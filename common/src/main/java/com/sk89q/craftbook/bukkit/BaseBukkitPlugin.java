@@ -160,6 +160,7 @@ public abstract class BaseBukkitPlugin extends JavaPlugin {
         // and other data files will be stored
         getDataFolder().mkdirs();
         createDefaultConfiguration("en_US.txt", true);
+        createDefaultConfiguration("ru_RU.txt", true);
         createDefaultConfiguration("config.yml", false);
 
         // config = new BaseConfiguration(getConfig(), getDataFolder());

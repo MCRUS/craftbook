@@ -28,8 +28,8 @@ public class CommonConfiguration extends BaseConfiguration {
     @Override
     public void load() {
 
-        languages = getStringList("languages", new ArrayList<String>(Arrays.asList("en_US")));
-        language = getString("language", "en_US");
+        languages = getStringList("languages", new ArrayList<String>(Arrays.asList("ru_RU")));
+        language = getString("language", "ru_RU");
         opPerms = getBoolean("op-perms", true);
         useBlockDistance = getBoolean("use-block-radius", false);
         checkWGRegions = getBoolean("check-worldguard-flags", true);

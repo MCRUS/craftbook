@@ -26,6 +26,10 @@
     </properties>
     <repositories>
         <repository>
+            <id>bukkit-ru</id>
+            <url>http://mc-repo.alexbond.info/artifactory/repo/</url>
+        </repository>
+        <repository>
             <id>bukkit-repo</id>
             <url>http://repo.bukkit.org/content/groups/public</url>
         </repository>

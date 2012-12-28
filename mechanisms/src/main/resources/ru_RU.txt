@@ -1,0 +1,45 @@
+mech.use-permission:У Вас недостаточно прав для использования этого механизма.
+mech.lift.target-sign-created:Конечная точка листа создана.
+mech.lift.down-sign-created:Лифт вниз создан.
+mech.lift.up-sign-created:Лифт вверх создан.
+mech.lift.obstruct:Точка назначения застроена!
+mech.lift.no-floor:Точка назначания не имеет пола!
+mech.lift.floor:Этаж
+mech.lift.up:Вы поднялись на лифте вверх!
+mech.lift.down:Вы спустились на лифте вниз!
+mech.gate.create:Ворота созданы!
+mech.dgate.create:Малые ворота созданы!
+mech.gate.toggle:Состояние ворот переключено!
+mech.gate.not-found:Ворота не найдены!
+mech.door.create:Дверь создана!
+mech.door.toggle:Состояние двери переключено!
+mech.door.other-sign:Табличка двери требуетя и с другой стороны (или она слишком далеко).
+mech.door.unusable:Данный материал нельзя использовать для двери!
+mech.door.material:Дверь должна быть полностью сделана одного материала!
+mech.bridge.create:Мост создан!
+mech.bridge.toggle:Состояние моста переключено!
+mech.bridge.end-create:Конечная точка моста создана!
+mech.bridge.unusable:Из этого материала нельзя делать мост!
+mech.bridge.material:Мост должен быть сделан из одного материала!
+mech.bridge.other-sign:Табличка моста должна быть и на другом конце (или она слишком далеко).
+mech.pay.create:Сборщик денег создан!
+mech.teleport.create:Телепорт создан!
+mech.teleport.alert:Вы телепортированы!
+mech.teleport.range:Вне зоны досягаемости!
+mech.teleport.sign:В точне назначения нет таблички!
+mech.cauldron.too-small:Котел создан!
+mech.cauldron.leaky:Котел подтекает!
+mech.cauldron.no-lava:У котла протекает лава!
+mech.cauldron.stir:Вы пытались приготовить что то в котле, но ничего не вышло.
+mech.command.create:Командная табличка создана!
+mech.cook.create:Кастрюля создана!
+mech.cook.ouch:Ауч! Это было гарячо!
+mech.hiddenswitch.key:Ключ не подходит!
+mech.group:Вы не состоите в запрашиваниемой группе!
+mech.restock:Механизм пополнен!
+mech.anchor.create:Якорь чанка создан!
+mech.lightswitch.create:Переключатель света создан!
+mech.painting.editing:Вы в режиме смены картины!
+mech.painting.stop:Вы вышли из режима редактирования картины!
+mech.painting.used:Данная картинка уже была отредактирована
+area.permissions:У Вас недостаточно прав на использование механизмов на этой территории!

@@ -46,7 +46,7 @@ public class LanguageManager {
                 BufferedReader br = new BufferedReader(new FileReader(f));
                 String line;
                 while ((line = br.readLine()) != null) {
-                    String[] split = RegexUtil.COLON_PATTERN.split(line);
+                    String[] split = RegexUtil.COLON_PATTERN.split(new String(line.getBytes(), "UTF-8"));
                     if (split.length != 2) {
                         continue;
                     }
@@ -56,7 +56,7 @@ public class LanguageManager {
             } catch (IOException e) {
                 plugin.getLogger().log(Level.SEVERE,
                         "[CraftBook] could not find file: " + plugin.getDataFolder().getName() + File.pathSeparator +
-                        language + ".txt");
+                                language + ".txt");
             }
             languageMap.put(language, languageData);
         }

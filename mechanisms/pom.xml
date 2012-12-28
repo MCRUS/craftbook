@@ -52,6 +52,7 @@
                     <include>cauldron-recipes.txt</include>
                     <include>books.txt</include>
                     <include>en_US.txt</include>
+                    <include>ru_RU.txt</include>
                     <include>custom-block-drops.txt</include>
                     <include>custom-mob-drops.txt</include>
                     <include>cauldron-recipes.yml</include>
