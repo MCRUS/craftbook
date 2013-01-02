@@ -50,7 +50,6 @@
                 <directory>${basedir}/src/main/resources/</directory>
                 <includes>
                     <include>en_US.txt</include>
-                    <include>ru_RU.txt</include>
                 </includes>
             </resource>
         </resources>
