@@ -4,7 +4,6 @@ package com.sk89q.craftbook.util.config;
  * Author: Turtle9598
  */
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.logging.FileHandler;
@@ -35,13 +34,6 @@ public class YAMLConfiguration extends LocalConfiguration {
 
     @Override
     public void load() {
-
-        try {
-            config.load();
-        } catch (IOException e) {
-            logger.severe("Error loading CraftBook configuration: " + e);
-            e.printStackTrace();
-        }
 
         /* Circuits Configuration */
 
@@ -78,11 +70,13 @@ public class YAMLConfiguration extends LocalConfiguration {
         areaEnabled = config.getBoolean("mechanics.area.enable", true);
         areaAllowRedstone = config.getBoolean("mechanics.area.allow-redstone", true);
         areaUseSchematics = config.getBoolean("mechanics.area.use-schematics", true);
+        areaShortenNames = config.getBoolean("mechanics.area.shorten-long-names", true);
         areaMaxAreaSize = config.getInt("mechanics.area.max-size", 5000);
         areaMaxAreaPerUser = config.getInt("mechanics.area.max-per-user", 30);
 
         // Bookcase Configuration Listener
         bookcaseEnabled = config.getBoolean("mechanics.bookcase.enable", true);
+        bookcaseReadWhenSneaking = config.getBoolean("mechanics.bookcase.read-when-sneaking", false);
         bookcaseReadLine = config.getString("mechanics.bookcase.read-line", "You pick up a book...");
 
         // Bridge Configuration Listener
@@ -105,6 +99,8 @@ public class YAMLConfiguration extends LocalConfiguration {
 
         // Chunk Anchor Configuration Listener
         chunkAnchorEnabled = config.getBoolean("mechanics.chunk-anchor.enable", true);
+        chunkAnchorRedstone = config.getBoolean("mechanics.chunk-anchor.enable-redstone", true);
+        chunkAnchorCheck = config.getBoolean("mechanics.chunk-anchor.check-chunks", true);
 
         // Command Sign Configuration Listener
         commandSignEnabled = config.getBoolean("mechanics.command-sign.enable", true);
@@ -172,9 +168,10 @@ public class YAMLConfiguration extends LocalConfiguration {
         paymentEnabled = config.getBoolean("mechanics.payment.enable", true);
 
         // Snow Configuration Listener
-        snowEnabled = config.getBoolean("mechanics.snow.enable", true);
-        snowTrample = config.getBoolean("mechanics.snow.trample", true);
-        snowPlace = config.getBoolean("mechanics.snow.place", true);
+        snowPiling = config.getBoolean("mechanics.snow.piling", false);
+        snowTrample = config.getBoolean("mechanics.snow.trample", false);
+        snowPlace = config.getBoolean("mechanics.snow.place", false);
+        snowSlowdown = config.getBoolean("mechanics.snow.slowdown", false);
         snowRealistic = config.getBoolean("mechanics.snow.realistic", false);
         snowHighPiles = config.getBoolean("mechanics.snow.high-piling", false);
         snowJumpTrample = config.getBoolean("mechanics.snow.jump-trample", false);
@@ -217,6 +214,8 @@ public class YAMLConfiguration extends LocalConfiguration {
         minecartMessengerEnabled = config.getBoolean("vehicles.minecart.track-messages", true);
         minecartDecayTime = config.getInt("vehicles.minecart.decay-time", 20);
         minecartConstantSpeed = config.getDouble("vehicles.minecart.constant-speed", 0);
+        minecartPoweredRailModifier = config.getDouble("vehicles.minecart.powered-rail-modifier", 0);
+        minecartPickupItemsOnCollision = config.getBoolean("vehicles.minecart.item-pickup-collision", false);
 
         // Vehicles - Boat Options
         boatRemoveEntities = config.getBoolean("vehicles.boat.remove-entities", false);

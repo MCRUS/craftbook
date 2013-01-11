@@ -1,3 +1,53 @@
+3.5 Beta 4 (Probably last 3.5 Beta, it looks very stable)
+* Fix error due to improper IC config.
++ Added /ic fireworks command to list firework scripts.
+* Fixed some IC's being unrestricted when they should've been restricted
+* Fix Custom Crafting & Improved Cauldrons recipes.
+* Fixed Crash bug with Hidden Switch.
+* Fixed Auto Crafter not crafting the correct amount of an item.
+* Made Chest Stocker use block above IC Block by default. (Also offset is based of ic block now)
+* Fixed Creature Spawner data overflowing into amount.
+* Fixed radius verification on farm IC's.
+* Fixed Chairs allowing people to glitch through blocks.
+* Fixed all 3I3O IC's. (Adders, Subtractors, Dispatchers)
++ Added a lot more harvestable blocks to Combine Harvester.
++ Added Animal Harvester IC.
+* Made Entity Sensor less buggy.
+
+3.5 Beta 3
+* Fix errors related to corrupt signs.
+* Renamed a few configuration nodes to make more sense.
+* Fixed a NPE with areas.
++ Added an option to auto shorten area namespaces.
+* Fixed SetBridge offset
++ Added error handling for missing fireworks
++ Added an option to make snow slow you down when piled up.
++ Made piled snow drop the equivalent amount of snowballs.
+* Made MessageSender broadcast to all players if the line was empty.
+* Added a workaround for IC's outputs not triggering IC's.
+* Fixed many incorrect config nodes.
++ Added an option to disable redstone on (and therefore turning off) chunk anchors.
++ Added an option to make chunk anchors check for chunk anchors already in the chunk.
++ Added an option to have a ! on the last line of a player sensor to invert the IC.
++ Added an option to have a ! on the offset of a player sensor to use absolute coordinates.
++ Manually added correct drops to Combine Harvester.
+* Fixed /cb reload being usable by all
+* Fixed Auto crafter with 3x2 recipes.
+
+3.5 Beta 2
+* Stop unneeded folders generating.
++ Added better detection of corrupt chunks/blocks. It now tells you which chunk is corrupt if it finds one.
+* Fixed CartReverser being inversed.
++ Added furnace support to pipes.
+* Minor changes to IC Permissions. (Shouldn't effect you in any way)
++ Added option to modify powered rail power.
++ Added option for storage carts to pickup items they run into.
+* Made snow mechanics off by default.
+* Made Spigot IC Restricted temporarily, it can be dangerous.
+* Fixed a lot of bugs with minecart remove entities on collision, it is now more stable and won't stop you when hitting entities.
+* Fixed Custom Dispensing, Snow, Painting Switcher, Chairs, AI Mechanics, Custom Drops
++ Added an option to only read bookshelves while sneaking, and if false; it is the opposite.
+
 3.5 Beta 1
 * MERGED ALL 4 JARS INTO 1. DUE TO THIS CONFIGS NEED TO BE REGENERATED, AND MIDIS + TOGGLE AREAS NEED TO BE MOVED
 + Added a Tune IC

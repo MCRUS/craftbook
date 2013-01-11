@@ -1,6 +1,9 @@
 package com.sk89q.craftbook.mech;
 
-import com.sk89q.craftbook.*;
+import com.sk89q.craftbook.AbstractMechanic;
+import com.sk89q.craftbook.AbstractMechanicFactory;
+import com.sk89q.craftbook.ChangedSign;
+import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.util.exceptions.InsufficientPermissionsException;
 import com.sk89q.craftbook.util.exceptions.InvalidMechanismException;
@@ -43,7 +46,7 @@ public class HiddenSwitch extends AbstractMechanic {
 
             // Must be Wall Sign
             if (b == null || b.getTypeId() != BlockID.WALL_SIGN) return false;
-            if (!(b.getState() instanceof Sign)) return false;
+            if (b.getState() == null || !(b.getState() instanceof Sign)) return false;
             Sign s = (Sign) b.getState();
 
             return s.getLine(1).equalsIgnoreCase("[X]");
@@ -71,8 +74,7 @@ public class HiddenSwitch extends AbstractMechanic {
     @Override
     public void onRightClick(PlayerInteractEvent event) {
 
-        if (!CraftBookPlugin.inst().getConfiguration().hiddenSwitchEnabled)
-            return;
+        if (!CraftBookPlugin.inst().getConfiguration().hiddenSwitchEnabled) return;
 
         LocalPlayer player = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
 
@@ -81,10 +83,9 @@ public class HiddenSwitch extends AbstractMechanic {
         } catch (InsufficientPermissionsException e) {
             return;
         }
-        if (!(event.getBlockFace() == BlockFace.EAST || event.getBlockFace() == BlockFace.WEST || event.getBlockFace
-                () == BlockFace.NORTH
-                || event.getBlockFace() == BlockFace.SOUTH || event.getBlockFace() == BlockFace.UP || event
-                .getBlockFace() == BlockFace.DOWN))
+        if (!(event.getBlockFace() == BlockFace.EAST || event.getBlockFace() == BlockFace.WEST
+                || event.getBlockFace() == BlockFace.NORTH || event.getBlockFace() == BlockFace.SOUTH
+                || event.getBlockFace() == BlockFace.UP || event.getBlockFace() == BlockFace.DOWN))
             return;
         BlockFace face = event.getBlockFace().getOppositeFace();
         Block testBlock = switchBlock.getRelative(face);
@@ -125,6 +126,7 @@ public class HiddenSwitch extends AbstractMechanic {
 
                     break;
                 }
+                break;
             } else if (CraftBookPlugin.inst().getConfiguration().hiddenSwitchAnyside) {
                 if (face == event.getBlockFace().getOppositeFace() && passed) {
                     break;

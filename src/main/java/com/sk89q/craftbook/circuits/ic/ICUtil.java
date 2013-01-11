@@ -16,7 +16,16 @@
 
 package com.sk89q.craftbook.circuits.ic;
 
+import java.util.HashMap;
+
+import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.material.Lever;
+
 import com.sk89q.craftbook.ChangedSign;
+import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.util.LocationUtil;
 import com.sk89q.craftbook.util.RegexUtil;
@@ -24,12 +33,6 @@ import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.blocks.BlockType;
 import com.sk89q.worldedit.blocks.ItemType;
-import org.bukkit.Location;
-import org.bukkit.block.Block;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.Lever;
-
-import java.util.HashMap;
 
 /**
  * IC utility functions.
@@ -119,10 +122,13 @@ public class ICUtil {
 
         // if the state changed lets apply physics to the source block and the lever itself
         if (wasOn != state) {
+
             // set the new data
             block.setData((byte) newData, true);
             // apply physics to the source block the lever is attached to
             block.setData(block.getData(), true);
+            BlockRedstoneEvent event = new BlockRedstoneEvent(block,wasOn ? 15 : 0, state ? 15 : 0);
+            CraftBookPlugin.inst().getServer().getPluginManager().callEvent(event);
             return true;
         }
 
@@ -218,7 +224,7 @@ public class ICUtil {
 
     public static ItemStack getItem(String line) {
 
-        if (line.isEmpty()) {
+        if (line == null || line.isEmpty()) {
             return null;
         }
         try {

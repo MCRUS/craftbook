@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
@@ -13,6 +14,7 @@ import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.PersistentMechanic;
 import com.sk89q.craftbook.SourcedBlockRedstoneEvent;
+import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.util.exceptions.InsufficientPermissionsException;
 import com.sk89q.craftbook.util.exceptions.InvalidMechanismException;
 import com.sk89q.craftbook.util.exceptions.ProcessedMechanismException;
@@ -61,6 +63,21 @@ public class ChunkAnchor extends PersistentMechanic {
             if (!sign.getLine(1).equalsIgnoreCase("[Chunk]")) return null;
             if (!player.hasPermission("craftbook.mech.chunk")) throw new InsufficientPermissionsException();
 
+            if(CraftBookPlugin.inst().getConfiguration().chunkAnchorCheck) {
+
+                for(BlockState entity : BukkitUtil.toBlock(pt).getChunk().getTileEntities()) {
+
+                    if(entity instanceof Sign) {
+
+                        Sign s = (Sign) entity;
+                        if(s.getLine(1).equalsIgnoreCase("[Chunk]")) {
+
+                            throw new InvalidMechanismException("Chunk already anchored!");
+                        }
+                    }
+                }
+            }
+
             player.print("mech.anchor.create");
             sign.setLine(1, "[Chunk]");
 
@@ -98,6 +115,7 @@ public class ChunkAnchor extends PersistentMechanic {
     @Override
     public void onBlockRedstoneChange(SourcedBlockRedstoneEvent event) {
 
+        if(!CraftBookPlugin.inst().getConfiguration().chunkAnchorRedstone) return;
         Block block = event.getBlock();
         if (block.getState() instanceof Sign) {
             Sign sign = (Sign) block.getState();
@@ -120,13 +138,9 @@ public class ChunkAnchor extends PersistentMechanic {
     }
 
     @Override
-    public void onChunkUnload(ChunkUnloadEvent event) {
+    public void unloadWithEvent(ChunkUnloadEvent event) {
 
-        boolean isOn = true;
-
-        if(!isOn)
-            return;
-
+        if (!isOn && CraftBookPlugin.inst().getConfiguration().chunkAnchorRedstone) return;
         event.setCancelled(true);
     }
 }

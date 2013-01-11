@@ -11,14 +11,20 @@ import org.bukkit.entity.Snowball;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.util.ItemUtil;
 import com.sk89q.worldedit.blocks.BlockID;
+import com.sk89q.worldedit.blocks.ItemID;
 
 /**
  * Snow fall mechanism. Builds up/tramples snow
@@ -54,6 +60,24 @@ public class Snow implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent event) {
+
+        if(event.getBlock().getTypeId() == BlockID.SNOW && ItemUtil.isStackValid(event.getPlayer().getItemInHand())) {
+
+            if(event.getPlayer().getItemInHand().getTypeId() == ItemID.WOOD_SHOVEL
+                    || event.getPlayer().getItemInHand().getTypeId() == ItemID.STONE_SHOVEL
+                    || event.getPlayer().getItemInHand().getTypeId() == ItemID.IRON_SHOVEL
+                    || event.getPlayer().getItemInHand().getTypeId() == ItemID.GOLD_SHOVEL
+                    || event.getPlayer().getItemInHand().getTypeId() == ItemID.DIAMOND_SHOVEL) {
+                event.setCancelled(true);
+                int amount = event.getBlock().getData()+1;
+                event.getBlock().setTypeId(BlockID.AIR);
+                event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation().add(0.5, 0.5, 0.5), new ItemStack(ItemID.SNOWBALL, amount));
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerMove(PlayerMoveEvent event) {
 
         if (!CraftBookPlugin.inst().getConfiguration().snowTrample) return;
@@ -61,6 +85,14 @@ public class Snow implements Listener {
         if (!event.getFrom().getWorld().getName().equalsIgnoreCase(event.getTo().getWorld().getName())) return;
         LocalPlayer player = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
         if (!player.hasPermission("craftbook.mech.snow.trample")) return;
+
+        if(CraftBookPlugin.inst().getConfiguration().snowSlowdown && event.getTo().getBlock().getTypeId() == BlockID.SNOW) {
+
+            if(event.getTo().getBlock().getData() > 0x5)
+                event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 40, 2), true);
+            else if(event.getTo().getBlock().getData() > 0x2)
+                event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 60, 1), true);
+        }
 
         if (CraftBookPlugin.inst().getConfiguration().snowJumpTrample && event.getPlayer().getVelocity().getY() >= 0D)
             return;
@@ -82,7 +114,7 @@ public class Snow implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockForm(final BlockFormEvent event) {
 
-        if (!CraftBookPlugin.inst().getConfiguration().snowEnabled) return;
+        if (!CraftBookPlugin.inst().getConfiguration().snowPiling) return;
         if (event.getNewState().getTypeId() == BlockID.SNOW) {
             Block block = event.getBlock();
             pile(block);
@@ -103,7 +135,7 @@ public class Snow implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockPhysics(final BlockPhysicsEvent event) {
 
-        if (!CraftBookPlugin.inst().getConfiguration().snowEnabled) return;
+        if (!CraftBookPlugin.inst().getConfiguration().snowPiling) return;
         if (event.getBlock().getTypeId() == BlockID.SNOW) {
             Block block = event.getBlock();
 

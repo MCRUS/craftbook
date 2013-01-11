@@ -16,14 +16,15 @@
 
 package com.sk89q.craftbook.circuits.gates.world.blocks;
 
+import org.bukkit.Server;
+import org.bukkit.block.Block;
+
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.ic.RestrictedIC;
 import com.sk89q.worldedit.blocks.BlockID;
-import org.bukkit.Server;
-import org.bukkit.block.Block;
 
 public class SetBlockBelow extends SetBlock {
 
@@ -73,7 +74,7 @@ public class SetBlockBelow extends SetBlock {
         }
 
         @Override
-        public String getDescription() {
+        public String getShortDescription() {
 
             return "Sets block below the IC block.";
         }

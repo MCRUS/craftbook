@@ -72,9 +72,8 @@ public class ICMechanic extends PersistentMechanic {
 
                 @Override
                 public void run() {
-                    // Assuming that the plugin host isn't going wonky here
-                    if (block.getTypeId() != BlockID.WALL_SIGN) // Could change between then and now.
-                        return;
+
+                    if (block.getTypeId() != BlockID.WALL_SIGN) return;
                     ChipState chipState = family.detect(BukkitUtil.toWorldVector(source),
                             BukkitUtil.toChangedSign(block));
                     int cnt = 0;

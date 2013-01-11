@@ -1,11 +1,8 @@
 package com.sk89q.craftbook.mech;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
-import com.sk89q.craftbook.bukkit.BukkitPlayer;
-import com.sk89q.craftbook.bukkit.CraftBookPlugin;
-import com.sk89q.craftbook.util.GeneralUtil;
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Block;
@@ -17,8 +14,13 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ConcurrentHashMap;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import com.sk89q.craftbook.bukkit.BukkitPlayer;
+import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.util.GeneralUtil;
+import com.sk89q.worldedit.blocks.BlockType;
 
 /**
  * @author Me4502
@@ -148,12 +150,18 @@ public class Chair implements Listener {
             }
             if (hasChair(player.getPlayer())) { // Stand
                 removeChair(player.getPlayer());
+                event.getPlayer().teleport(event.getClickedBlock().getLocation().add(0.5, 1.5, 0.5));
             } else { // Sit
                 if (hasChair(event.getClickedBlock())) {
                     player.print("This seat is already occupied.");
                     return;
                 }
-                player.getPlayer().teleport(event.getClickedBlock().getLocation().add(0.5, 0,
+                if(BlockType.canPassThrough(event.getClickedBlock().getRelative(0, -1, 0).getTypeId())) {
+
+                    player.printError("This chair has nothing below it!");
+                    return;
+                }
+                player.getPlayer().teleport(event.getClickedBlock().getLocation().add(0.5,0,
                         0.5)); // Teleport to the seat
                 addChair(player.getPlayer(), event.getClickedBlock());
             }
@@ -170,11 +178,11 @@ public class Chair implements Listener {
                 if (p == null) continue;
                 if (!plugin.getConfiguration().chairBlocks.contains(getChair(p).getTypeId())
                         || !p.getWorld().equals(getChair(p).getWorld()) || p.getLocation().distanceSquared(getChair
-                        (p).getLocation()) > 1)
+                                (p).getLocation()) > 1)
                     removeChair(p); // Remove
-                    // it.
-                    // It's
-                    // unused.
+                // it.
+                // It's
+                // unused.
                 else {
                     addChair(p, getChair(p)); // For any new players.
 

@@ -1,11 +1,18 @@
 package com.sk89q.craftbook.circuits.gates.logic;
 
-import com.sk89q.craftbook.ChangedSign;
-import com.sk89q.craftbook.bukkit.CraftBookPlugin;
-import com.sk89q.craftbook.circuits.ic.*;
-import com.sk89q.craftbook.util.RegexUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
+
+import com.sk89q.craftbook.ChangedSign;
+import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.circuits.ic.AbstractIC;
+import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
+import com.sk89q.craftbook.circuits.ic.ChipState;
+import com.sk89q.craftbook.circuits.ic.IC;
+import com.sk89q.craftbook.circuits.ic.ICFactory;
+import com.sk89q.craftbook.circuits.ic.ICVerificationException;
+import com.sk89q.craftbook.circuits.ic.RestrictedIC;
+import com.sk89q.craftbook.util.RegexUtil;
 
 /**
  * @author Silthus
@@ -216,7 +223,7 @@ public class Pulser extends AbstractIC {
         }
 
         @Override
-        public String getDescription() {
+        public String getShortDescription() {
 
             return "Fires a (choosable) pulse of high-signals with a choosable length of the signal "
                     + "and the pause between the pulses when the input goes from low to high.";

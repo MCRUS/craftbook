@@ -96,6 +96,8 @@ import com.sk89q.craftbook.circuits.gates.world.blocks.Spigot;
 import com.sk89q.craftbook.circuits.gates.world.blocks.WaterSensor;
 import com.sk89q.craftbook.circuits.gates.world.blocks.WaterSensorST;
 import com.sk89q.craftbook.circuits.gates.world.entity.AdvancedEntitySpawner;
+import com.sk89q.craftbook.circuits.gates.world.entity.AnimalHarvester;
+import com.sk89q.craftbook.circuits.gates.world.entity.AnimalHarvesterST;
 import com.sk89q.craftbook.circuits.gates.world.entity.CreatureSpawner;
 import com.sk89q.craftbook.circuits.gates.world.entity.EntityCannon;
 import com.sk89q.craftbook.circuits.gates.world.entity.EntityCannonST;
@@ -112,6 +114,8 @@ import com.sk89q.craftbook.circuits.gates.world.items.ContainerCollector;
 import com.sk89q.craftbook.circuits.gates.world.items.ContainerCollectorST;
 import com.sk89q.craftbook.circuits.gates.world.items.ContainerDispenser;
 import com.sk89q.craftbook.circuits.gates.world.items.ContainerDispenserST;
+import com.sk89q.craftbook.circuits.gates.world.items.Distributer;
+import com.sk89q.craftbook.circuits.gates.world.items.DistributerST;
 import com.sk89q.craftbook.circuits.gates.world.items.ItemDispenser;
 import com.sk89q.craftbook.circuits.gates.world.items.ItemFan;
 import com.sk89q.craftbook.circuits.gates.world.items.ItemFanST;
@@ -148,8 +152,6 @@ import com.sk89q.craftbook.circuits.gates.world.sensors.ItemSensor;
 import com.sk89q.craftbook.circuits.gates.world.sensors.ItemSensorST;
 import com.sk89q.craftbook.circuits.gates.world.sensors.LightSensor;
 import com.sk89q.craftbook.circuits.gates.world.sensors.LightSensorST;
-import com.sk89q.craftbook.circuits.gates.world.sensors.MovementSensor;
-import com.sk89q.craftbook.circuits.gates.world.sensors.MovementSensorST;
 import com.sk89q.craftbook.circuits.gates.world.sensors.PlayerSensor;
 import com.sk89q.craftbook.circuits.gates.world.sensors.PlayerSensorST;
 import com.sk89q.craftbook.circuits.gates.world.sensors.PowerSensor;
@@ -379,6 +381,8 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1240", "shoot arrow", new ArrowShooter.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1241", "shoot arrows", new ArrowBarrage.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1242", "stocker", new ChestStocker.Factory(server), familySISO, familyAISO); // Restricted
+        registerIC("MC1243", "distributer", new Distributer.Factory(server), familySISO, familyAISO);
+        registerIC("MC1244", "animal harvest", new AnimalHarvester.Factory(server), familySISO, familyAISO);
         registerIC("MC1250", "shoot fire", new FireShooter.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1251", "shoot fires", new FireBarrage.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1252", "flame thower", new FlameThrower.Factory(server), familySISO, familyAISO); // Restricted
@@ -391,7 +395,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1264", "sense item", new ItemSensor.Factory(server), familySISO, familyAISO);
         registerIC("MC1265", "inv sense item", new ItemNotSensor.Factory(server), familySISO, familyAISO);
         registerIC("MC1266", "sense power", new PowerSensor.Factory(server), familySISO, familyAISO);
-        registerIC("MC1267", "sense move", new MovementSensor.Factory(server), familySISO, familyAISO);
+        //FIXME registerIC("MC1267", "sense move", new MovementSensor.Factory(server), familySISO, familyAISO);
         registerIC("MC1270", "melody", new Melody.Factory(server), familySISO, familyAISO);
         registerIC("MC1271", "sense entity", new EntitySensor.Factory(server), familySISO, familyAISO);
         registerIC("MC1272", "sense player", new PlayerSensor.Factory(server), familySISO, familyAISO); // Restricted
@@ -474,6 +478,8 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC0238", "irrigate st", new IrrigatorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0239", "harvester st", new CombineHarvesterST.Factory(server), familySISO, familyAISO);
         registerIC("MC0242", "stocker st", new ChestStockerST.Factory(server), familySISO, familyAISO); // Restricted
+        registerIC("MC0243", "distributer st", new DistributerST.Factory(server), familySISO, familyAISO);
+        registerIC("MC0244", "animal harvest st", new AnimalHarvesterST.Factory(server), familySISO, familyAISO);
         registerIC("MC0260", "sense water st", new WaterSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0261", "sense lava st", new LavaSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0262", "sense light st", new LightSensorST.Factory(server), familySISO, familyAISO);
@@ -482,7 +488,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC0265", "sense n item s", new ItemNotSensorST.Factory(server), familySISO,
                 familyAISO); // Restricted
         registerIC("MC0266", "sense power st", new PowerSensorST.Factory(server), familySISO, familyAISO); // Restricted
-        registerIC("MC0267", "sense move st", new MovementSensorST.Factory(server), familySISO, familyAISO);
+        //FIXME registerIC("MC0267", "sense move st", new MovementSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0270", "sense power st", new PowerSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0271", "sense entit st", new EntitySensorST.Factory(server), familySISO,
                 familyAISO); // Restricted
@@ -565,6 +571,8 @@ public class CircuitCore implements LocalComponent {
 
     public List<RegisteredICFactory> getICList() {
 
+        if(ICManager == null)
+            return new ArrayList<RegisteredICFactory>();
         List<RegisteredICFactory> ics = new ArrayList<RegisteredICFactory>();
         for (Map.Entry<String, RegisteredICFactory> e : ICManager.registered.entrySet()) {
             ics.add(e.getValue());
@@ -594,7 +602,7 @@ public class CircuitCore implements LocalComponent {
             if (plugin.getConfiguration().ICShortHandEnabled && ric.getShorthand() != null) {
                 player.sendMessage(ChatColor.YELLOW + "Shorthand: =" + ric.getShorthand());
             }
-            player.sendMessage(ChatColor.YELLOW + "Desc: " + ric.getFactory().getDescription());
+            player.sendMessage(ChatColor.YELLOW + "Desc: " + ric.getFactory().getShortDescription());
             if (ric.getFactory().getLineHelp()[0] != null) {
                 player.sendMessage(ChatColor.YELLOW + "Line 3: " + ric.getFactory().getLineHelp()[0]);
             } else {
@@ -684,11 +692,7 @@ public class CircuitCore implements LocalComponent {
                 col = !col;
                 ChatColor colour = col ? ChatColor.YELLOW : ChatColor.GOLD;
 
-                if (ric.getFactory() instanceof RestrictedIC) {
-                    if (!p.hasPermission("craftbook.ic.restricted." + ic.toLowerCase())) {
-                        colour = col ? ChatColor.RED : ChatColor.DARK_RED;
-                    }
-                } else if (!p.hasPermission("craftbook.ic.safe." + ic.toLowerCase())) {
+                if (!ICMechanicFactory.checkPermissionsBoolean(CraftBookPlugin.inst().wrapPlayer(p), ric.getFactory(), ic.toLowerCase())) {
                     colour = col ? ChatColor.RED : ChatColor.DARK_RED;
                 }
                 strings.add(colour + tic.getTitle() + " (" + ric.getId() + ")"

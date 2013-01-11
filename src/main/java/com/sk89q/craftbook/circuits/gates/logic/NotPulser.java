@@ -1,11 +1,12 @@
 package com.sk89q.craftbook.circuits.gates.logic;
 
+import org.bukkit.Server;
+
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.ic.RestrictedIC;
-import org.bukkit.Server;
 
 /**
  * @author Silthus
@@ -49,7 +50,7 @@ public class NotPulser extends Pulser {
         }
 
         @Override
-        public String getDescription() {
+        public String getShortDescription() {
 
             return "Fires a (choosable) pulse of low-signals with a choosable length of the signal "
                     + "and the pause between the pulses when the input goes from low to high.";

@@ -15,6 +15,7 @@ import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.util.ItemUtil;
 import com.sk89q.craftbook.util.SignUtil;
+import com.sk89q.craftbook.util.VerifyUtil;
 import com.sk89q.util.yaml.YAMLProcessor;
 import com.sk89q.worldedit.blocks.BlockID;
 
@@ -52,6 +53,8 @@ public class Cultivator extends AbstractIC {
         } catch (Exception e) {
             radius = 10;
         }
+
+        radius = VerifyUtil.verifyRadius(radius, 15);
     }
 
     @Override
@@ -117,9 +120,15 @@ public class Cultivator extends AbstractIC {
         }
 
         @Override
-        public String getDescription() {
+        public String getShortDescription() {
 
             return "Cultivates an area using a hoe.";
+        }
+
+        @Override
+        public String getLongDescription() {
+
+            return "The Cultivator IC tills dirt and grass around the IC within the area designated on line 3, using the hoes in the above chest.";
         }
 
         @Override

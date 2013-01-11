@@ -1,9 +1,11 @@
 package com.sk89q.craftbook.bukkit.commands;
+import org.bukkit.command.CommandSender;
+
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandContext;
+import com.sk89q.minecraft.util.commands.CommandPermissions;
 import com.sk89q.minecraft.util.commands.NestedCommand;
-import org.bukkit.command.CommandSender;
 
 /**
  * Author: Turtle9598
@@ -27,6 +29,7 @@ public class TopLevelCommands {
         }
 
         @Command(aliases = "reload", desc = "Reloads the CraftBook Common config")
+        @CommandPermissions("craftbook.reload")
         public void reload(CommandContext context, CommandSender sender) {
 
             CraftBookPlugin.inst().reloadConfiguration();

@@ -1,13 +1,10 @@
 package com.sk89q.craftbook.circuits.gates.world.blocks;
 
-import com.sk89q.craftbook.ChangedSign;
-import com.sk89q.craftbook.bukkit.CircuitCore;
-import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.circuits.ic.*;
-import com.sk89q.craftbook.util.RegexUtil;
-import com.sk89q.craftbook.util.SignUtil;
-import com.sk89q.worldedit.Vector;
-import com.sk89q.worldedit.blocks.BlockID;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+
 import org.bukkit.Server;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -15,10 +12,21 @@ import org.bukkit.block.Chest;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.PistonBaseMaterial;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import com.sk89q.craftbook.ChangedSign;
+import com.sk89q.craftbook.bukkit.CircuitCore;
+import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.circuits.ic.AbstractIC;
+import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
+import com.sk89q.craftbook.circuits.ic.ChipState;
+import com.sk89q.craftbook.circuits.ic.IC;
+import com.sk89q.craftbook.circuits.ic.ICFactory;
+import com.sk89q.craftbook.util.RegexUtil;
+import com.sk89q.craftbook.util.SignUtil;
+import com.sk89q.craftbook.util.VerifyUtil;
+import com.sk89q.worldedit.Vector;
+import com.sk89q.worldedit.blocks.BlockID;
+import com.sk89q.worldedit.blocks.ItemID;
 
 public class CombineHarvester extends AbstractIC {
 
@@ -59,6 +67,8 @@ public class CombineHarvester extends AbstractIC {
             offset = new Vector(0, 2, 0);
         }
 
+        radius = VerifyUtil.verifyRadius(radius, 15);
+
         target = onBlock.getRelative(offset.getBlockX(), offset.getBlockY(), offset.getBlockZ());
     }
 
@@ -92,7 +102,7 @@ public class CombineHarvester extends AbstractIC {
 
                     if (harvestable(b)) {
 
-                        collectDrops(b.getDrops().toArray(new ItemStack[b.getDrops().size()]));
+                        collectDrops(getDrops(b));
                         b.setTypeId(0);
                         return true;
                     }
@@ -139,8 +149,48 @@ public class CombineHarvester extends AbstractIC {
     public boolean harvestable(Block block) {
 
         // TODO add a list of things that can be harvestable, and in what circumstance.
-        return (block.getTypeId() == BlockID.CROPS || block.getTypeId() == BlockID.CARROTS || block.getTypeId() ==
-                BlockID.POTATOES) && block.getData() >= 0x7;
+        if((block.getTypeId() == BlockID.CROPS || block.getTypeId() == BlockID.CARROTS || block.getTypeId() == BlockID.POTATOES) && block.getData() >= 0x7)
+            return true;
+
+        if(block.getTypeId() == BlockID.CACTUS && block.getRelative(0, -1, 0).getTypeId() == BlockID.CACTUS && block.getRelative(0, 1, 0).getTypeId() != BlockID.CACTUS)
+            return true;
+
+        if(block.getTypeId() == BlockID.REED && block.getRelative(0, -1, 0).getTypeId() == BlockID.REED && block.getRelative(0, 1, 0).getTypeId() != BlockID.REED)
+            return true;
+
+        if(block.getTypeId() == BlockID.VINE && block.getRelative(0, 1, 0).getTypeId() == BlockID.VINE && block.getRelative(0, -1, 0).getTypeId() != BlockID.VINE)
+            return true;
+
+        if(block.getTypeId() == BlockID.COCOA_PLANT && ((block.getData() & 0x8) == 0x8 || (block.getData() & 0xC) == 0xC))
+            return true;
+
+        if(block.getTypeId() == BlockID.NETHER_WART && block.getData() >= 0x3)
+            return true;
+
+        return false;
+    }
+
+    public ItemStack[] getDrops(Block b) {
+
+        List<ItemStack> drops = new ArrayList<ItemStack>();
+
+        if (b.getTypeId() == BlockID.CROPS) {
+
+            drops.add(new ItemStack(ItemID.WHEAT, 1));
+            int amount = CraftBookPlugin.inst().getRandom().nextInt(4);
+            if(amount > 0)
+                drops.add(new ItemStack(ItemID.SEEDS, amount));
+        } else if (b.getTypeId() == BlockID.CARROTS) {
+
+            drops.add(new ItemStack(ItemID.CARROT, 1 + CraftBookPlugin.inst().getRandom().nextInt(4)));
+        } else if (b.getTypeId() == BlockID.POTATOES) {
+
+            drops.add(new ItemStack(ItemID.POTATO, 1 + CraftBookPlugin.inst().getRandom().nextInt(4)));
+            if(CraftBookPlugin.inst().getRandom().nextInt(50) == 0)
+                drops.add(new ItemStack(ItemID.POISONOUS_POTATO, 1));
+        }
+
+        return drops.toArray(new ItemStack[drops.size()]);
     }
 
     public static class Factory extends AbstractICFactory {
@@ -157,7 +207,7 @@ public class CombineHarvester extends AbstractIC {
         }
 
         @Override
-        public String getDescription() {
+        public String getShortDescription() {
 
             return "Harvests nearby crops.";
         }

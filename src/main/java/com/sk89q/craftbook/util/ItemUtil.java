@@ -1,16 +1,32 @@
 package com.sk89q.craftbook.util;
 
-import com.sk89q.worldedit.blocks.BlockID;
-import com.sk89q.worldedit.blocks.ItemID;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 
+import com.sk89q.worldedit.blocks.BlockID;
+import com.sk89q.worldedit.blocks.ItemID;
+
 public class ItemUtil {
 
     private ItemUtil() {
 
+    }
+
+    public static ItemStack addToStack(ItemStack base, ItemStack toAdd) {
+
+        if (!areItemsIdentical(base, toAdd)) return toAdd;
+
+        if (base.getAmount() + toAdd.getAmount() > 64) {
+
+            toAdd.setAmount(base.getAmount() + toAdd.getAmount() - 64);
+            base.setAmount(64);
+            return toAdd;
+        } else {
+            base.setAmount(base.getAmount() + toAdd.getAmount());
+            return null;
+        }
     }
 
     public static boolean areItemsSimilar(ItemStack item, int type) {
@@ -45,7 +61,10 @@ public class ItemUtil {
 
     public static boolean areItemsIdentical(ItemStack item, ItemStack item2) {
 
-        return !isStackValid(item) && !isStackValid(item2) || areItemsIdentical(item.getData(), item2.getData());
+        if(!isStackValid(item) || !isStackValid(item2))
+            return !isStackValid(item) && !isStackValid(item2);
+        else
+            return areItemsIdentical(item.getData(), item2.getData());
     }
 
     public static boolean areItemsIdentical(MaterialData data, MaterialData comparedData) {
@@ -159,15 +178,6 @@ public class ItemUtil {
                 || i == ItemID.MAGMA_CREAM || i == ItemID.SUGAR || i == ItemID.GLISTERING_MELON || i == ItemID
                 .GHAST_TEAR || i == ItemID.BLAZE_POWDER
                 || i == ItemID.FERMENTED_SPIDER_EYE || i == ItemID.SULPHUR;
-    }
-
-    public static void addToStack(ItemStack stack, ItemStack to) {
-
-        if (stack == null) {
-            stack = new ItemStack(to.getTypeId(), to.getAmount(), to.getDurability());
-        } else if (areItemsIdentical(stack, to)) {
-            stack.setAmount(stack.getAmount() + to.getAmount());
-        }
     }
 
     public static boolean containsRawFood(Inventory inv) {

@@ -1,4 +1,5 @@
 package com.sk89q.craftbook.bukkit;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,6 +9,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.PoweredMinecart;
@@ -37,6 +39,7 @@ import com.sk89q.craftbook.cart.CartMechanism;
 import com.sk89q.craftbook.cart.MinecartManager;
 import com.sk89q.craftbook.util.RailUtil;
 import com.sk89q.craftbook.util.exceptions.InsufficientPermissionsException;
+import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.blocks.ItemID;
 
 /**
@@ -117,36 +120,65 @@ public class VehicleCore implements LocalComponent {
             Vehicle vehicle = event.getVehicle();
             Entity entity = event.getEntity();
 
-            if (!plugin.getConfiguration().boatRemoveEntities && !plugin.getConfiguration().minecartRemoveEntities &&
-                    !plugin.getConfiguration().minecartEnterOnImpact)
-                return;
+            enterOnImpact: {
+                if (plugin.getConfiguration().minecartEnterOnImpact && vehicle instanceof Minecart) {
+                    if (!vehicle.isEmpty() || vehicle instanceof StorageMinecart || vehicle instanceof PoweredMinecart) break enterOnImpact;
+                    if (!(event.getEntity() instanceof LivingEntity)) break enterOnImpact;
+                    vehicle.setPassenger(event.getEntity());
 
-            if (plugin.getConfiguration().minecartEnterOnImpact && vehicle instanceof Minecart) {
-                if (!vehicle.isEmpty() || vehicle instanceof StorageMinecart || vehicle instanceof PoweredMinecart) return;
-                if (!(event.getEntity() instanceof LivingEntity)) return;
-                vehicle.setPassenger(event.getEntity());
+                    return;
+                }
+            }
+
+            if (plugin.getConfiguration().minecartPickupItemsOnCollision && vehicle instanceof StorageMinecart && event.getEntity() instanceof Item) {
+
+                StorageMinecart cart = (StorageMinecart) vehicle;
+                Collection<ItemStack> leftovers = cart.getInventory().addItem(((Item) entity).getItemStack()).values();
+                if(leftovers.isEmpty())
+                    entity.remove();
+                else
+                    ((Item) entity).setItemStack(leftovers.toArray(new ItemStack[1])[0]);
 
                 return;
             }
 
-            if (plugin.getConfiguration().boatRemoveEntities && vehicle instanceof Boat) {
-                if (!plugin.getConfiguration().boatRemoveEntitiesOtherBoats && entity instanceof Boat) return;
+            boatRemoveEntities: {
+                if (plugin.getConfiguration().boatRemoveEntities && vehicle instanceof Boat) {
+                    if (!plugin.getConfiguration().boatRemoveEntitiesOtherBoats && entity instanceof Boat) break boatRemoveEntities;
 
-                if (entity instanceof LivingEntity) {
-                    ((LivingEntity) entity).damage(5);
-                    entity.setVelocity(vehicle.getVelocity().multiply(2));
-                } else entity.remove();
+                    if (entity instanceof LivingEntity) {
+                        ((LivingEntity) entity).damage(5);
+                        entity.setVelocity(vehicle.getVelocity().multiply(2));
+                    } else entity.remove();
 
-                return;
+                    return;
+                }
             }
 
-            if (plugin.getConfiguration().minecartRemoveEntities && vehicle instanceof Minecart) {
-                if (!plugin.getConfiguration().minecartRemoveEntitiesOtherCarts && entity instanceof Minecart) return;
+            minecartRemoveEntities: {
+                if (plugin.getConfiguration().minecartRemoveEntities && vehicle instanceof Minecart) {
+                    if (!plugin.getConfiguration().minecartRemoveEntitiesOtherCarts && entity instanceof Minecart) break minecartRemoveEntities;
 
-                if (entity instanceof LivingEntity) {
-                    ((LivingEntity) entity).damage(5);
-                    entity.setVelocity(vehicle.getVelocity().multiply(2));
-                } else entity.remove();
+                    if(!(vehicle instanceof StorageMinecart) && !(vehicle instanceof PoweredMinecart) && vehicle.isEmpty())
+                        break minecartRemoveEntities;
+
+                    if (entity instanceof LivingEntity) {
+                        ((LivingEntity) entity).damage(10);
+                        entity.setVelocity(vehicle.getVelocity().normalize().multiply(1.8).add(new Vector(0,0.5,0)));
+                    } else if (entity instanceof Vehicle) {
+
+                        if(!entity.isEmpty())
+                            break minecartRemoveEntities;
+                        else
+                            entity.remove();
+                    } else
+                        entity.remove();
+
+                    event.setCancelled(true);
+                    event.setPickupCancelled(true);
+                    event.setCollisionCancelled(true);
+                    return;
+                }
             }
         }
 
@@ -211,6 +243,14 @@ public class VehicleCore implements LocalComponent {
         public void onVehicleMove(VehicleMoveEvent event) {
             // Ignore events not relating to minecarts.
             if (!(event.getVehicle() instanceof Minecart)) return;
+
+            if (plugin.getConfiguration().minecartPoweredRailModifier > 0) {
+
+                if (event.getTo().getBlock().getTypeId() == BlockID.POWERED_RAIL) {
+
+                    event.getVehicle().getVelocity().multiply(plugin.getConfiguration().minecartPoweredRailModifier);
+                }
+            }
 
             if (plugin.getConfiguration().minecartConstantSpeed > 0 && RailUtil.isTrack(event.getTo().getBlock()
                     .getTypeId())

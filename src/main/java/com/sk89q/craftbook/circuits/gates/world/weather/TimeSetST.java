@@ -1,9 +1,14 @@
 package com.sk89q.craftbook.circuits.gates.world.weather;
 
+import org.bukkit.Server;
+
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.circuits.ic.*;
-import org.bukkit.Server;
+import com.sk89q.craftbook.circuits.ic.ChipState;
+import com.sk89q.craftbook.circuits.ic.IC;
+import com.sk89q.craftbook.circuits.ic.ICFactory;
+import com.sk89q.craftbook.circuits.ic.RestrictedIC;
+import com.sk89q.craftbook.circuits.ic.SelfTriggeredIC;
 
 public class TimeSetST extends TimeSet implements SelfTriggeredIC {
 
@@ -55,7 +60,7 @@ public class TimeSetST extends TimeSet implements SelfTriggeredIC {
         }
 
         @Override
-        public String getDescription() {
+        public String getShortDescription() {
 
             return "Sets time continuously.";
         }

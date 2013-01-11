@@ -16,11 +16,12 @@
 
 package com.sk89q.craftbook.circuits.gates.logic;
 
+import org.bukkit.Server;
+
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
-import org.bukkit.Server;
 
 public class AndGate extends SimpleAnyInputLogicGate {
 
@@ -61,7 +62,7 @@ public class AndGate extends SimpleAnyInputLogicGate {
         }
 
         @Override
-        public String getDescription() {
+        public String getShortDescription() {
 
             return "Outputs high if all inputs are high.";
         }
