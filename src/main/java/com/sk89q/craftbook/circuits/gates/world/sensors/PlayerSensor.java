@@ -62,8 +62,8 @@ public class PlayerSensor extends AbstractIC {
     @Override
     public void load() {
 
-        if (getLine(3).replace("!", "").contains(":")) {
-            type = Type.getFromChar(getLine(3).trim().toCharArray()[0]);
+        if (getLine(3).contains(":")) {
+            type = Type.getFromChar(getLine(3).replace("!", "").trim().toCharArray()[0]);
         }
         if (type == null) type = Type.PLAYER;
 
@@ -73,8 +73,6 @@ public class PlayerSensor extends AbstractIC {
 
         try {
             String locInfo = getLine(2);
-            boolean relative = !locInfo.contains("!");
-            locInfo = locInfo.replace("!", "");
             if (locInfo.startsWith("r:") && CraftBookPlugin.inst().getWorldGuard() != null) {
 
                 locInfo = locInfo.replace("r:", "");
@@ -85,7 +83,7 @@ public class PlayerSensor extends AbstractIC {
             radius = ICUtil.parseRadius(getSign());
             if (locInfo.contains("=")) {
                 getSign().setLine(2, radius + "=" + RegexUtil.EQUALS_PATTERN.split(getSign().getLine(2))[1]);
-                location = ICUtil.parseBlockLocation(getSign(), 2, relative).getLocation();
+                location = ICUtil.parseBlockLocation(getSign(), 2).getLocation();
             } else {
                 getSign().setLine(2, String.valueOf(radius));
                 location = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock()).getLocation();

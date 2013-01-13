@@ -9,7 +9,7 @@ import org.bukkit.entity.Minecart;
 public class CartLift extends CartMechanism {
 
     @Override
-    public void impact(Minecart cart, CartMechanismBlocks blocks, boolean minor) {
+    public void impact(final Minecart cart, CartMechanismBlocks blocks, boolean minor) {
         // validate
         if (cart == null) return;
         if (blocks.sign == null) return;
@@ -25,6 +25,10 @@ public class CartLift extends CartMechanism {
 
         while (true) {
 
+            if(destination.getLocation().getY() == 0 && !up)
+                return;
+            if(destination.getLocation().getY() == destination.getWorld().getMaxHeight() && up)
+                return;
             destination = destination.getRelative(face);
 
             BlockState state = destination.getState();
@@ -33,13 +37,13 @@ public class CartLift extends CartMechanism {
 
                 if (testLine.equalsIgnoreCase("[CartLift Up]") || testLine.equalsIgnoreCase("[CartLift Down]")
                         || testLine.equalsIgnoreCase("[CartLift]")) {
-                    destination.getRelative(BlockFace.UP, 2);
+                    destination = destination.getRelative(BlockFace.UP, 2);
                     break;
                 }
             }
         }
 
-        cart.teleport(destination.getLocation());
+        CartUtils.teleport(cart, destination.getLocation());
     }
 
     @Override

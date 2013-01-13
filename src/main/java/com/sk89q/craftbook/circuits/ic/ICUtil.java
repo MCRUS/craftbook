@@ -50,31 +50,6 @@ public class ICUtil {
 
     private static HashMap<Location, Boolean> torchStatus = new HashMap<Location, Boolean>();
 
-    /*
-     * TODO reimplement torches. public static class ICListener implements Listener {
-     * 
-     * @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true) public void onBlockPhysics
-     * (BlockPhysicsEvent event) {
-     * 
-     * if (event.getBlock().getType() == Material.REDSTONE_TORCH_ON || event.getBlock().getType() == Material
-     * .REDSTONE_TORCH_OFF) if
-     * (ICUtil.getTorchStatus(event.getBlock().getLocation()) != null) { byte data = event.getBlock().getData(); if
-     * (ICUtil.getTorchStatus(event.getBlock().getLocation())) { if (event.getBlock().getTypeId() != Material
-     * .REDSTONE_TORCH_OFF.getId()) {
-     * event.getBlock().setTypeId(Material.REDSTONE_TORCH_OFF.getId()); } } else if (event.getBlock().getTypeId() !=
-     * Material.REDSTONE_TORCH_ON.getId()) { event.getBlock().setTypeId(Material.REDSTONE_TORCH_ON.getId()); } event
-     * .getBlock().setData(data, false);
-     * } }
-     * 
-     * @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true) public void onBlockBreak
-     * (BlockBreakEvent event) {
-     * 
-     * if (event.getBlock().getType() == Material.REDSTONE_TORCH_ON || event.getBlock().getType() == Material
-     * .REDSTONE_TORCH_OFF) if
-     * (ICUtil.getTorchStatus(event.getBlock().getLocation()) != null) { ICUtil.removeTorch(event.getBlock()
-     * .getLocation()); } } }
-     */
-
     public static Boolean getTorchStatus(Location loc) {
 
         return torchStatus.get(loc);
@@ -135,10 +110,21 @@ public class ICUtil {
         return false;
     }
 
-    public static Block parseBlockLocation(ChangedSign sign, int lPos, boolean relative) {
+    public static Block parseBlockLocation(ChangedSign sign, int lPos, LocationCheckType relative) {
 
         Block target = SignUtil.getBackBlock(BukkitUtil.toSign(sign).getBlock());
         String line = sign.getLine(lPos);
+        if (line.contains("!")) {
+            relative = LocationCheckType.getTypeFromChar('!');
+            line = line.replace("!", "");
+        } else if (line.contains("^")) {
+            relative = LocationCheckType.getTypeFromChar('^');
+            line = line.replace("^", "");
+        } else if (line.contains("&")) {
+            relative = LocationCheckType.getTypeFromChar('&');
+            line = line.replace("&", "");
+        }
+        line = line.replace("!", "").replace("^", "").replace("&", ""); //incase it had multiples.
         int offsetX = 0;
         int offsetY = 0;
         int offsetZ = 0;
@@ -160,22 +146,24 @@ public class ICUtil {
         } catch (ArrayIndexOutOfBoundsException e) {
             // do nothing and use defaults
         }
-        if (relative) {
+        if (relative == LocationCheckType.RELATIVE) {
             target = LocationUtil.getRelativeOffset(sign, offsetX, offsetY, offsetZ);
-        } else {
+        } else if (relative == LocationCheckType.OFFSET){
             target = LocationUtil.getOffset(target, offsetX, offsetY, offsetZ);
+        } else {
+            target = new Location(target.getWorld(), offsetX, offsetY, offsetZ).getBlock();
         }
         return target;
     }
 
     public static Block parseBlockLocation(ChangedSign sign, int lPos) {
 
-        return parseBlockLocation(sign, lPos, true);
+        return parseBlockLocation(sign, lPos, LocationCheckType.RELATIVE);
     }
 
     public static Block parseBlockLocation(ChangedSign sign) {
 
-        return parseBlockLocation(sign, 2, true);
+        return parseBlockLocation(sign, 2, LocationCheckType.RELATIVE);
     }
 
     public static void verifySignSyntax(ChangedSign sign) throws ICVerificationException {
@@ -262,5 +250,28 @@ public class ICUtil {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    public enum LocationCheckType {
+
+        RELATIVE('^'),
+        OFFSET('&'),
+        ABSOLUTE('!');
+
+        char c;
+
+        LocationCheckType(char c) {
+
+            this.c = c;
+        }
+
+        public static LocationCheckType getTypeFromChar(char c) {
+
+            for(LocationCheckType t : values())
+                if(t.c == c)
+                    return t;
+
+            return RELATIVE;
+        }
     }
 }
