@@ -103,6 +103,7 @@
                 <directory>${basedir}/src/main/resources/</directory>
                 <includes>
                     <include>en_US.txt</include>
+                    <include>ru_RU.txt</include>
                     <include>config.yml</include>
                     <include>books.txt</include>
                     <include>cauldron-recipes.txt</include>
