@@ -13,12 +13,12 @@ import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
-import com.sk89q.craftbook.circuits.ic.ICUtil;
 import com.sk89q.craftbook.circuits.ic.RestrictedIC;
-import com.sk89q.craftbook.util.GeneralUtil;
+import com.sk89q.craftbook.util.ICUtil;
 import com.sk89q.craftbook.util.LocationUtil;
 import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.craftbook.util.SignUtil;
+import com.sk89q.worldedit.Vector;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 
 /**
@@ -51,7 +51,7 @@ public class PlayerSensor extends AbstractIC {
         }
     }
 
-    int radius;
+    Vector radius;
 
     Location location;
     ProtectedRegion reg;
@@ -81,16 +81,19 @@ public class PlayerSensor extends AbstractIC {
                 if (reg != null) return;
             }
             radius = ICUtil.parseRadius(getSign());
+            String radiusString = radius.getBlockX() + "," + radius.getBlockY() + "," + radius.getBlockZ();
+            if(radius.getBlockX() == radius.getBlockY() && radius.getBlockY() == radius.getBlockZ())
+                radiusString = String.valueOf(radius.getBlockX());
             if (locInfo.contains("=")) {
-                getSign().setLine(2, radius + "=" + RegexUtil.EQUALS_PATTERN.split(getSign().getLine(2))[1]);
+                getSign().setLine(2, radiusString + "=" + RegexUtil.EQUALS_PATTERN.split(getSign().getLine(2))[1]);
                 location = ICUtil.parseBlockLocation(getSign(), 2).getLocation();
             } else {
-                getSign().setLine(2, String.valueOf(radius));
+                getSign().setLine(2, radiusString);
                 location = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock()).getLocation();
             }
         } catch (Exception e) {
             location = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock()).getLocation();
-            Bukkit.getLogger().severe(GeneralUtil.getStackTrace(e));
+            BukkitUtil.printStacktrace(e);
         }
         if(reg == null && location == null)
             location = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock()).getLocation();

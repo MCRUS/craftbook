@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.sound.midi.InvalidMidiDataException;
@@ -16,13 +18,14 @@ import org.bukkit.scheduler.BukkitTask;
 
 import com.sk89q.craftbook.bukkit.CircuitCore;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
-import com.sk89q.craftbook.util.GeneralUtil;
+import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 
 public class Playlist {
 
     String playlist;
 
-    protected List<Player> players;
+    protected volatile HashSet<Player> players; // Super safe code here.. this is going to be done across threads.
+    private volatile HashSet<Player> lastPlayers;
 
     int position;
 
@@ -30,17 +33,19 @@ public class Playlist {
 
     BukkitTask task;
 
-    JingleNoteManager jNote = new JingleNoteManager();
-    MidiJingleSequencer midiSequencer;
-    StringJingleSequencer stringSequencer;
+    volatile JingleNoteManager jNote = new JingleNoteManager();
+    volatile MidiJingleSequencer midiSequencer;
+    volatile StringJingleSequencer stringSequencer;
 
     public Playlist(String name) {
 
+        players = new HashSet<Player>();
+        lastPlayers = new HashSet<Player>();
         playlist = name;
         try {
             readPlaylist();
         } catch (IOException e) {
-            Bukkit.getLogger().severe(GeneralUtil.getStackTrace(e));
+            BukkitUtil.printStacktrace(e);
         }
     }
 
@@ -64,14 +69,45 @@ public class Playlist {
         br.close();
     }
 
-    public void startPlaylist(List<Player> players) {
+    public void startPlaylist() {
 
-        this.players = players;
         position = 0;
         if (task != null)
             task.cancel();
         Runnable show = new PlaylistInterpreter();
-        task = Bukkit.getScheduler().runTask(CraftBookPlugin.inst(), show);
+        task = Bukkit.getScheduler().runTaskAsynchronously(CraftBookPlugin.inst(), show);
+    }
+
+    public void stopPlaylist() {
+
+        lastPlayers.clear();
+        jNote.stopAll();
+        players.clear();
+        position = 0;
+        if (task != null)
+            task.cancel();
+    }
+
+    @SuppressWarnings("unchecked")
+    public void setPlayers(List<Player> players) {
+
+        lastPlayers = (HashSet<Player>) this.players.clone();
+        this.players.clear();
+        this.players.addAll(players);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void addPlayers(List<Player> players) {
+
+        lastPlayers = (HashSet<Player>) this.players.clone();
+        this.players.addAll(players);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void removePlayers(List<Player> players) {
+
+        lastPlayers = (HashSet<Player>) this.players.clone();
+        this.players.removeAll(players);
     }
 
     private class PlaylistInterpreter implements Runnable {
@@ -81,12 +117,83 @@ public class Playlist {
 
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void run () {
 
             while (position < lines.size()) {
 
+                if(midiSequencer != null) {
+
+                    while(midiSequencer.isSongPlaying()) {
+
+                        if(!areIdentical(players, lastPlayers)) {
+
+                            Bukkit.getLogger().severe("OUT OF SYNC PLAYERS");
+                            for(Player p : players) {
+
+                                if(lastPlayers.contains(p))
+                                    continue;
+                                Bukkit.getLogger().severe("ADDING A PLAYER");
+
+                                jNote.play(p, midiSequencer);
+                            }
+
+                            for(Player p : lastPlayers) {
+
+                                if(players.contains(p))
+                                    continue;
+                                Bukkit.getLogger().severe("TAKING A PLAYER");
+
+                                jNote.stop(p);
+                            }
+
+                            lastPlayers = (HashSet<Player>) players.clone();
+                        }
+
+                        try {
+                            Thread.sleep(1000L);
+                        } catch (InterruptedException e) {
+                            BukkitUtil.printStacktrace(e);
+                        }
+                    }
+                    midiSequencer = null;
+                }
+                if(stringSequencer != null) {
+
+                    while(stringSequencer.isSongPlaying()) {
+
+                        if(!lastPlayers.equals(players)) {
+
+                            for(Player p : players) {
+
+                                if(lastPlayers.contains(p))
+                                    continue;
+
+                                jNote.play(p, stringSequencer);
+                            }
+
+                            for(Player p : lastPlayers) {
+
+                                if(players.contains(p))
+                                    continue;
+
+                                jNote.stop(p);
+                            }
+
+                            lastPlayers = (HashSet<Player>) players.clone();
+                        }
+
+                        try {
+                            Thread.sleep(1000L);
+                        } catch (InterruptedException e) {
+                            BukkitUtil.printStacktrace(e);
+                        }
+                    }
+                    stringSequencer = null;
+                }
                 String line = lines.get(position);
+                Bukkit.getLogger().severe(line);
                 position++;
                 if (line.trim().startsWith("#") || line.trim().isEmpty())
                     continue;
@@ -94,7 +201,7 @@ public class Playlist {
                 if (line.startsWith("wait ")) {
 
                     PlaylistInterpreter show = new PlaylistInterpreter();
-                    task = Bukkit.getScheduler().runTaskLater(CraftBookPlugin.inst(), show, Long.parseLong(line.replace("wait ", "")));
+                    task = Bukkit.getScheduler().runTaskLaterAsynchronously(CraftBookPlugin.inst(), show, Long.parseLong(line.replace("wait ", "")));
                     return;
                 } else if (line.startsWith("midi ")) {
 
@@ -118,12 +225,13 @@ public class Playlist {
 
                     try {
                         midiSequencer = new MidiJingleSequencer(file);
+                        midiSequencer.getSequencer().start();
                     } catch (MidiUnavailableException e) {
-                        e.printStackTrace();
+                        BukkitUtil.printStacktrace(e);
                     } catch (InvalidMidiDataException e) {
-                        e.printStackTrace();
+                        BukkitUtil.printStacktrace(e);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        BukkitUtil.printStacktrace(e);
                     }
 
                     for(Player player : players)
@@ -142,8 +250,28 @@ public class Playlist {
 
                     for(Player player : players)
                         player.sendMessage(message);
+                } else if (line.startsWith("goto ")) {
+
+                    position = Integer.parseInt(line.replace("goto ", ""));
                 }
             }
         }
+    }
+
+    public boolean areIdentical(HashSet<?> h1, HashSet<?> h2) {
+        if ( h1.size() != h2.size() ) {
+            return false;
+        }
+        HashSet<?> clone = (HashSet<?>) h2.clone();
+        Iterator<?> it = h1.iterator();
+        while (it.hasNext() ){
+            Object o = it.next();
+            if (clone.contains(o)){
+                clone.remove(o);
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 }

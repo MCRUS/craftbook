@@ -19,10 +19,9 @@ import javax.sound.midi.Sequence;
 import javax.sound.midi.Sequencer;
 import javax.sound.midi.ShortMessage;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 
-import com.sk89q.craftbook.util.GeneralUtil;
+import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 
 /**
  * A sequencer that reads MIDI files.
@@ -32,37 +31,37 @@ import com.sk89q.craftbook.util.GeneralUtil;
 public class MidiJingleSequencer implements JingleSequencer {
 
     private static final int[] instruments = {
-            0, 0, 0, 0, 0, 0, 0, 5, // 8
-            6, 0, 0, 0, 0, 0, 0, 0, // 16
-            0, 0, 0, 0, 0, 0, 0, 5, // 24
-            5, 5, 5, 5, 5, 5, 5, 5, // 32
-            6, 6, 6, 6, 6, 6, 6, 6, // 40
-            5, 5, 5, 5, 5, 5, 5, 2, // 48
-            5, 5, 5, 5, 0, 0, 0, 0, // 56
-            0, 0, 0, 0, 0, 0, 0, 0, // 64
-            0, 0, 0, 0, 0, 0, 0, 0, // 72
-            0, 0, 0, 0, 0, 0, 0, 0, // 80
-            0, 0, 0, 0, 0, 0, 0, 0, // 88
-            0, 0, 0, 0, 0, 0, 0, 0, // 96
-            0, 0, 0, 0, 0, 0, 0, 0, // 104
-            0, 0, 0, 0, 0, 0, 0, 0, // 112
-            1, 1, 1, 3, 1, 1, 1, 5, // 120
-            1, 1, 1, 1, 1, 2, 4, 3, // 128
+        0, 0, 0, 0, 0, 0, 0, 5, // 8
+        6, 0, 0, 0, 0, 0, 0, 0, // 16
+        0, 0, 0, 0, 0, 0, 0, 5, // 24
+        5, 5, 5, 5, 5, 5, 5, 5, // 32
+        6, 6, 6, 6, 6, 6, 6, 6, // 40
+        5, 5, 5, 5, 5, 5, 5, 2, // 48
+        5, 5, 5, 5, 0, 0, 0, 0, // 56
+        0, 0, 0, 0, 0, 0, 0, 0, // 64
+        0, 0, 0, 0, 0, 0, 0, 0, // 72
+        0, 0, 0, 0, 0, 0, 0, 0, // 80
+        0, 0, 0, 0, 0, 0, 0, 0, // 88
+        0, 0, 0, 0, 0, 0, 0, 0, // 96
+        0, 0, 0, 0, 0, 0, 0, 0, // 104
+        0, 0, 0, 0, 0, 0, 0, 0, // 112
+        1, 1, 1, 3, 1, 1, 1, 5, // 120
+        1, 1, 1, 1, 1, 2, 4, 3, // 128
 
-            // 16
+        // 16
     };
 
 
     private static int[] percussion = {
-            1, 1, 1, 2, 3, 2,
-            1, 3, 1, 3, 1, 3,
-            1, 1, 3, 1, 3, 3,
-            3, 3, 3, 0, 3, 3,
-            3, 1, 1, 1, 1, 1,
-            1, 1, 3, 3, 3, 3,
-            4, 4, 3, 3, 3, 3,
-            3, 1, 1, 3, 3, 2,
-            4, 4, 3, 1, 1,
+        1, 1, 1, 2, 3, 2,
+        1, 3, 1, 3, 1, 3,
+        1, 1, 3, 1, 3, 3,
+        3, 3, 3, 0, 3, 3,
+        3, 1, 1, 1, 1, 1,
+        1, 1, 3, 3, 3, 3,
+        4, 4, 3, 3, 3, 3,
+        3, 1, 1, 3, 3, 2,
+        4, 4, 3, 1, 1,
     };
 
 
@@ -147,7 +146,7 @@ public class MidiJingleSequencer implements JingleSequencer {
                 sequencer.stop();
             }
         } catch (MidiUnavailableException e) {
-            Bukkit.getLogger().severe(GeneralUtil.getStackTrace(e));
+            BukkitUtil.printStacktrace(e);
         } finally {
             if (sequencer.isOpen()) {
                 sequencer.close();
@@ -216,5 +215,9 @@ public class MidiJingleSequencer implements JingleSequencer {
     public boolean isSongPlaying() {
 
         return sequencer.isRunning();
+    }
+
+    public Sequencer getSequencer() {
+        return sequencer;
     }
 }

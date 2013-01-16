@@ -8,16 +8,17 @@ import org.bukkit.entity.Entity;
 
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.circuits.gates.world.sensors.EntitySensor.Type;
 import com.sk89q.craftbook.circuits.ic.AbstractIC;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
-import com.sk89q.craftbook.circuits.ic.ICUtil;
+import com.sk89q.craftbook.util.EntityType;
+import com.sk89q.craftbook.util.ICUtil;
 import com.sk89q.craftbook.util.LocationUtil;
 import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.craftbook.util.SignUtil;
+import com.sk89q.worldedit.Vector;
 
 /**
  * Movement Sensor. This IC is incomplete due to the bukkit API not providing ample movement velocity support.
@@ -31,20 +32,20 @@ public class MovementSensor extends AbstractIC {
         super(server, sign, factory);
     }
 
-    private Set<Type> types;
+    private Set<EntityType> types;
 
     private Block center;
-    private int radius;
+    private Vector radius;
 
     @Override
     public void load() {
 
         // lets get the types to detect first
-        types = Type.getDetected(getSign().getLine(3).trim());
+        types = EntityType.getDetected(getSign().getLine(3).trim());
 
         // Add all if no params are specified
         if (types.isEmpty()) {
-            types.add(Type.ANY);
+            types.add(EntityType.ANY);
         }
 
         getSign().setLine(3, getSign().getLine(3).toUpperCase());
@@ -53,11 +54,14 @@ public class MovementSensor extends AbstractIC {
         // the given string should look something like that:
         // radius=x:y:z or radius, e.g. 1=-2:5:11
         radius = ICUtil.parseRadius(getSign());
+        String radiusString = radius.getBlockX() + "," + radius.getBlockY() + "," + radius.getBlockZ();
+        if(radius.getBlockX() == radius.getBlockY() && radius.getBlockY() == radius.getBlockZ())
+            radiusString = String.valueOf(radius.getBlockX());
         if (getSign().getLine(2).contains("=")) {
-            getSign().setLine(2, radius + "=" + RegexUtil.EQUALS_PATTERN.split(getSign().getLine(2))[1]);
+            getSign().setLine(2, radiusString + "=" + RegexUtil.EQUALS_PATTERN.split(getSign().getLine(2))[1]);
             center = ICUtil.parseBlockLocation(getSign());
         } else {
-            getSign().setLine(2, String.valueOf(radius));
+            getSign().setLine(2, radiusString);
             center = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock());
         }
         getSign().update(false);
@@ -85,11 +89,8 @@ public class MovementSensor extends AbstractIC {
 
         for (Entity entity : LocationUtil.getNearbyEntities(center.getLocation(), radius)) {
             if (entity.isValid()) {
-                for (Type type : types)
-                    // Check Type
-                {
-                    if (type.is(entity)) {
-                        // Check Radius
+                for (EntityType type : types) { // Check Type
+                    if (type.is(entity)) { // Check Radius
                         if (LocationUtil.isWithinRadius(center.getLocation(), entity.getLocation(), radius)) {
                             if (entity.getVelocity().lengthSquared() >= 0.01) return true;
                         }

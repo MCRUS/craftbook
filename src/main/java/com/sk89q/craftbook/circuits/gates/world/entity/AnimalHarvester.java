@@ -17,11 +17,11 @@ import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
-import com.sk89q.craftbook.circuits.ic.ICUtil;
+import com.sk89q.craftbook.util.ICUtil;
 import com.sk89q.craftbook.util.LocationUtil;
 import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.craftbook.util.SignUtil;
-import com.sk89q.craftbook.util.VerifyUtil;
+import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.blocks.ItemID;
 
@@ -32,7 +32,7 @@ public class AnimalHarvester extends AbstractIC {
     }
 
     private Block center;
-    private int radius;
+    private Vector radius;
     private Block chest;
 
     @Override
@@ -42,19 +42,18 @@ public class AnimalHarvester extends AbstractIC {
         // the given string should look something like that:
         // radius=x:y:z or radius, e.g. 1=-2:5:11
         radius = ICUtil.parseRadius(getSign());
+        String radiusString = radius.getBlockX() + "," + radius.getBlockY() + "," + radius.getBlockZ();
+        if(radius.getBlockX() == radius.getBlockY() && radius.getBlockY() == radius.getBlockZ())
+            radiusString = String.valueOf(radius.getBlockX());
         if (getSign().getLine(2).contains("=")) {
-            getSign().setLine(2, radius + "=" + RegexUtil.EQUALS_PATTERN.split(getSign().getLine(2))[1]);
+            getSign().setLine(2, radiusString + "=" + RegexUtil.EQUALS_PATTERN.split(getSign().getLine(2))[1]);
             center = ICUtil.parseBlockLocation(getSign());
         } else {
-            getSign().setLine(2, String.valueOf(radius));
+            getSign().setLine(2, radiusString);
             center = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock());
         }
 
         chest = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock()).getRelative(BlockFace.UP);
-
-        radius = VerifyUtil.verifyRadius(radius, 15);
-
-        getSign().update(false);
     }
 
     @Override

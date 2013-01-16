@@ -19,12 +19,12 @@ import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.jinglenote.Playlist;
 import com.sk89q.craftbook.util.LocationUtil;
 
-public class Radio extends AbstractIC {
+public class Jukebox extends AbstractIC {
 
     Playlist playlist;
     int radius;
 
-    public Radio (Server server, ChangedSign sign, ICFactory factory) {
+    public Jukebox (Server server, ChangedSign sign, ICFactory factory) {
         super(server, sign, factory);
     }
 
@@ -44,29 +44,37 @@ public class Radio extends AbstractIC {
 
     @Override
     public String getTitle () {
-        return "Radio Player";
+        return "Jukebox";
     }
 
     @Override
     public String getSignTitle () {
-        return "RADIO";
+        return "JUKEBOX";
     }
 
     @Override
     public void trigger (ChipState chip) {
 
-        if(radius < 0)
-            playlist.startPlaylist(Arrays.asList(Bukkit.getServer().getOnlinePlayers()));
-        else {
+        if(radius < 0) {
+            playlist.setPlayers(Arrays.asList(Bukkit.getServer().getOnlinePlayers()));
+            if(chip.getInput(0))
+                playlist.startPlaylist();
+            else
+                playlist.stopPlaylist();
+        } else {
             List<Player> players = new ArrayList<Player>();
             Location signLoc = BukkitUtil.toSign(getSign()).getLocation();
             for(Player player : BukkitUtil.toSign(getSign()).getWorld().getPlayers()) {
 
-                if(LocationUtil.isWithinRadius(signLoc, player.getLocation(), radius))
+                if(LocationUtil.isWithinSphericalRadius(signLoc, player.getLocation(), radius))
                     players.add(player);
             }
 
-            playlist.startPlaylist(players);
+            playlist.setPlayers(players);
+            if(chip.getInput(0))
+                playlist.startPlaylist();
+            else
+                playlist.stopPlaylist();
         }
     }
 
@@ -80,7 +88,7 @@ public class Radio extends AbstractIC {
         @Override
         public IC create(ChangedSign sign) {
 
-            return new Radio(getServer(), sign, this);
+            return new Jukebox(getServer(), sign, this);
         }
 
         @Override

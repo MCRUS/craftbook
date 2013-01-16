@@ -3,7 +3,6 @@ package com.sk89q.craftbook.circuits.gates.world.miscellaneous;
 import java.io.File;
 import java.util.logging.Level;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
@@ -19,7 +18,6 @@ import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.jinglenote.JingleNoteManager;
 import com.sk89q.craftbook.circuits.jinglenote.MidiJingleSequencer;
-import com.sk89q.craftbook.util.GeneralUtil;
 import com.sk89q.craftbook.util.LocationUtil;
 import com.sk89q.craftbook.util.RegexUtil;
 
@@ -85,9 +83,9 @@ public class Melody extends AbstractIC {
         midiName = getSign().getLine(2);
 
         File[] trialPaths = {
-                new File(((CircuitCore) CircuitCore.inst()).getMidiFolder(), midiName),
-                new File(((CircuitCore) CircuitCore.inst()).getMidiFolder(), midiName + ".mid"),
-                new File(((CircuitCore) CircuitCore.inst()).getMidiFolder(), midiName + ".midi"),
+                new File(CircuitCore.inst().getMidiFolder(), midiName),
+                new File(CircuitCore.inst().getMidiFolder(), midiName + ".mid"),
+                new File(CircuitCore.inst().getMidiFolder(), midiName + ".midi"),
                 new File("midi", midiName), new File("midi", midiName + ".mid"),
                 new File("midi", midiName + ".midi"),
         };
@@ -127,8 +125,7 @@ public class Melody extends AbstractIC {
                     if (player == null) {
                         continue;
                     }
-                    if (radius > 0 && !LocationUtil.isWithinRadius(BukkitUtil.toSign(getSign()).getLocation(),
-                            player.getLocation(), radius)) {
+                    if (radius > 0 && !LocationUtil.isWithinSphericalRadius(BukkitUtil.toSign(getSign()).getLocation(), player.getLocation(), radius)) {
                         continue;
                     }
                     jNote.play(player, sequencer);
@@ -143,7 +140,7 @@ public class Melody extends AbstractIC {
             }
         } catch (Throwable e) {
             getServer().getLogger().log(Level.SEVERE, "[CraftBookCircuits]: Midi Failed To Play!");
-            Bukkit.getLogger().severe(GeneralUtil.getStackTrace(e));
+            BukkitUtil.printStacktrace(e);
         }
     }
 

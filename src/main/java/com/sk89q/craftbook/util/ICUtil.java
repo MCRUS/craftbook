@@ -14,9 +14,7 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package com.sk89q.craftbook.circuits.ic;
-
-import java.util.HashMap;
+package com.sk89q.craftbook.util;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -27,9 +25,8 @@ import org.bukkit.material.Lever;
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.util.LocationUtil;
-import com.sk89q.craftbook.util.RegexUtil;
-import com.sk89q.craftbook.util.SignUtil;
+import com.sk89q.craftbook.circuits.ic.ICVerificationException;
+import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.blocks.BlockType;
 import com.sk89q.worldedit.blocks.ItemType;
@@ -46,23 +43,6 @@ public class ICUtil {
 
     public ICUtil() {
 
-    }
-
-    private static HashMap<Location, Boolean> torchStatus = new HashMap<Location, Boolean>();
-
-    public static Boolean getTorchStatus(Location loc) {
-
-        return torchStatus.get(loc);
-    }
-
-    public static void removeTorch(Location loc) {
-
-        torchStatus.remove(loc);
-    }
-
-    public static void setTorch(Location loc, Boolean value) {
-
-        torchStatus.put(loc, value);
     }
 
     /**
@@ -124,7 +104,7 @@ public class ICUtil {
             relative = LocationCheckType.getTypeFromChar('&');
             line = line.replace("&", "");
         }
-        line = line.replace("!", "").replace("^", "").replace("&", ""); //incase it had multiples.
+        line = line.replace("!", "").replace("^", "").replace("&", ""); //in case it had multiples.
         int offsetX = 0;
         int offsetY = 0;
         int offsetZ = 0;
@@ -168,17 +148,26 @@ public class ICUtil {
 
     public static void verifySignSyntax(ChangedSign sign) throws ICVerificationException {
 
-        verifySignSyntax(sign, 2);
+        verifySignLocationSyntax(sign, 2);
     }
 
-    public static void verifySignSyntax(ChangedSign sign, int i) throws ICVerificationException {
+    public static void verifySignLocationSyntax(ChangedSign sign, int i) throws ICVerificationException {
 
         try {
             String line = sign.getLine(i);
             String[] strings;
+            line = line.replace("!", "").replace("^", "").replace("&", "");
             if (line.contains("=")) {
                 String[] split = RegexUtil.EQUALS_PATTERN.split(line, 2);
-                Integer.parseInt(split[0]);
+                if(RegexUtil.COMMA_PATTERN.split(split[0]).length > 1) {
+
+                    String[] rads = RegexUtil.COMMA_PATTERN.split(split[0]);
+                    Integer.parseInt(rads[0]);
+                    Integer.parseInt(rads[1]);
+                    Integer.parseInt(rads[2]);
+                }
+                else
+                    Integer.parseInt(split[0]);
                 strings = RegexUtil.COLON_PATTERN.split(split[1], 3);
             } else {
                 strings = RegexUtil.COLON_PATTERN.split(line);
@@ -193,17 +182,27 @@ public class ICUtil {
         }
     }
 
-    public static int parseRadius(ChangedSign sign) {
+    public static Vector parseRadius(ChangedSign sign) {
 
         return parseRadius(sign, 2);
     }
 
-    public static int parseRadius(ChangedSign sign, int lPos) {
+    public static Vector parseRadius(ChangedSign sign, int lPos) {
 
         String line = sign.getLine(lPos);
-        int radius = 10; // default radius is 10.
+        Vector radius = new Vector(10,10,10); // default radius is 10.
         try {
-            return Integer.parseInt(RegexUtil.EQUALS_PATTERN.split(line, 2)[0]);
+            String[] radians = RegexUtil.COMMA_PATTERN.split(RegexUtil.EQUALS_PATTERN.split(line, 2)[0]);
+            if(radians.length > 1) {
+                int x = VerifyUtil.verifyRadius(Integer.parseInt(radians[0]), CraftBookPlugin.inst().getConfiguration().ICMaxRange);
+                int y = VerifyUtil.verifyRadius(Integer.parseInt(radians[1]), CraftBookPlugin.inst().getConfiguration().ICMaxRange);
+                int z = VerifyUtil.verifyRadius(Integer.parseInt(radians[2]), CraftBookPlugin.inst().getConfiguration().ICMaxRange);
+                return new Vector(x,y,z);
+            }
+            else {
+                int r = VerifyUtil.verifyRadius(Integer.parseInt(radians[0]), CraftBookPlugin.inst().getConfiguration().ICMaxRange);
+                return new Vector(r,r,r);
+            }
         } catch (NumberFormatException e) {
             // do nothing and use default radius
         }

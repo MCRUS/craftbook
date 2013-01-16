@@ -1,7 +1,7 @@
 package com.sk89q.craftbook.util.config;
 
 /**
- * Author: Turtle9598
+ * @author Turtle9598
  */
 
 import java.util.Arrays;
@@ -40,6 +40,7 @@ public class YAMLConfiguration extends LocalConfiguration {
         // IC Configuration Listener.
         ICEnabled = config.getBoolean("circuits.ics.enable", true);
         ICCached = config.getBoolean("circuits.ics.cache", true);
+        ICMaxRange = config.getInt("circuits.ics.max-radius", 15);
         ICShortHandEnabled = config.getBoolean("circuits.ics.allow-short-hand", true);
         disabledICs = new HashSet<String>(config.getStringList("circuits.ics.disallowed-ics", Arrays.asList("")));
 
@@ -73,6 +74,10 @@ public class YAMLConfiguration extends LocalConfiguration {
         areaShortenNames = config.getBoolean("mechanics.area.shorten-long-names", true);
         areaMaxAreaSize = config.getInt("mechanics.area.max-size", 5000);
         areaMaxAreaPerUser = config.getInt("mechanics.area.max-per-user", 30);
+
+        // Better Physics Configuration Listener
+        physicsEnabled = config.getBoolean("mechanics.better-physics.enable", false);
+        physicsLadders = config.getBoolean("mechanics.better-physics.falling-ladders", false);
 
         // Bookcase Configuration Listener
         bookcaseEnabled = config.getBoolean("mechanics.bookcase.enable", true);
@@ -217,6 +222,7 @@ public class YAMLConfiguration extends LocalConfiguration {
         minecartPoweredRailModifier = config.getDouble("vehicles.minecart.powered-rail-modifier", 0);
         minecartPickupItemsOnCollision = config.getBoolean("vehicles.minecart.item-pickup-collision", false);
         minecartPressurePlateIntersection = config.getBoolean("vehicles.minecart.pressure-plate-intersection", false);
+        minecartStoragePlaceRails = config.getBoolean("vehicles.minecart.storage-place-rails", false);
 
         // Vehicles - Boat Options
         boatRemoveEntities = config.getBoolean("vehicles.boat.remove-entities", false);

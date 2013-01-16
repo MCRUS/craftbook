@@ -17,6 +17,7 @@ public abstract class LocalConfiguration {
     public boolean ICEnabled;
     public boolean ICCached;
     public boolean ICShortHandEnabled;
+    public int ICMaxRange;
     public Set<String> disabledICs;
 
     // Circuits - Wiring
@@ -46,6 +47,9 @@ public abstract class LocalConfiguration {
     public boolean areaShortenNames;
     public int areaMaxAreaSize;
     public int areaMaxAreaPerUser;
+    // Mechanics - BetterPhysics
+    public boolean physicsEnabled;
+    public boolean physicsLadders;
     // Mechanics - Bookcase
     public boolean bookcaseEnabled;
     public boolean bookcaseReadWhenSneaking;
@@ -164,6 +168,7 @@ public abstract class LocalConfiguration {
     public double minecartPoweredRailModifier;
     public boolean minecartPickupItemsOnCollision;
     public boolean minecartPressurePlateIntersection;
+    public boolean minecartStoragePlaceRails;
     // Vehicles - Boat Options
     public boolean boatNoCrash;
     public boolean boatRemoveEntities;
