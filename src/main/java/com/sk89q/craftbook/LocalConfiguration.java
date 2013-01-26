@@ -50,6 +50,12 @@ public abstract class LocalConfiguration {
     // Mechanics - BetterPhysics
     public boolean physicsEnabled;
     public boolean physicsLadders;
+    public boolean physicsPots;
+    // Mechanics - BetterPistons
+    public boolean pistonsEnabled;
+    public boolean pistonsCrusher;
+    public boolean pistonsSuperSticky;
+    public boolean pistonsBounce;
     // Mechanics - Bookcase
     public boolean bookcaseEnabled;
     public boolean bookcaseReadWhenSneaking;
@@ -130,6 +136,7 @@ public abstract class LocalConfiguration {
     public boolean snowRealistic;
     public boolean snowHighPiles;
     public boolean snowJumpTrample;
+    public List<Integer> snowRealisticReplacables;
     // Mechanics - Teleporter
     public boolean teleporterEnabled;
     public boolean teleporterRequireSign;
@@ -165,7 +172,6 @@ public abstract class LocalConfiguration {
     public boolean minecartMessengerEnabled = true;
     public int minecartDecayTime;
     public double minecartConstantSpeed;
-    public double minecartPoweredRailModifier;
     public boolean minecartPickupItemsOnCollision;
     public boolean minecartPressurePlateIntersection;
     public boolean minecartStoragePlaceRails;

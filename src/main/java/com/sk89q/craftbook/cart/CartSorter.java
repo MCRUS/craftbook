@@ -241,7 +241,7 @@ public class CartSorter extends CartMechanism {
         }
         if (line.startsWith("#")) {
             if (player != null) {
-                String selectedStation = ((VehicleCore) VehicleCore.inst()).getStation(player.getName());
+                String selectedStation = VehicleCore.inst().getStation(player.getName());
                 return line.equalsIgnoreCase("#" + selectedStation);
             }
         }

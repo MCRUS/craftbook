@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.jar.JarFile;
@@ -24,7 +25,13 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -36,7 +43,10 @@ import com.sk89q.craftbook.LocalComponent;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.MechanicClock;
 import com.sk89q.craftbook.MechanicManager;
+import com.sk89q.craftbook.bukkit.BukkitMetrics.Graph;
+import com.sk89q.craftbook.bukkit.BukkitMetrics.Plotter;
 import com.sk89q.craftbook.bukkit.commands.TopLevelCommands;
+import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.util.GeneralUtil;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.minecraft.util.commands.CommandPermissionsException;
@@ -51,6 +61,7 @@ import com.sk89q.wepif.PermissionsResolverManager;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
 import com.sk89q.worldguard.protection.GlobalRegionManager;
+import com.sk89q.worldguard.protection.flags.DefaultFlag;
 
 public class CraftBookPlugin extends JavaPlugin {
 
@@ -113,6 +124,8 @@ public class CraftBookPlugin extends JavaPlugin {
      */
     private MechanicClock mechanicClock;
 
+    public HashMap<String, String> versionConverter = new HashMap<String, String>();
+
     /**
      * Construct objects. Actual loading occurs when the plugin is enabled, so
      * this merely instantiates the objects.
@@ -121,6 +134,11 @@ public class CraftBookPlugin extends JavaPlugin {
 
         // Set the instance
         instance = this;
+
+        // Set the version converter contents. It really only needs the current versions stuff... but just incase you are using a release version that isn't on bukkit dev yet, this is here.
+        versionConverter.put("3.4.1", "1541");
+        versionConverter.put("3.5", "1680");
+        versionConverter.put("3.5.1", "1718");
     }
 
     public void registerManager(MechanicManager manager) {
@@ -155,8 +173,8 @@ public class CraftBookPlugin extends JavaPlugin {
                 @SuppressWarnings("unused")
                 String s = WorldEditPlugin.CUI_PLUGIN_CHANNEL;
             } catch (Throwable t) {
-                logger().warning("WorldEdit detection has failed!");
-                logger().warning("WorldEdit is a required dependency, Craftbook disabled!");
+                logger().severe("WorldEdit detection has failed!");
+                logger().severe("WorldEdit is a required dependency, Craftbook disabled!");
                 return;
             }
         }
@@ -223,6 +241,108 @@ public class CraftBookPlugin extends JavaPlugin {
         } else worldGuardPlugin = null;
 
         // Let's start the show
+        registerGlobalEvents();
+        startComponents();
+    }
+
+    public boolean updateAvailable = false;
+    String latestVersion = null;
+    long updateSize = 0;
+
+    /**
+     * Registers events used by the main CraftBook plugin. Also registers PluginMetrics
+     */
+    public void registerGlobalEvents() {
+
+        if(getConfiguration().updateNotifier) {
+
+            final Updater updater = new Updater(this, "CraftBook", getFile(), Updater.UpdateType.NO_DOWNLOAD, false); // Start Updater but just do a version check
+            getServer().getScheduler().runTaskLaterAsynchronously(this, new Runnable() {
+
+                @Override
+                public void run () {
+                    updateAvailable = updater.getResult() == Updater.UpdateResult.UPDATE_AVAILABLE; // Determine if there is an update ready for us
+                    latestVersion = updater.getLatestVersionString(); // Get the latest version
+                    Bukkit.getLogger().info(latestVersion);
+                    updateSize = updater.getFileSize(); // Get latest size
+
+                    if(updateAvailable) {
+
+                        for (Player player : getServer().getOnlinePlayers()) {
+                            if (hasPermission(player, "craftbook.update")) {
+                                player.sendMessage(ChatColor.YELLOW + "An update is available: " + latestVersion + "(" + updateSize + " bytes)");
+                                player.sendMessage(ChatColor.YELLOW + "Type /cb update if you would like to update.");
+                            }
+                        }
+
+                        getServer().getPluginManager().registerEvents(new Listener() {
+                            @EventHandler
+                            public void onPlayerJoin (PlayerJoinEvent event) {
+                                Player player = event.getPlayer();
+                                if (hasPermission(player, "craftbook.update")) {
+                                    player.sendMessage(ChatColor.YELLOW + "An update is available: " + latestVersion + "(" + updateSize + " bytes)");
+                                    player.sendMessage(ChatColor.YELLOW + "Type /cb update if you would like to update.");
+                                }
+                            }
+                        }, CraftBookPlugin.inst());
+                    }
+                }
+            }, 10L);
+        }
+
+        try {
+            BukkitMetrics metrics = new BukkitMetrics(this);
+            metrics.start();
+
+            Graph g = metrics.createGraph("Language");
+            for (String language : languageManager.getLanguages()) {
+                g.addPlotter(new Plotter(language) {
+
+                    @Override
+                    public int getValue () {
+                        return 1;
+                    }
+                });
+            }
+            g.addPlotter(new Plotter("Total") {
+
+                @Override
+                public int getValue () {
+                    return languageManager.getLanguages().size();
+                }
+            });
+
+            Graph comp = metrics.createGraph("Components");
+            if (config.enableCircuits)
+                comp.addPlotter(new Plotter("Circuits") {
+
+                    @Override
+                    public int getValue () {
+                        return 1;
+                    }
+                });
+            if (config.enableMechanisms)
+                comp.addPlotter(new Plotter("Mechanisms") {
+
+                    @Override
+                    public int getValue () {
+                        return 1;
+                    }
+                });
+            if (config.enableVehicles)
+                comp.addPlotter(new Plotter("Vehicles") {
+
+                    @Override
+                    public int getValue () {
+                        return 1;
+                    }
+                });
+        } catch (Throwable e1) {
+            BukkitUtil.printStacktrace(e1);
+        }
+    }
+
+    public void startComponents() {
         // Circuits
         if (config.enableCircuits) {
             CircuitCore circuitCore = new CircuitCore();
@@ -349,15 +469,16 @@ public class CraftBookPlugin extends JavaPlugin {
                 "elapsed)");
 
         // Set up the clock for self-triggered ICs.
-        getServer().getScheduler().runTaskTimer(this, mechanicClock, 0, 2);
+        getServer().getScheduler().runTaskTimer(this, mechanicClock, 0, getConfiguration().stThinkRate);
     }
 
     /**
      * This is a method used to register events for a class under CraftBook.
      */
-    public static void registerEvents(Listener listener) {
+    public static void registerEvents(Listener ... listeners) {
 
-        inst().getServer().getPluginManager().registerEvents(listener, inst());
+        for(Listener listener : listeners)
+            inst().getServer().getPluginManager().registerEvents(listener, inst());
     }
 
     /**
@@ -550,10 +671,16 @@ public class CraftBookPlugin extends JavaPlugin {
     /**
      * Reload configuration
      */
-    public void reloadConfiguration() {
+    public void reloadConfiguration() throws Throwable {
 
+        for (LocalComponent component : components) {
+            component.disable();
+        }
+        HandlerList.unregisterAll(this);
         config.unload();
         config.load();
+        registerGlobalEvents();
+        startComponents();
     }
 
     /**
@@ -687,10 +814,7 @@ public class CraftBookPlugin extends JavaPlugin {
      */
     public boolean canBuild(Player player, Location loc) {
 
-        return true;
-        //if (!config.obeyWorldguard)
-        //    return true;
-        //return worldGuardPlugin != null && worldGuardPlugin.getGlobalRegionManager().canBuild(player, loc);
+        return canBuild(player,loc.getBlock());
     }
 
     /**
@@ -706,9 +830,14 @@ public class CraftBookPlugin extends JavaPlugin {
      */
     public boolean canBuild(Player player, Block block) {
 
-        return true;
-        //if (!config.obeyWorldguard) return true;
-        //return worldGuardPlugin != null && worldGuardPlugin.getGlobalRegionManager().canBuild(player, block);
+        if (config.advancedBlockChecks) {
+
+            BlockPlaceEvent event = new BlockPlaceEvent(block, block.getState(), block.getRelative(0, -1, 0), player.getItemInHand(), player, true);
+            getServer().getPluginManager().callEvent(event);
+            return !event.isCancelled() || event.canBuild();
+        }
+        if (!config.obeyWorldguard) return true;
+        return worldGuardPlugin != null && worldGuardPlugin.canBuild(player, block);
     }
 
     /**
@@ -724,10 +853,14 @@ public class CraftBookPlugin extends JavaPlugin {
      */
     public boolean canUse(Player player, Location loc) {
 
-        return true;
-        //if (!config.obeyWorldguard) return true;
-        //return worldGuardPlugin != null && worldGuardPlugin.getGlobalRegionManager().allows(new StateFlag("use",
-        //        true), loc, worldGuardPlugin.wrapPlayer(player));
+        if (config.advancedBlockChecks) {
+
+            PlayerInteractEvent event = new PlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, player.getItemInHand(), loc.getBlock(), BlockFace.UP);
+            getServer().getPluginManager().callEvent(event);
+            return !event.isCancelled();
+        }
+        if (!config.obeyWorldguard) return true;
+        return worldGuardPlugin != null && worldGuardPlugin.getGlobalRegionManager().allows(DefaultFlag.USE, loc, worldGuardPlugin.wrapPlayer(player));
     }
 
     /**
@@ -743,5 +876,11 @@ public class CraftBookPlugin extends JavaPlugin {
         }
 
         return useOldBlockFace;
+    }
+
+    @Override
+    public File getFile() {
+
+        return super.getFile();
     }
 }

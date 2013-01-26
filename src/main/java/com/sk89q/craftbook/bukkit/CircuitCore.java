@@ -115,6 +115,8 @@ import com.sk89q.craftbook.circuits.gates.world.items.ContainerCollector;
 import com.sk89q.craftbook.circuits.gates.world.items.ContainerCollectorST;
 import com.sk89q.craftbook.circuits.gates.world.items.ContainerDispenser;
 import com.sk89q.craftbook.circuits.gates.world.items.ContainerDispenserST;
+import com.sk89q.craftbook.circuits.gates.world.items.ContainerStacker;
+import com.sk89q.craftbook.circuits.gates.world.items.ContainerStackerST;
 import com.sk89q.craftbook.circuits.gates.world.items.Distributer;
 import com.sk89q.craftbook.circuits.gates.world.items.DistributerST;
 import com.sk89q.craftbook.circuits.gates.world.items.ItemDispenser;
@@ -144,8 +146,11 @@ import com.sk89q.craftbook.circuits.gates.world.miscellaneous.Tune;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.WirelessReceiver;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.WirelessReceiverST;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.WirelessTransmitter;
+import com.sk89q.craftbook.circuits.gates.world.miscellaneous.XPSpawner;
 import com.sk89q.craftbook.circuits.gates.world.sensors.BlockSensor;
 import com.sk89q.craftbook.circuits.gates.world.sensors.BlockSensorST;
+import com.sk89q.craftbook.circuits.gates.world.sensors.ContentsSensor;
+import com.sk89q.craftbook.circuits.gates.world.sensors.ContentsSensorST;
 import com.sk89q.craftbook.circuits.gates.world.sensors.DaySensor;
 import com.sk89q.craftbook.circuits.gates.world.sensors.DaySensorST;
 import com.sk89q.craftbook.circuits.gates.world.sensors.EntitySensor;
@@ -387,6 +392,9 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1242", "stocker", new ChestStocker.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1243", "distributer", new Distributer.Factory(server), familySISO, familyAISO);
         registerIC("MC1244", "animal harvest", new AnimalHarvester.Factory(server), familySISO, familyAISO);
+        registerIC("MC1245", "cont stacker", new ContainerStacker.Factory(server), familySISO, familyAISO);
+        registerIC("MC1246", "xp spawner", new XPSpawner.Factory(server), familySISO, familyAISO); //Restricted
+        //TODO Dyed Armour Spawner (MC1247) (Sign Title: DYE ARMOUR)
         registerIC("MC1250", "shoot fire", new FireShooter.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1251", "shoot fires", new FireBarrage.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1252", "flame thower", new FlameThrower.Factory(server), familySISO, familyAISO); // Restricted
@@ -400,6 +408,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1265", "inv sense item", new ItemNotSensor.Factory(server), familySISO, familyAISO);
         registerIC("MC1266", "sense power", new PowerSensor.Factory(server), familySISO, familyAISO);
         //FIXME registerIC("MC1267", "sense move", new MovementSensor.Factory(server), familySISO, familyAISO);
+        registerIC("MC1268", "sense contents", new ContentsSensor.Factory(server), familySISO, familyAISO);
         registerIC("MC1270", "melody", new Melody.Factory(server), familySISO, familyAISO);
         registerIC("MC1271", "sense entity", new EntitySensor.Factory(server), familySISO, familyAISO);
         registerIC("MC1272", "sense player", new PlayerSensor.Factory(server), familySISO, familyAISO); // Restricted
@@ -488,6 +497,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC0242", "stocker st", new ChestStockerST.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC0243", "distributer st", new DistributerST.Factory(server), familySISO, familyAISO);
         registerIC("MC0244", "animal harvest st", new AnimalHarvesterST.Factory(server), familySISO, familyAISO);
+        registerIC("MC0245", "cont stacker st", new ContainerStackerST.Factory(server), familySISO, familyAISO);
         registerIC("MC0260", "sense water st", new WaterSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0261", "sense lava st", new LavaSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0262", "sense light st", new LightSensorST.Factory(server), familySISO, familyAISO);
@@ -497,6 +507,7 @@ public class CircuitCore implements LocalComponent {
                 familyAISO); // Restricted
         registerIC("MC0266", "sense power st", new PowerSensorST.Factory(server), familySISO, familyAISO); // Restricted
         //FIXME registerIC("MC0267", "sense move st", new MovementSensorST.Factory(server), familySISO, familyAISO);
+        registerIC("MC0268", "sense contents st", new ContentsSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0270", "sense power st", new PowerSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0271", "sense entit st", new EntitySensorST.Factory(server), familySISO,
                 familyAISO); // Restricted

@@ -158,12 +158,14 @@ public class VehicleCore implements LocalComponent {
 
             minecartRemoveEntities: {
                 if (plugin.getConfiguration().minecartRemoveEntities && vehicle instanceof Minecart) {
-                    if (!plugin.getConfiguration().minecartRemoveEntitiesOtherCarts && entity instanceof Minecart) break minecartRemoveEntities;
+                    if (!plugin.getConfiguration().minecartRemoveEntitiesOtherCarts && (entity instanceof Minecart || entity.isInsideVehicle())) break minecartRemoveEntities;
 
                     if(!(vehicle instanceof StorageMinecart) && !(vehicle instanceof PoweredMinecart) && vehicle.isEmpty())
                         break minecartRemoveEntities;
 
                     if (entity instanceof LivingEntity) {
+                        if(entity.isInsideVehicle())
+                            break minecartRemoveEntities;
                         ((LivingEntity) entity).damage(10);
                         entity.setVelocity(vehicle.getVelocity().normalize().multiply(1.8).add(new Vector(0,0.5,0)));
                     } else if (entity instanceof Vehicle) {
@@ -244,14 +246,6 @@ public class VehicleCore implements LocalComponent {
         public void onVehicleMove(VehicleMoveEvent event) {
             // Ignore events not relating to minecarts.
             if (!(event.getVehicle() instanceof Minecart)) return;
-
-            if (plugin.getConfiguration().minecartPoweredRailModifier > 0) {
-
-                if (event.getTo().getBlock().getTypeId() == BlockID.POWERED_RAIL) {
-
-                    event.getVehicle().setVelocity(event.getVehicle().getVelocity().multiply(plugin.getConfiguration().minecartPoweredRailModifier));
-                }
-            }
 
             if (plugin.getConfiguration().minecartStoragePlaceRails && event.getVehicle() instanceof StorageMinecart) {
 

@@ -78,6 +78,14 @@ public class YAMLConfiguration extends LocalConfiguration {
         // Better Physics Configuration Listener
         physicsEnabled = config.getBoolean("mechanics.better-physics.enable", false);
         physicsLadders = config.getBoolean("mechanics.better-physics.falling-ladders", false);
+        //physicsPots = config.getBoolean("mechanics.better-physics.smashing-pots", false);
+        physicsPots = false; //TODO enable when 1.5 comes out (It fixes the client crash caused by this)
+
+        // Better Pistons Configuration Listener
+        pistonsEnabled = config.getBoolean("mechanics.better-pistons.enable", true);
+        pistonsCrusher = config.getBoolean("mechanics.better-pistons.crushers", true);
+        pistonsSuperSticky = config.getBoolean("mechanics.better-pistons.super-sticky", true);
+        pistonsBounce = config.getBoolean("mechanics.better-pistons.bounce", true);
 
         // Bookcase Configuration Listener
         bookcaseEnabled = config.getBoolean("mechanics.bookcase.enable", true);
@@ -180,6 +188,7 @@ public class YAMLConfiguration extends LocalConfiguration {
         snowRealistic = config.getBoolean("mechanics.snow.realistic", false);
         snowHighPiles = config.getBoolean("mechanics.snow.high-piling", false);
         snowJumpTrample = config.getBoolean("mechanics.snow.jump-trample", false);
+        snowRealisticReplacables = config.getIntList("mechanics.snow.replacable-blocks", Arrays.asList(BlockID.LONG_GRASS, BlockID.DEAD_BUSH, BlockID.FIRE, BlockID.RED_FLOWER, BlockID.YELLOW_FLOWER, BlockID.BROWN_MUSHROOM, BlockID.RED_MUSHROOM, BlockID.TRIPWIRE));
 
         // Teleporter Configuration Listener
         teleporterEnabled = config.getBoolean("mechanics.teleporter.enable", true);
@@ -219,7 +228,6 @@ public class YAMLConfiguration extends LocalConfiguration {
         minecartMessengerEnabled = config.getBoolean("vehicles.minecart.track-messages", true);
         minecartDecayTime = config.getInt("vehicles.minecart.decay-time", 20);
         minecartConstantSpeed = config.getDouble("vehicles.minecart.constant-speed", 0);
-        minecartPoweredRailModifier = config.getDouble("vehicles.minecart.powered-rail-modifier", 0);
         minecartPickupItemsOnCollision = config.getBoolean("vehicles.minecart.item-pickup-collision", false);
         minecartPressurePlateIntersection = config.getBoolean("vehicles.minecart.pressure-plate-intersection", false);
         minecartStoragePlaceRails = config.getBoolean("vehicles.minecart.storage-place-rails", false);

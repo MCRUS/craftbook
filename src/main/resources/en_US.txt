@@ -2,6 +2,7 @@ area.permissions:You don't have permissions to use that in this area!
 
 mech.use-permission:You don't have permission to use this mechanic.
 mech.not-enough-blocks:Not enough blocks to trigger mechanic!
+mech.pistons.crush.created:Piston Crush Mechanic Created!
 mech.lift.target-sign-created:Elevator target sign created.
 mech.lift.down-sign-created:Elevator down sign created.
 mech.lift.up-sign-created:Elevator up sign created.
@@ -30,6 +31,7 @@ mech.teleport.create:Teleporter Created!
 mech.teleport.alert:You Teleported!
 mech.teleport.range:Out of Range!
 mech.teleport.sign:There is no Sign at your Destination!
+mech.teleport.arriveonly:You can only arrive at this teleporter!
 mech.cauldron.too-small:Cauldron is too small!
 mech.cauldron.leaky:Cauldron has a leak!
 mech.cauldron.no-lava:Cauldron lacks lava!

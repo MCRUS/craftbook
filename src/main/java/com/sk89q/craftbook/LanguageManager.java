@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
-import net.minecraft.server.v1_4_6.LocaleLanguage;
+import net.minecraft.server.v1_4_R1.LocaleLanguage;
 
 import org.bukkit.ChatColor;
-import org.bukkit.craftbukkit.v1_4_6.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_4_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
@@ -44,7 +44,7 @@ public class LanguageManager {
                 BufferedReader br = new BufferedReader(new FileReader(f));
                 String line;
                 while ((line = br.readLine()) != null) {
-                    if (line.trim().isEmpty() || line.trim().startsWith("#"))
+                    if (line.trim().length() == 0 || line.trim().startsWith("#"))
                         continue;
                     String[] split = RegexUtil.COLON_PATTERN.split(line);
                     if (split.length != 2) {
@@ -56,7 +56,7 @@ public class LanguageManager {
             } catch (IOException e) {
                 plugin.getLogger().log(Level.SEVERE,
                         "[CraftBook] could not find file: " + plugin.getDataFolder().getName() + File.pathSeparator +
-                                language + ".txt");
+                        language + ".txt");
             }
             languageMap.put(language, languageData);
         }
@@ -77,7 +77,7 @@ public class LanguageManager {
         HashMap<String, String> languageData = languageMap.get(language);
         if (languageData == null) return getString(message);
         String translated = languageData.get(ChatColor.stripColor(message));
-        if (translated == null) {
+        if (translated == null || translated.length() == 0) {
             languageData = languageMap.get(plugin.getConfiguration().language);
             translated = languageData.get(ChatColor.stripColor(message));
             if (translated == null) return message;
