@@ -215,6 +215,7 @@ public class CraftBookPlugin extends JavaPlugin {
 
         // Initialize the language manager.
         createDefaultConfiguration(new File(getDataFolder(), "en_US.txt"), "en_US.txt", false);
+        createDefaultConfiguration(new File(getDataFolder(), "ru_RU.txt"), "ru_RU.txt", false);
         languageManager = new LanguageManager();
 
         // Resolve Vault

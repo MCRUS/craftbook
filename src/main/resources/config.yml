@@ -2,7 +2,9 @@ enable-circuits: true
 enable-mechanisms: true
 enable-vehicles: true
 
-language: en_US
+language: ru_RU
+languages:
+  - ru_RU
 no-op-permissions: true
 safe-destruction: true
 use-block-distance: false

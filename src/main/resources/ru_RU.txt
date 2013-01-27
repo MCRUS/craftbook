@@ -1,4 +1,8 @@
+area.permissions:У Вас недостаточно прав на использование механизмов на этой территории!
+
 mech.use-permission:У Вас недостаточно прав для использования этого механизма.
+mech.not-enough-blocks:Недостаточно блоков чтобы перключить состяние механизма!
+mech.pistons.crush.created:Piston Crush создан!
 mech.lift.target-sign-created:Конечная точка листа создана.
 mech.lift.down-sign-created:Лифт вниз создан.
 mech.lift.up-sign-created:Лифт вверх создан.
@@ -27,6 +31,7 @@ mech.teleport.create:Телепорт создан!
 mech.teleport.alert:Вы телепортированы!
 mech.teleport.range:Вне зоны досягаемости!
 mech.teleport.sign:В точне назначения нет таблички!
+mech.teleport.arriveonly:Вы можете только прибыть на данную точку телепорта!
 mech.cauldron.too-small:Котел создан!
 mech.cauldron.leaky:Котел подтекает!
 mech.cauldron.no-lava:У котла протекает лава!
@@ -42,4 +47,5 @@ mech.lightswitch.create:Переключатель света создан!
 mech.painting.editing:Вы в режиме смены картины!
 mech.painting.stop:Вы вышли из режима редактирования картины!
 mech.painting.used:Данная картинка уже была отредактирована
-area.permissions:У Вас недостаточно прав на использование механизмов на этой территории!
+
+vehicles.create-permission:У Вас недостаточно прав для создания этого механизма!
