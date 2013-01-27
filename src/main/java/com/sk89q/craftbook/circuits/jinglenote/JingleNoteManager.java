@@ -17,8 +17,6 @@ import org.bukkit.entity.Player;
  */
 public class JingleNoteManager {
 
-    private JingleSequencer sequencer;
-
     /**
      * List of instances.
      */
@@ -26,7 +24,6 @@ public class JingleNoteManager {
 
     public void play(Player player, JingleSequencer sequencer) {
 
-        this.sequencer = sequencer;
         String name = player.getName();
 
         // Existing player found!
@@ -67,16 +64,5 @@ public class JingleNoteManager {
         }
 
         instances.clear();
-    }
-
-    public boolean isSequencerPlaying() {
-
-        if(sequencer == null) return false;
-        return sequencer.isSongPlaying();
-    }
-
-    public JingleSequencer getSequencer() {
-
-        return sequencer;
     }
 }

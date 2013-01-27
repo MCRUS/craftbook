@@ -5,11 +5,13 @@ enable-vehicles: true
 language: ru_RU
 languages:
   - ru_RU
-no-op-permissions: true
+no-op-permissions: false
 safe-destruction: true
 use-block-distance: false
 check-worldguard-flags: true
 indirect-redstone: false
+
+notify-updates: false
 
 circuits:
     ics:
