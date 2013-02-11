@@ -81,9 +81,14 @@ public class ICUtil {
             // set the new data
             block.setData((byte) newData, true);
             // apply physics to the source block the lever is attached to
-            block.setData(block.getData(), true);
-            BlockRedstoneEvent event = new BlockRedstoneEvent(block,wasOn ? 15 : 0, state ? 15 : 0);
-            CraftBookPlugin.inst().getServer().getPluginManager().callEvent(event);
+            source.setData((byte)newData, true);
+
+            // lets call blockredstone events on the source block and the lever
+            // in order to correctly update all surrounding blocks
+            BlockRedstoneEvent leverEvent = new BlockRedstoneEvent(block, wasOn ? 15 : 0, state ? 15 : 0);
+            BlockRedstoneEvent sourceEvent = new BlockRedstoneEvent(source, wasOn ? 15 : 0, state ? 15 : 0);
+            CraftBookPlugin.inst().getServer().getPluginManager().callEvent(leverEvent);
+            CraftBookPlugin.inst().getServer().getPluginManager().callEvent(sourceEvent);
             return true;
         }
 
@@ -138,12 +143,12 @@ public class ICUtil {
 
     public static Block parseBlockLocation(ChangedSign sign, int lPos) {
 
-        return parseBlockLocation(sign, lPos, LocationCheckType.RELATIVE);
+        return parseBlockLocation(sign, lPos, CraftBookPlugin.inst().getConfiguration().ICdefaultCoordinate);
     }
 
     public static Block parseBlockLocation(ChangedSign sign) {
 
-        return parseBlockLocation(sign, 2, LocationCheckType.RELATIVE);
+        return parseBlockLocation(sign, 2, CraftBookPlugin.inst().getConfiguration().ICdefaultCoordinate);
     }
 
     public static void verifySignSyntax(ChangedSign sign) throws ICVerificationException {
@@ -268,6 +273,17 @@ public class ICUtil {
 
             for(LocationCheckType t : values())
                 if(t.c == c)
+                    return t;
+
+            return RELATIVE;
+        }
+
+        public static LocationCheckType getTypeFromName(String name) {
+
+            if(name.length() == 1)
+                return getTypeFromChar(name.charAt(0));
+            for(LocationCheckType t : values())
+                if(t.name().equalsIgnoreCase(name))
                     return t;
 
             return RELATIVE;

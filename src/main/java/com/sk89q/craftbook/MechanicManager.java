@@ -19,6 +19,7 @@ package com.sk89q.craftbook;
 import static com.sk89q.worldedit.bukkit.BukkitUtil.toWorldVector;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,6 +41,7 @@ import org.bukkit.inventory.ItemStack;
 
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.circuits.ic.ICMechanic;
 import com.sk89q.craftbook.util.exceptions.InvalidMechanismException;
 import com.sk89q.craftbook.util.exceptions.ProcessedMechanismException;
 import com.sk89q.worldedit.BlockWorldVector;
@@ -123,6 +125,17 @@ public class MechanicManager {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Unregister a mechanic factory, using a iterator object.
+     *
+     * @param factory
+     */
+    public boolean unregister(Iterator<MechanicFactory<? extends Mechanic>> factory) {
+
+        factory.remove();
+        return true;
     }
 
     /**
@@ -589,6 +602,10 @@ public class MechanicManager {
             logger.log(Level.WARNING, "CraftBook mechanic: Failed to unload(Mechanic) - null.");
             return;
         }
+
+
+        if(CraftBookPlugin.inst().getConfiguration().ICKeepLoaded && mechanic instanceof ICMechanic && event != null)
+            return;
 
         try {
             mechanic.unload();

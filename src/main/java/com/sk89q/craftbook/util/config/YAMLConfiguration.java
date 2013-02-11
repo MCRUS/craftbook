@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import com.sk89q.craftbook.LocalConfiguration;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.mech.CustomDropManager;
+import com.sk89q.craftbook.util.ICUtil.LocationCheckType;
 import com.sk89q.craftbook.util.ItemInfo;
 import com.sk89q.util.yaml.YAMLProcessor;
 import com.sk89q.worldedit.blocks.BlockID;
@@ -22,7 +23,7 @@ import com.sk89q.worldedit.blocks.ItemID;
  */
 public class YAMLConfiguration extends LocalConfiguration {
 
-    protected final YAMLProcessor config;
+    public final YAMLProcessor config;
     protected final Logger logger;
     private FileHandler logFileHandler;
 
@@ -42,7 +43,9 @@ public class YAMLConfiguration extends LocalConfiguration {
         ICCached = config.getBoolean("circuits.ics.cache", true);
         ICMaxRange = config.getInt("circuits.ics.max-radius", 15);
         ICShortHandEnabled = config.getBoolean("circuits.ics.allow-short-hand", true);
+        ICKeepLoaded = config.getBoolean("circuits.ics.keep-loaded", false);
         disabledICs = new HashSet<String>(config.getStringList("circuits.ics.disallowed-ics", Arrays.asList("")));
+        ICdefaultCoordinate = LocationCheckType.getTypeFromName(config.getString("circuits.ics.default-coordinate-system", "RELATIVE"));
 
         // Circuits Configuration Listener
         netherrackEnabled = config.getBoolean("circuits.wiring.netherrack-enabled", false);
@@ -86,6 +89,8 @@ public class YAMLConfiguration extends LocalConfiguration {
         pistonsCrusher = config.getBoolean("mechanics.better-pistons.crushers", true);
         pistonsSuperSticky = config.getBoolean("mechanics.better-pistons.super-sticky", true);
         pistonsBounce = config.getBoolean("mechanics.better-pistons.bounce", true);
+        pistonsSuperPush = config.getBoolean("mechanics.better-pistons.super-push", true);
+        pistonMaxDistance = config.getInt("mechanics.better-pistons.max-distance", 12);
 
         // Bookcase Configuration Listener
         bookcaseEnabled = config.getBoolean("mechanics.bookcase.enable", true);

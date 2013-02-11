@@ -207,7 +207,7 @@ public class CircuitCore implements LocalComponent {
     private static CircuitCore instance;
     private CraftBookPlugin plugin = CraftBookPlugin.inst();
     private MechanicManager manager;
-    private ICManager ICManager;
+    private ICManager icManager;
 
     private YAMLICConfiguration icConfiguration;
 
@@ -272,6 +272,8 @@ public class CircuitCore implements LocalComponent {
     @Override
     public void disable() {
 
+        unregisterAllMechanics();
+        ICManager.emptyCache();
         icConfiguration.unload();
     }
 
@@ -309,7 +311,7 @@ public class CircuitCore implements LocalComponent {
 
         if (config.ICEnabled) {
             registerICs();
-            registerMechanic(ICFactory = new ICMechanicFactory(ICManager));
+            registerMechanic(ICFactory = new ICMechanicFactory(icManager));
         }
 
         // Let's register mechanics!
@@ -324,7 +326,7 @@ public class CircuitCore implements LocalComponent {
         Server server = plugin.getServer();
 
         // Let's register ICs!
-        ICManager = new ICManager();
+        icManager = new ICManager();
         ICFamily familySISO = FAMILY_SISO;
         ICFamily family3ISO = FAMILY_3ISO;
         ICFamily familySI3O = FAMILY_SI3O;
@@ -346,8 +348,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1113", "tele-in", new TeleportReciever.Factory(server), familySISO, familyAISO);
         registerIC("MC1200", "spawner", new CreatureSpawner.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1201", "dispenser", new ItemDispenser.Factory(server), familySISO, familyAISO); // Restricted
-        registerIC("MC1202", "c dispense", new ContainerDispenser.Factory(server), familySISO,
-                familyAISO); // Restricted
+        registerIC("MC1202", "c dispense", new ContainerDispenser.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1203", "strike", new LightningSummon.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1204", "trap", new EntityTrap.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1205", "set above", new SetBlockAbove.Factory(server), familySISO, familyAISO); // Restricted
@@ -359,10 +360,8 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1211", "set bridge", new SetBridge.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1212", "set door", new SetDoor.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1213", "sound", new SoundEffect.Factory(server), familySISO, familyAISO); // Restricted
-        registerIC("MC1215", "set a chest", new SetBlockAboveChest.Factory(server), familySISO,
-                familyAISO); // Restricted
-        registerIC("MC1216", "set b chest", new SetBlockBelowChest.Factory(server), familySISO,
-                familyAISO); // Restricted
+        registerIC("MC1215", "set a chest", new SetBlockAboveChest.Factory(server), familySISO, familyAISO); // Restricted
+        registerIC("MC1216", "set b chest", new SetBlockBelowChest.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1217", "pot induce", new PotionInducer.Factory(server), familySISO, familyAISO);
         registerIC("MC1218", "block launch", new BlockLauncher.Factory(server), familySISO, familyAISO);
         registerIC("MC1219", "auto craft", new AutomaticCrafter.Factory(server), familySISO, familyAISO);
@@ -373,8 +372,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1224", "time bomb", new TimedExplosion.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1225", "pump", new Pump.Factory(server), familySISO, familyAISO);
         registerIC("MC1226", "spigot", new Spigot.Factory(server), familySISO, familyAISO);
-        registerIC("MC1227", "avd spawner", new AdvancedEntitySpawner.Factory(server), familySISO,
-                familyAISO); // Restricted
+        registerIC("MC1227", "avd spawner", new AdvancedEntitySpawner.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1228", "ent cannon", new EntityCannon.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1229", "sorter", new Sorter.Factory(server), familySISO, familyAISO);
         registerIC("MC1230", "sense day", new DaySensor.Factory(server), familySISO, familyAISO);
@@ -398,8 +396,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1250", "shoot fire", new FireShooter.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1251", "shoot fires", new FireBarrage.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1252", "flame thower", new FlameThrower.Factory(server), familySISO, familyAISO); // Restricted
-        registerIC("MC1253", "firework show", new ProgrammableFireworkShow.Factory(server), familySISO,
-                familyAISO); // Restricted
+        registerIC("MC1253", "firework show", new ProgrammableFireworkShow.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1260", "sense water", new WaterSensor.Factory(server), familySISO, familyAISO);
         registerIC("MC1261", "sense lava", new LavaSensor.Factory(server), familySISO, familyAISO);
         registerIC("MC1262", "sense light", new LightSensor.Factory(server), familySISO, familyAISO);
@@ -477,8 +474,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC0210", "emitter st", new ParticleEffectST.Factory(server), familySISO, familyAISO);
         registerIC("MC0215", "set a chest st", new SetBlockAboveChestST.Factory(server), familySISO, familyAISO);
         registerIC("MC0216", "set b chest st", new SetBlockBelowChestST.Factory(server), familySISO, familyAISO);
-        registerIC("MC0217", "pot induce st", new PotionInducerST.Factory(server), familySISO,
-                familyAISO); // Restricted
+        registerIC("MC0217", "pot induce st", new PotionInducerST.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC0219", "auto craft st", new AutomaticCrafterST.Factory(server), familySISO, familyAISO);
         registerIC("MC0220", "a bl break st", new BlockBreakerST.Factory(server, false), familySISO, familyAISO);
         registerIC("MC0221", "b bl break st", new BlockBreakerST.Factory(server, true), familySISO, familyAISO);
@@ -503,16 +499,13 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC0262", "sense light st", new LightSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0263", "sense block st", new BlockSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0264", "sense item st", new ItemSensorST.Factory(server), familySISO, familyAISO); // Restricted
-        registerIC("MC0265", "sense n item s", new ItemNotSensorST.Factory(server), familySISO,
-                familyAISO); // Restricted
+        registerIC("MC0265", "sense n item s", new ItemNotSensorST.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC0266", "sense power st", new PowerSensorST.Factory(server), familySISO, familyAISO); // Restricted
         //FIXME registerIC("MC0267", "sense move st", new MovementSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0268", "sense contents st", new ContentsSensorST.Factory(server), familySISO, familyAISO);
         registerIC("MC0270", "sense power st", new PowerSensorST.Factory(server), familySISO, familyAISO);
-        registerIC("MC0271", "sense entit st", new EntitySensorST.Factory(server), familySISO,
-                familyAISO); // Restricted
-        registerIC("MC0272", "sense playe st", new PlayerSensorST.Factory(server), familySISO,
-                familyAISO); // Restricted
+        registerIC("MC0271", "sense entit st", new EntitySensorST.Factory(server), familySISO, familyAISO); // Restricted
+        registerIC("MC0272", "sense playe st", new PlayerSensorST.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC0420", "clock st", new ClockST.Factory(server), familySISO, familyAISO);
         registerIC("MC0421", "monostable", new Monostable.Factory(server), familySISO, familyAISO);
         registerIC("MC0500", "range output", new RangedOutput.Factory(server), familySISO, familyAISO);
@@ -538,7 +531,7 @@ public class CircuitCore implements LocalComponent {
     public boolean registerIC(String name, String longName, ICFactory factory, ICFamily... families) {
 
         if (CraftBookPlugin.inst().getConfiguration().disabledICs.contains(name)) return false;
-        return ICManager.register(name, longName, factory, families);
+        return icManager.register(name, longName, factory, families);
     }
 
     /**
@@ -577,23 +570,22 @@ public class CircuitCore implements LocalComponent {
 
     protected boolean unregisterAllMechanics() {
 
-        boolean ret = true;
-
         Iterator<MechanicFactory<? extends Mechanic>> iterator = manager.factories.iterator();
 
         while (iterator.hasNext()) {
-            if (!unregisterMechanic(iterator.next())) ret = false;
+            iterator.next();
+            manager.unregister(iterator);
         }
 
-        return ret;
+        return true;
     }
 
     public List<RegisteredICFactory> getICList() {
 
-        if(ICManager == null)
+        if(icManager == null)
             return new ArrayList<RegisteredICFactory>();
         List<RegisteredICFactory> ics = new ArrayList<RegisteredICFactory>();
-        for (Map.Entry<String, RegisteredICFactory> e : ICManager.registered.entrySet()) {
+        for (Map.Entry<String, RegisteredICFactory> e : icManager.registered.entrySet()) {
             ics.add(e.getValue());
         }
         return ics;
@@ -601,10 +593,10 @@ public class CircuitCore implements LocalComponent {
 
     public void generateICDocs(Player player, String id) {
 
-        RegisteredICFactory ric = ICManager.registered.get(id.toLowerCase());
+        RegisteredICFactory ric = icManager.registered.get(id.toLowerCase());
         if (ric == null) {
             try {
-                ric = ICManager.registered.get(getSearchID(player, id));
+                ric = icManager.registered.get(getSearchID(player, id));
                 if (ric == null) {
                     player.sendMessage(ChatColor.RED + "Invalid IC!");
                     return;
@@ -641,13 +633,13 @@ public class CircuitCore implements LocalComponent {
     public String getSearchID(Player p, String search) {
 
         ArrayList<String> icNameList = new ArrayList<String>();
-        icNameList.addAll(ICManager.registered.keySet());
+        icNameList.addAll(icManager.registered.keySet());
 
         Collections.sort(icNameList);
 
         for (String ic : icNameList) {
             try {
-                RegisteredICFactory ric = ICManager.registered.get(ic);
+                RegisteredICFactory ric = icManager.registered.get(ic);
                 IC tic = ric.getFactory().create(null);
                 if (search != null && !tic.getTitle().toLowerCase().contains(search.toLowerCase())
                         && !ric.getId().toLowerCase().contains(search.toLowerCase())) continue;
@@ -670,7 +662,7 @@ public class CircuitCore implements LocalComponent {
     public String[] generateICText(Player p, String search, char[] parameters) {
 
         ArrayList<String> icNameList = new ArrayList<String>();
-        icNameList.addAll(ICManager.registered.keySet());
+        icNameList.addAll(icManager.registered.keySet());
 
         Collections.sort(icNameList);
 
@@ -680,7 +672,7 @@ public class CircuitCore implements LocalComponent {
             try {
                 thisIC:
                 {
-                RegisteredICFactory ric = ICManager.registered.get(ic);
+                RegisteredICFactory ric = icManager.registered.get(ic);
                 IC tic = ric.getFactory().create(null);
                 if (search != null && !tic.getTitle().toLowerCase().contains(search.toLowerCase())
                         && !ric.getId().toLowerCase().contains(search.toLowerCase())) continue;

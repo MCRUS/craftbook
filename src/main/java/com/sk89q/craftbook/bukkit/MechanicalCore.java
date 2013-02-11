@@ -13,6 +13,7 @@ import com.sk89q.craftbook.mech.AIMechanic;
 import com.sk89q.craftbook.mech.Ammeter;
 import com.sk89q.craftbook.mech.BetterPhysics;
 import com.sk89q.craftbook.mech.BetterPistons;
+import com.sk89q.craftbook.mech.BetterPistons.Types;
 import com.sk89q.craftbook.mech.Bookcase;
 import com.sk89q.craftbook.mech.Bridge;
 import com.sk89q.craftbook.mech.Cauldron;
@@ -82,6 +83,7 @@ public class MechanicalCore implements LocalComponent {
     @Override
     public void disable() {
 
+        unregisterAllMechanics();
         // Nothing to do at the current time
     }
 
@@ -116,9 +118,8 @@ public class MechanicalCore implements LocalComponent {
         if (config.cauldronEnabled) registerMechanic(new ImprovedCauldron.Factory());
         if (config.xpStorerEnabled) registerMechanic(new XPStorer.Factory());
         if (config.mapChangerEnabled) registerMechanic(new MapChanger.Factory());
-        if (config.pistonsEnabled) registerMechanic(new BetterPistons.Factory());
-
-        if (config.customCraftingEnabled) new CustomCrafting();
+        for(Types type : BetterPistons.Types.values())
+            if (config.pistonsEnabled) registerMechanic(new BetterPistons.Factory(type));
 
         // Special mechanics.
         if (plugin.getEconomy() != null && config.paymentEnabled) {
@@ -131,6 +132,9 @@ public class MechanicalCore implements LocalComponent {
         Server server = plugin.getServer();
         BukkitConfiguration config = plugin.getConfiguration();
 
+        if (config.customCraftingEnabled) {
+            server.getPluginManager().registerEvents(new CustomCrafting(), plugin);
+        }
         if (config.customDispensingEnabled) {
             server.getPluginManager().registerEvents(new DispenserRecipes(), plugin);
         }
@@ -178,23 +182,22 @@ public class MechanicalCore implements LocalComponent {
      *
      * @return true if the mechanic was successfully unregistered.
      */
+    @SuppressWarnings("unused")
     private boolean unregisterMechanic(MechanicFactory<? extends Mechanic> factory) {
 
         return manager.unregister(factory);
     }
 
-    @SuppressWarnings("unused")
     private boolean unregisterAllMechanics() {
-
-        boolean ret = true;
 
         Iterator<MechanicFactory<? extends Mechanic>> iterator = manager.factories.iterator();
 
         while (iterator.hasNext()) {
-            if (!unregisterMechanic(iterator.next())) ret = false;
+            iterator.next();
+            manager.unregister(iterator);
         }
 
-        return ret;
+        return true;
     }
 
     /**

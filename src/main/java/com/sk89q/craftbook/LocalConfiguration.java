@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.sk89q.craftbook.mech.CustomDropManager;
+import com.sk89q.craftbook.util.ICUtil.LocationCheckType;
 import com.sk89q.craftbook.util.ItemInfo;
 
 /**
@@ -19,6 +20,8 @@ public abstract class LocalConfiguration {
     public boolean ICShortHandEnabled;
     public int ICMaxRange;
     public Set<String> disabledICs;
+    public boolean ICKeepLoaded;
+    public LocationCheckType ICdefaultCoordinate;
 
     // Circuits - Wiring
     public boolean netherrackEnabled;
@@ -52,10 +55,12 @@ public abstract class LocalConfiguration {
     public boolean physicsLadders;
     public boolean physicsPots;
     // Mechanics - BetterPistons
+    public int pistonMaxDistance;
     public boolean pistonsEnabled;
     public boolean pistonsCrusher;
     public boolean pistonsSuperSticky;
     public boolean pistonsBounce;
+    public boolean pistonsSuperPush;
     // Mechanics - Bookcase
     public boolean bookcaseEnabled;
     public boolean bookcaseReadWhenSneaking;

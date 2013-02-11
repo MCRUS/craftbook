@@ -5,7 +5,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.jar.JarFile;
@@ -37,6 +36,8 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.comphenix.protocol.ProtocolLibrary;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.sk89q.bukkit.util.CommandsManagerRegistration;
 import com.sk89q.craftbook.LanguageManager;
 import com.sk89q.craftbook.LocalComponent;
@@ -117,14 +118,14 @@ public class CraftBookPlugin extends JavaPlugin {
     /**
      * The adapter for events to the manager.
      */
-    private MechanicListenerAdapter managerAdapter;
+    MechanicListenerAdapter managerAdapter;
 
     /**
      * The MechanicClock that manages all Self-Triggering Components.
      */
     private MechanicClock mechanicClock;
 
-    public HashMap<String, String> versionConverter = new HashMap<String, String>();
+    public BiMap<String, String> versionConverter = HashBiMap.create();
 
     /**
      * Construct objects. Actual loading occurs when the plugin is enabled, so
@@ -137,9 +138,11 @@ public class CraftBookPlugin extends JavaPlugin {
 
         // Set the version converter contents. It really only needs the current versions stuff... but just incase you are using a release version that isn't on bukkit dev yet, this is here.
         versionConverter.put("3.4.1", "1541");
-        versionConverter.put("3.5", "1680");
+        versionConverter.put("3.5",   "1680");
         versionConverter.put("3.5.1", "1718");
         versionConverter.put("3.5.2", "1749");
+        versionConverter.put("3.5.3", "1766");
+        versionConverter.put("3.5.4", "1795");
     }
 
     public void registerManager(MechanicManager manager) {
@@ -376,6 +379,7 @@ public class CraftBookPlugin extends JavaPlugin {
         for (LocalComponent component : components) {
             component.disable();
         }
+        components.clear();
         config.unload();
     }
 
@@ -678,9 +682,12 @@ public class CraftBookPlugin extends JavaPlugin {
         for (LocalComponent component : components) {
             component.disable();
         }
+        components.clear();
         HandlerList.unregisterAll(this);
         config.unload();
         config.load();
+        managerAdapter = new MechanicListenerAdapter();
+        mechanicClock = new MechanicClock();
         registerGlobalEvents();
         startComponents();
     }
