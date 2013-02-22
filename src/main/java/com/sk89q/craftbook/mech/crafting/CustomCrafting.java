@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.bukkit.ChatColor;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -89,14 +90,40 @@ public class CustomCrafting implements Listener {
         plugin.getLogger().info("Registered " + recipes + " custom recipes!");
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    @SuppressWarnings("unchecked")
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onCraft(CraftItemEvent event) {
 
         if(!ItemUtil.isStackValid(event.getCurrentItem()))
             return;
-        ItemStack bits = new ItemStack(craftItem(event.getRecipe()));
-        bits.setAmount(event.getCurrentItem().getAmount());
-        event.setCurrentItem(bits);
+        ItemStack bits = null;
+        for(Recipe rec : advancedRecipes.keySet()) {
+
+            if(checkRecipes(rec, event.getRecipe())) {
+                if(advancedRecipes.get(rec).hasAdvancedData("permission-node")) {
+                    if(!event.getWhoClicked().hasPermission((String) advancedRecipes.get(rec).getAdvancedData("permission-node"))) {
+                        ((Player) event.getWhoClicked()).sendMessage(ChatColor.RED + "You do not have permission to craft this recipe!");
+                        event.setCancelled(true);
+                    }
+                }
+                if(advancedRecipes.get(rec).hasAdvancedData("extra-results")) {
+                    ArrayList<CraftingItemStack> stacks = (ArrayList<CraftingItemStack>) advancedRecipes.get(rec).getAdvancedData("extra-results");
+                    for(CraftingItemStack stack : stacks) {
+                        HashMap<Integer, ItemStack> leftovers = event.getWhoClicked().getInventory().addItem(stack.getItemStack());
+                        if(!leftovers.isEmpty()) {
+                            for(ItemStack istack : leftovers.values())
+                                event.getWhoClicked().getWorld().dropItemNaturally(event.getWhoClicked().getLocation(), istack);
+                        }
+                    }
+                }
+                bits = applyAdvancedEffects(event.getRecipe().getResult(),rec);
+                break;
+            }
+        }
+        if(bits != null) {
+            bits.setAmount(event.getCurrentItem().getAmount());
+            event.setCurrentItem(bits);
+        }
     }
 
     public static ItemStack craftItem(Recipe recipe) {
@@ -107,7 +134,7 @@ public class CustomCrafting implements Listener {
             }
         }
 
-        return recipe.getResult();
+        return null;
     }
 
     private static ItemStack applyAdvancedEffects(ItemStack stack, Recipe rep) {
@@ -118,7 +145,7 @@ public class CustomCrafting implements Listener {
             meta.setDisplayName(ChatColor.RESET + (String) recipe.getResult().getAdvancedData("name"));
             res.setItemMeta(meta);
         }
-        return res;
+        return null;
     }
 
     private static boolean checkRecipes(Recipe rec1, Recipe rec2) {

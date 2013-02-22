@@ -143,6 +143,8 @@ public class CraftBookPlugin extends JavaPlugin {
         versionConverter.put("3.5.2", "1749");
         versionConverter.put("3.5.3", "1766");
         versionConverter.put("3.5.4", "1795");
+        versionConverter.put("3.5.5b1","1816"); 
+        versionConverter.put("3.5.5", "1828");
     }
 
     public void registerManager(MechanicManager manager) {
@@ -150,8 +152,7 @@ public class CraftBookPlugin extends JavaPlugin {
         managerAdapter.register(manager);
     }
 
-    public void registerManager(MechanicManager manager, boolean player, boolean block, boolean world,
-            boolean vehicle) {
+    public void registerManager(MechanicManager manager, boolean player, boolean block, boolean world, boolean vehicle) {
 
         managerAdapter.register(manager, player, block, world, vehicle);
     }
@@ -241,7 +242,7 @@ public class CraftBookPlugin extends JavaPlugin {
 
         // Resolve WorldGuard
         checkPlugin = getServer().getPluginManager().getPlugin("WorldGuard");
-        if (checkPlugin != null && checkPlugin instanceof WorldEditPlugin) {
+        if (checkPlugin != null && checkPlugin instanceof WorldGuardPlugin) {
             worldGuardPlugin = (WorldGuardPlugin) checkPlugin;
         } else worldGuardPlugin = null;
 
@@ -846,7 +847,8 @@ public class CraftBookPlugin extends JavaPlugin {
             return !event.isCancelled() || event.canBuild();
         }
         if (!config.obeyWorldguard) return true;
-        return worldGuardPlugin != null && worldGuardPlugin.canBuild(player, block);
+        if (worldGuardPlugin == null) return true;
+        return worldGuardPlugin.canBuild(player, block);
     }
 
     /**
@@ -869,7 +871,8 @@ public class CraftBookPlugin extends JavaPlugin {
             return !event.isCancelled();
         }
         if (!config.obeyWorldguard) return true;
-        return worldGuardPlugin != null && worldGuardPlugin.getGlobalRegionManager().allows(DefaultFlag.USE, loc, worldGuardPlugin.wrapPlayer(player));
+        if (worldGuardPlugin == null) return true;
+        return worldGuardPlugin.getGlobalRegionManager().allows(DefaultFlag.USE, loc, worldGuardPlugin.wrapPlayer(player));
     }
 
     /**

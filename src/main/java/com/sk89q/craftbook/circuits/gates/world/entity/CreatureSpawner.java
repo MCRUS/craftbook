@@ -34,6 +34,8 @@ import org.bukkit.entity.Ocelot;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Sheep;
+import org.bukkit.entity.Skeleton;
+import org.bukkit.entity.Skeleton.SkeletonType;
 import org.bukkit.entity.Slime;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.Tameable;
@@ -212,6 +214,11 @@ public class CreatureSpawner extends AbstractIC {
                     ((Wolf) ent).setCollarColor(DyeColor.valueOf(data[1]));
                 }
                 break;
+            case SKELETON:
+                if (data[0].equalsIgnoreCase("wither")) {
+                    ((Skeleton) ent).setSkeletonType(SkeletonType.WITHER);
+                }
+                break;
             case ENDERMAN:
                 if (data[0].equalsIgnoreCase("block")) {
                     try {
@@ -347,7 +354,7 @@ public class CreatureSpawner extends AbstractIC {
         @Override
         public String[] getLineHelp() {
 
-            String[] lines = new String[] {"entitytype", "data*amount"};
+            String[] lines = new String[] {"entitytype", "+odata*amount"};
             return lines;
         }
 

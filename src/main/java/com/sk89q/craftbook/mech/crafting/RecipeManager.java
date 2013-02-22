@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -49,7 +50,11 @@ public class RecipeManager extends LocalConfiguration {
         List<String> keys = config.getKeys("crafting-recipes");
         if (keys != null) {
             for (String key : keys) {
-                recipes.add(new Recipe(key, config));
+                try {
+                    recipes.add(new Recipe(key, config));
+                } catch (InvalidCraftingException e) {
+                    logger.warning(e.getMessage());
+                }
             }
         }
     }
@@ -80,10 +85,10 @@ public class RecipeManager extends LocalConfiguration {
             if(!result.hasAdvancedData())
                 return true;
 
-            return false;
+            return !advancedData.isEmpty();
         }
 
-        private Recipe(String id, YAMLProcessor config) {
+        private Recipe(String id, YAMLProcessor config) throws InvalidCraftingException {
 
             this.id = id; 
             this.config = config;
@@ -92,7 +97,7 @@ public class RecipeManager extends LocalConfiguration {
             load();
         }
 
-        private void load() {
+        private void load() throws InvalidCraftingException {
 
             type = RecipeType.getTypeFromName(config.getString("crafting-recipes." + id + ".type"));
             if (type != RecipeType.SHAPED2X2 && type != RecipeType.SHAPED3X3) {
@@ -101,7 +106,22 @@ public class RecipeManager extends LocalConfiguration {
                 items = getHashItems("crafting-recipes." + id + ".ingredients");
                 shape = config.getStringList("crafting-recipes." + id + ".shape", Arrays.asList(""));
             }
-            result = getItems("crafting-recipes." + id + ".results").iterator().next();
+            Iterator<CraftingItemStack> iterator = getItems("crafting-recipes." + id + ".results").iterator();
+            if(iterator.hasNext())
+                result = iterator.next();
+            else
+                throw new InvalidCraftingException("Result is invalid in recipe: "+ id);
+
+            if(iterator.hasNext()) {
+                ArrayList<CraftingItemStack> extraResults = new ArrayList<CraftingItemStack>();
+                while(iterator.hasNext())
+                    extraResults.add(iterator.next());
+                addAdvancedData("extra-results", extraResults);
+            }
+
+            String permNode = config.getString("crafting-recipes." + id + ".permission-node", null);
+            if (permNode != null)
+                addAdvancedData("permission-node", permNode);
         }
 
         private HashMap<CraftingItemStack, Character> getHashItems(String path) {
@@ -224,6 +244,22 @@ public class RecipeManager extends LocalConfiguration {
                 for (RecipeType t : RecipeType.values()) { if (t.getName().equalsIgnoreCase(name)) return t; }
                 return SHAPELESS; // Default to shapeless
             }
+        }
+
+        //Advanced data
+        private HashMap<String, Object> advancedData = new HashMap<String, Object>();
+
+        public boolean hasAdvancedData(String key) {
+            return advancedData.containsKey(key);
+        }
+
+        public Object getAdvancedData(String key) {
+            return advancedData.get(key);
+        }
+
+        public void addAdvancedData(String key, Object data) {
+            Bukkit.getLogger().info("Adding advanced data of type: " + key + " to an ItemStack!");
+            advancedData.put(key, data);
         }
     }
 }
