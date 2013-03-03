@@ -3,6 +3,7 @@ package com.sk89q.craftbook.mech;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FallingBlock;
@@ -231,23 +232,20 @@ public class BetterPistons extends AbstractMechanic {
 
                         @Override
                         public void run () {
-                            for(int x = fp == 0 ? 2 : 1; x <= fblock+(fp == 0 ? 2 : 1); x++) {
-                                final int i = x;
-                                if(x >= fblock+(fp == 0 ? 2 : 1) || trigger.equals(trigger.getRelative(piston.getFacing(), i+1)) || trigger.getRelative(piston.getFacing(), i+1).getTypeId() == BlockID.PISTON_MOVING_PIECE || trigger.getRelative(piston.getFacing(), i+1).getTypeId() == 0 && !air || trigger.getRelative(piston.getFacing(), i+1).getState() != null && trigger.getRelative(piston.getFacing(), i+1).getState() instanceof InventoryHolder || !canPistonPushBlock(trigger.getRelative(piston.getFacing(), i+1))) {
+                            for(int x = 1; x <= fblock+(fp == 0 ? 2 : 1); x++) {
+                                final int i = x; 
+                                if(x >= fblock+(fp == 0 ? 2 : 1) || trigger.getRelative(piston.getFacing(), i+1).getTypeId() == 0 && !air || !canPistonPushBlock(trigger.getRelative(piston.getFacing(), i+1))) {
                                     trigger.getRelative(piston.getFacing(), i).setTypeId(0);
-                                    break;
-                                }
+                                    Bukkit.getLogger().severe(x + " Is X!");
+                                    break; 
+                                } 
                                 for(Entity ent : trigger.getRelative(piston.getFacing(), i).getChunk().getEntities()) {
 
                                     if(ent.getLocation().getBlock().getLocation().distanceSquared(trigger.getRelative(piston.getFacing(), i).getLocation()) < 0.5) {
                                         ent.teleport(ent.getLocation().subtract(piston.getFacing().getModX() * movemod, piston.getFacing().getModY() * movemod, piston.getFacing().getModZ() * movemod));
                                     }
                                 }
-                                trigger.getRelative(piston.getFacing(), i).setTypeIdAndData(trigger.getRelative(piston.getFacing(), i+1).getTypeId(), trigger.getRelative(piston.getFacing(), i+1).getData(), true);
-                                if(trigger.getRelative(piston.getFacing(), i).getTypeId() == BlockID.STONE_BUTTON || trigger.getRelative(piston.getFacing(), i).getTypeId() == BlockID.WOODEN_BUTTON) {
-                                    if((trigger.getRelative(piston.getFacing(), i).getData() & 0x8) == 0x8)
-                                        trigger.getRelative(piston.getFacing(), i).setData((byte) (trigger.getRelative(piston.getFacing(), i).getData() ^ 0x8));
-                                }
+                                copyData(trigger.getRelative(piston.getFacing(), i+1), trigger.getRelative(piston.getFacing(), i));
                             }
                         }
                     }, 2L*(p+1));
@@ -279,7 +277,7 @@ public class BetterPistons extends AbstractMechanic {
                         public void run () {
                             for(int x = fblock+2; x >= 2; x--) {
                                 final int i = x;
-                                if(trigger.equals(trigger.getRelative(piston.getFacing(), i)) || trigger.getRelative(piston.getFacing(), i).getState() != null && trigger.getRelative(piston.getFacing(), i).getState() instanceof InventoryHolder || trigger.getRelative(piston.getFacing(), i).getTypeId() == BlockID.PISTON_MOVING_PIECE || trigger.getRelative(piston.getFacing(), i).getTypeId() == BlockID.PISTON_EXTENSION || !canPistonPushBlock(trigger.getRelative(piston.getFacing(), i)))
+                                if(trigger.equals(trigger.getRelative(piston.getFacing(), i)) || trigger.getRelative(piston.getFacing(), i).getTypeId() == BlockID.PISTON_MOVING_PIECE || trigger.getRelative(piston.getFacing(), i).getTypeId() == BlockID.PISTON_EXTENSION || !canPistonPushBlock(trigger.getRelative(piston.getFacing(), i)))
                                     continue;
                                 if(trigger.getRelative(piston.getFacing(), i+1).getTypeId() == 0) {
                                     for(Entity ent : trigger.getRelative(piston.getFacing(), i+1).getChunk().getEntities()) {
@@ -288,12 +286,8 @@ public class BetterPistons extends AbstractMechanic {
                                             ent.teleport(ent.getLocation().add(piston.getFacing().getModX() * movemod, piston.getFacing().getModY() * movemod, piston.getFacing().getModZ() * movemod));
                                         }
                                     }
-                                    trigger.getRelative(piston.getFacing(), i+1).setTypeIdAndData(trigger.getRelative(piston.getFacing(), i).getTypeId(), trigger.getRelative(piston.getFacing(), i).getData(), true);
+                                    copyData(trigger.getRelative(piston.getFacing(), i), trigger.getRelative(piston.getFacing(), i+1));
                                     trigger.getRelative(piston.getFacing(), i).setTypeId(0);
-                                    if(trigger.getRelative(piston.getFacing(), i+1).getTypeId() == BlockID.STONE_BUTTON || trigger.getRelative(piston.getFacing(), i+1).getTypeId() == BlockID.WOODEN_BUTTON) {
-                                        if((trigger.getRelative(piston.getFacing(), i+1).getData() & 0x8) == 0x8)
-                                            trigger.getRelative(piston.getFacing(), i+1).setData((byte) (trigger.getRelative(piston.getFacing(), i+1).getData() ^ 0x8));
-                                    }
                                 }
                             }
                         }
@@ -301,6 +295,37 @@ public class BetterPistons extends AbstractMechanic {
                     }, 2L*(p+1));
                 }
             }
+        }
+    }
+
+    /**
+     * Used for moving a block to elsewhere.
+     * 
+     * @param from The from block.
+     * @param to The block the data is being moved to.
+     */
+    public void copyData(Block from, Block to) {
+
+        to.setTypeIdAndData(from.getTypeId(), from.getData(), true);
+        if(to.getTypeId() == BlockID.STONE_BUTTON || to.getTypeId() == BlockID.WOODEN_BUTTON) {
+            if((to.getData() & 0x8) == 0x8)
+                to.setData((byte) (to.getData() ^ 0x8));
+        }
+
+        if(from.getState() instanceof Sign) {
+            Sign state = (Sign) to.getState();
+            for(int i = 0; i < 4; i++)
+                state.setLine(i, ((Sign) from.getState()).getLine(i));
+            state.update();
+        } else if (from.getState() instanceof InventoryHolder) {
+            BlockState state = to.getState();
+            BlockState fromState = from.getState();
+            for(int slot = 0; slot < ((InventoryHolder) state).getInventory().getSize(); slot++) {
+                ((InventoryHolder) state).getInventory().setItem(slot, ((InventoryHolder) fromState).getInventory().getItem(slot));
+                ((InventoryHolder) fromState).getInventory().setItem(slot, null);
+            }
+            state.update();
+            fromState.update();
         }
     }
 
@@ -314,7 +339,7 @@ public class BetterPistons extends AbstractMechanic {
             default: 
                 return true;
         }
-    }
+    } 
 
     private final Block trigger;
     private final Block sign;

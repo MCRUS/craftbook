@@ -145,6 +145,7 @@ public class CraftBookPlugin extends JavaPlugin {
         versionConverter.put("3.5.4", "1795");
         versionConverter.put("3.5.5b1","1816"); 
         versionConverter.put("3.5.5", "1828");
+        versionConverter.put("3.5.6", "1839");
     }
 
     public void registerManager(MechanicManager manager) {
@@ -867,6 +868,7 @@ public class CraftBookPlugin extends JavaPlugin {
         if (config.advancedBlockChecks) {
 
             PlayerInteractEvent event = new PlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, player.getItemInHand(), loc.getBlock(), BlockFace.UP);
+            MechanicListenerAdapter.ignoredEvents.add(event);
             getServer().getPluginManager().callEvent(event);
             return !event.isCancelled();
         }
