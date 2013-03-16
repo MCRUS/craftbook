@@ -68,9 +68,24 @@ public class ICMechanicFactory extends AbstractMechanicFactory<ICMechanic> {
         // TODO: remove after some time to stop converting existing MCA ICs
         // convert existing MCA ICs to the new [MCXXXX]A syntax
         if (prefix.equalsIgnoreCase("MCA")) {
-            sign.setLine(1, sign.getLine(1).replace("A", "") + "A");
+            sign.setLine(1, (sign.getLine(1).toLowerCase().replace("mca", "mc") + "a").toUpperCase());
             sign.update(false);
         }
+        if (sign.getLine(1).toLowerCase().startsWith("[mc0")) {
+            if(sign.getLine(1).equalsIgnoreCase("[mc0420]"))
+                sign.setLine(1, "[MC1421]S");
+            else if(sign.getLine(1).equalsIgnoreCase("[mc0421]"))
+                sign.setLine(1, "[MC1422]S");
+            else
+                sign.setLine(1, (sign.getLine(1).toLowerCase().replace("mc0", "mc1") + "s").toUpperCase());
+            sign.update(false);
+        }
+
+        if (sign.getLine(1).toLowerCase().startsWith("[mcz")) {
+            sign.setLine(1, (sign.getLine(1).toLowerCase().replace("mcz", "mcx") + "s").toUpperCase());
+            sign.update(false);
+        }
+
 
         if (!manager.hasCustomPrefix(prefix)) return null;
 
@@ -112,7 +127,7 @@ public class ICMechanicFactory extends AbstractMechanicFactory<ICMechanic> {
         }
 
         // okay, everything checked out. we can finally make it.
-        if (ic instanceof SelfTriggeredIC) return new SelfTriggeredICMechanic(id, (SelfTriggeredIC) ic, family, pt);
+        if (ic instanceof SelfTriggeredIC && sign.getLine(1).endsWith("S")) return new SelfTriggeredICMechanic(id, (SelfTriggeredIC) ic, family, pt);
         else return new ICMechanic(id, ic, family, pt);
     }
 

@@ -20,15 +20,15 @@ import org.bukkit.Server;
 import org.bukkit.block.Block;
 
 import com.sk89q.craftbook.ChangedSign;
-import com.sk89q.craftbook.circuits.ic.AbstractIC;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
+import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.ic.ICVerificationException;
 import com.sk89q.craftbook.util.ICUtil;
 
-public class WaterSensor extends AbstractIC {
+public class WaterSensor extends AbstractSelfTriggeredIC {
 
     Block center;
 
@@ -61,6 +61,18 @@ public class WaterSensor extends AbstractIC {
         if (chip.getInput(0)) {
             chip.setOutput(0, hasWater());
         }
+    }
+
+    @Override
+    public void think(ChipState chip) {
+
+        chip.setOutput(0, hasWater());
+    }
+
+    @Override
+    public boolean isActive() {
+
+        return true;
     }
 
     /**

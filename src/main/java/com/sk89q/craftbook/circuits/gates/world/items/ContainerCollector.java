@@ -16,8 +16,8 @@ import org.bukkit.inventory.ItemStack;
 
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.circuits.ic.AbstractIC;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
+import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
@@ -29,7 +29,7 @@ import com.sk89q.worldedit.blocks.BlockID;
 /**
  * @author Me4502
  */
-public class ContainerCollector extends AbstractIC {
+public class ContainerCollector extends AbstractSelfTriggeredIC {
 
     public ContainerCollector(Server server, ChangedSign sign, ICFactory factory) {
 
@@ -54,6 +54,12 @@ public class ContainerCollector extends AbstractIC {
         if (chip.getInput(0)) {
             chip.setOutput(0, collect());
         }
+    }
+
+    @Override
+    public void think(ChipState chip) {
+
+        chip.setOutput(0, collect());
     }
 
     ItemStack doWant, doNotWant;
@@ -161,7 +167,7 @@ public class ContainerCollector extends AbstractIC {
 
     private static boolean fitsInSlot(ItemStack stack, ItemStack slot) {
 
-        return slot == null || ItemUtil.areItemsIdentical(stack, slot);
+        return slot == null || ItemUtil.areItemsIdentical(stack, slot) && stack.getAmount() + slot.getAmount() <= 64;
     }
 
     public static class Factory extends AbstractICFactory {
@@ -189,5 +195,10 @@ public class ContainerCollector extends AbstractIC {
             String[] lines = new String[] {"included id:data", "excluded id:data"};
             return lines;
         }
+    }
+
+    @Override
+    public boolean isActive () {
+        return true;
     }
 }

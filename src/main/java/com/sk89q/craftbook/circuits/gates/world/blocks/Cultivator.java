@@ -8,8 +8,8 @@ import org.bukkit.inventory.ItemStack;
 
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.circuits.ic.AbstractIC;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
+import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
@@ -19,7 +19,7 @@ import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BlockID;
 
-public class Cultivator extends AbstractIC {
+public class Cultivator extends AbstractSelfTriggeredIC {
 
     public Cultivator(Server server, ChangedSign sign, ICFactory factory) {
 
@@ -51,6 +51,12 @@ public class Cultivator extends AbstractIC {
     public void trigger(ChipState chip) {
 
         if (chip.getInput(0)) chip.setOutput(0, cultivate());
+    }
+
+    @Override
+    public void think(ChipState state) {
+
+        state.setOutput(0, cultivate());
     }
 
     public boolean cultivate() {

@@ -15,8 +15,8 @@ import org.bukkit.material.PistonBaseMaterial;
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.bukkit.CircuitCore;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.circuits.ic.AbstractIC;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
+import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
@@ -25,7 +25,7 @@ import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.worldedit.blocks.BlockID;
 
-public class BlockBreaker extends AbstractIC {
+public class BlockBreaker extends AbstractSelfTriggeredIC {
 
     boolean above;
 
@@ -53,6 +53,12 @@ public class BlockBreaker extends AbstractIC {
         if (chip.getInput(0)) {
             chip.setOutput(0, breakBlock());
         }
+    }
+
+    @Override
+    public void think(ChipState state) {
+
+        state.setOutput(0, breakBlock());
     }
 
     Block broken, chest;

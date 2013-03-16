@@ -10,8 +10,8 @@ import org.bukkit.inventory.ItemStack;
 
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.circuits.ic.AbstractIC;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
+import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
@@ -32,14 +32,14 @@ import com.sk89q.worldedit.blocks.ItemID;
  *
  * @authors Drathus, Me4502
  */
-public class Planter extends AbstractIC {
+public class Planter extends AbstractSelfTriggeredIC {
 
     public Planter(Server server, ChangedSign block, ICFactory factory) {
 
         super(server, block, factory);
     }
 
-    ItemStack item;
+    ItemStack item; 
     Block target;
     Block onBlock;
     Vector offset;
@@ -92,6 +92,12 @@ public class Planter extends AbstractIC {
     public void trigger(ChipState chip) {
 
         if (chip.getInput(0)) chip.setOutput(0, plant());
+    }
+
+    @Override
+    public void think(ChipState state) {
+
+        plant();
     }
 
     public boolean plant() {
@@ -274,5 +280,10 @@ public class Planter extends AbstractIC {
             String[] lines = new String[] {"Item to plant id{:data}", "+oradius=x:y:z offset"};
             return lines;
         }
+    }
+
+    @Override
+    public boolean isActive () {
+        return true;
     }
 }
