@@ -2,7 +2,6 @@ package com.sk89q.craftbook.circuits.gates.world.blocks;
 
 import java.util.HashMap;
 
-import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -16,7 +15,6 @@ import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.util.ICUtil;
-import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BlockID;
@@ -29,33 +27,18 @@ public class Irrigator extends AbstractSelfTriggeredIC {
         super(server, sign, factory);
     }
 
-    Location centre;
+    Block centre;
     Vector radius;
 
     @Override
     public void load() {
 
-        centre = BukkitUtil.toSign(getSign()).getLocation();
-
-        radius = ICUtil.parseRadius(getSign());
-
-        try {
-            String[] splitEquals = RegexUtil.EQUALS_PATTERN.split(getSign().getLine(2), 2);
-            if (getSign().getLine(2).contains("=")) {
-                String[] splitCoords = RegexUtil.COLON_PATTERN.split(splitEquals[1]);
-                int x = Integer.parseInt(splitCoords[0]);
-                int y = Integer.parseInt(splitCoords[1]);
-                int z = Integer.parseInt(splitCoords[2]);
-                if (x > 16) x = 16;
-                if (x < -16) x = -16;
-                if (y > 16) y = 16;
-                if (y < -16) y = -16;
-                if (z > 16) z = 16;
-                if (z < -16) z = -16;
-                centre.add(x, y, z);
-            }
-        } catch (Exception ignored) {
+        if (getLine(2).contains("=")) {
+            centre = ICUtil.parseBlockLocation(getSign(), 2);
+        } else {
+            centre = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock());
         }
+        radius = ICUtil.parseRadius(getSign());
     }
 
     @Override
@@ -87,10 +70,10 @@ public class Irrigator extends AbstractSelfTriggeredIC {
         for (int x = -radius.getBlockX() + 1; x < radius.getBlockX(); x++) {
             for (int y = -radius.getBlockY() + 1; y < radius.getBlockY(); y++) {
                 for (int z = -radius.getBlockZ() + 1; z < radius.getBlockZ(); z++) {
-                    int rx = centre.getBlockX() - x;
-                    int ry = centre.getBlockY() - y;
-                    int rz = centre.getBlockZ() - z;
-                    Block b = centre.getWorld().getBlockAt(rx, ry, rz);
+                    int rx = centre.getX() - x;
+                    int ry = centre.getY() - y;
+                    int rz = centre.getZ() - z;
+                    Block b = BukkitUtil.toSign(getSign()).getWorld().getBlockAt(rx, ry, rz);
                     if (b.getTypeId() == BlockID.SOIL && b.getData() < 0x1) {
                         if (consumeWater()) {
                             b.setData((byte) 0x8, false);

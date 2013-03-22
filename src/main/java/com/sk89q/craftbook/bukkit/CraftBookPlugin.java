@@ -148,6 +148,7 @@ public class CraftBookPlugin extends JavaPlugin {
         versionConverter.put("3.5.6", "1839");
         versionConverter.put("3.5.7", "1853");
         versionConverter.put("3.6b1", "1859");
+        versionConverter.put("3.6b2", "1873");
     }
 
     public void registerManager(MechanicManager manager) {
@@ -862,7 +863,8 @@ public class CraftBookPlugin extends JavaPlugin {
 
             BlockPlaceEvent event = new BlockPlaceEvent(block, block.getState(), block.getRelative(0, -1, 0), player.getItemInHand(), player, true);
             getServer().getPluginManager().callEvent(event);
-            return !event.isCancelled() || event.canBuild();
+            if(event.isCancelled() || !event.canBuild())
+                return false;
         }
         if (!config.obeyWorldguard) return true;
         if (worldGuardPlugin == null) return true;
@@ -887,7 +889,8 @@ public class CraftBookPlugin extends JavaPlugin {
             PlayerInteractEvent event = new PlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, player.getItemInHand(), loc.getBlock(), BlockFace.UP);
             MechanicListenerAdapter.ignoredEvents.add(event);
             getServer().getPluginManager().callEvent(event);
-            return !event.isCancelled();
+            if(event.isCancelled())
+                return false;
         }
         if (!config.obeyWorldguard) return true;
         if (worldGuardPlugin == null) return true;

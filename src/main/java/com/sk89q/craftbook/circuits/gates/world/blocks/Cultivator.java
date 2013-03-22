@@ -39,12 +39,18 @@ public class Cultivator extends AbstractSelfTriggeredIC {
     }
 
     Vector radius;
+    Block target, onBlock;
 
     @Override
     public void load() {
 
-        radius = ICUtil.parseRadius(getSign());
-
+        onBlock = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock());
+        radius = ICUtil.parseRadius(getSign(), 2);
+        if (getLine(2).contains("=")) {
+            target = ICUtil.parseBlockLocation(getSign(), 2);
+        } else {
+            target = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock());
+        }
     }
 
     @Override
@@ -64,8 +70,13 @@ public class Cultivator extends AbstractSelfTriggeredIC {
         for (int x = -radius.getBlockX() + 1; x < radius.getBlockX(); x++) {
             for (int y = -radius.getBlockY() + 1; y < radius.getBlockY(); y++) {
                 for (int z = -radius.getBlockZ() + 1; z < radius.getBlockZ(); z++) {
-                    Block b = BukkitUtil.toSign(getSign()).getLocation().add(x, y, z).getBlock();
+                    int rx = target.getX() - x;
+                    int ry = target.getY() - y;
+                    int rz = target.getZ() - z;
+                    Block b = BukkitUtil.toSign(getSign()).getWorld().getBlockAt(rx, ry, rz);
+
                     if (b.getTypeId() == BlockID.DIRT || b.getTypeId() == BlockID.GRASS) {
+
                         if (b.getRelative(BlockFace.UP).getTypeId() == 0 && damageHoe()) {
                             b.setTypeId(BlockID.SOIL);
                             return true;
@@ -80,16 +91,17 @@ public class Cultivator extends AbstractSelfTriggeredIC {
 
     public boolean damageHoe() {
 
-        Block chest = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock()).getRelative(0, 1, 0);
-        if (chest.getTypeId() == BlockID.CHEST) {
-            Chest c = (Chest) chest.getState();
-            for (int i = 290; i < 294; i++) {
+        if (onBlock.getRelative(0, 1, 0).getTypeId() == BlockID.CHEST) {
+            Chest c = (Chest) onBlock.getRelative(0, 1, 0).getState();
+            for (int i = 290; i <= 294; i++) {
                 for (int slot = 0; slot < c.getInventory().getSize(); slot++) {
                     if (c.getInventory().getItem(slot) == null || c.getInventory().getItem(slot).getTypeId() != i)
                         continue;
                     if (ItemUtil.isStackValid(c.getInventory().getItem(slot))) {
                         ItemStack item = c.getInventory().getItem(slot);
                         item.setDurability((short) (item.getDurability() + 1));
+                        if(item.getDurability() < 0)
+                            item = null;
                         c.getInventory().setItem(slot, item);
                         return true;
                     }
@@ -101,8 +113,6 @@ public class Cultivator extends AbstractSelfTriggeredIC {
     }
 
     public static class Factory extends AbstractICFactory {
-
-        int maxradius;
 
         public Factory(Server server) {
 
@@ -130,7 +140,7 @@ public class Cultivator extends AbstractSelfTriggeredIC {
         @Override
         public String[] getLineHelp() {
 
-            String[] lines = new String[] {"+oradius", null};
+            String[] lines = new String[] {"+oradius=x:y:z offset", null};
             return lines;
         }
     }

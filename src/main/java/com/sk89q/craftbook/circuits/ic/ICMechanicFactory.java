@@ -127,7 +127,7 @@ public class ICMechanicFactory extends AbstractMechanicFactory<ICMechanic> {
         }
 
         // okay, everything checked out. we can finally make it.
-        if (ic instanceof SelfTriggeredIC && sign.getLine(1).endsWith("S")) return new SelfTriggeredICMechanic(id, (SelfTriggeredIC) ic, family, pt);
+        if (ic instanceof SelfTriggeredIC && (sign.getLine(1).endsWith("S") || ((SelfTriggeredIC) ic).isAlwaysST())) return new SelfTriggeredICMechanic(id, (SelfTriggeredIC) ic, family, pt);
         else return new ICMechanic(id, ic, family, pt);
     }
 
@@ -259,11 +259,19 @@ public class ICMechanicFactory extends AbstractMechanicFactory<ICMechanic> {
         }
 
         if (factory instanceof RestrictedIC) {
-            if (player.hasPermission("craftbook.ic.restricted." + id.toLowerCase())) return;
-        } else if (player.hasPermission("craftbook.ic.safe." + id.toLowerCase())) {
+            if (hasRestrictedPermissions(player, factory, id)) return;
+        } else if (hasSafePermissions(player, factory, id)) {
             return;
         }
 
         throw new ICVerificationException("You don't have permission to use " + id.toLowerCase() + ".");
+    }
+
+    public static boolean hasRestrictedPermissions(LocalPlayer player, ICFactory factory, String id) {
+        return player.hasPermission("craftbook.ic.restricted." + id.toLowerCase());
+    }
+
+    public static boolean hasSafePermissions(LocalPlayer player, ICFactory factory, String id) {
+        return player.hasPermission("craftbook.ic.safe." + id.toLowerCase());
     }
 }

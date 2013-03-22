@@ -34,7 +34,9 @@ import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.material.Diode;
+import org.bukkit.material.Button;
+import org.bukkit.material.Directional;
+import org.bukkit.material.Lever;
 
 import com.sk89q.craftbook.MechanicManager;
 import com.sk89q.craftbook.SourcedBlockRedstoneEvent;
@@ -136,17 +138,14 @@ public class MechanicListenerAdapter {
                 ignoredEvents.remove(event);
                 return;
             }
-            if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-                for (MechanicManager manager : managers) {
-                    manager.dispatchBlockRightClick(event);
-                }
-            }
 
-            if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
-                for (MechanicManager manager : managers) {
+            if (event.getAction() == Action.RIGHT_CLICK_BLOCK)
+                for (MechanicManager manager : managers)
+                    manager.dispatchBlockRightClick(event);
+
+            if (event.getAction() == Action.LEFT_CLICK_BLOCK)
+                for (MechanicManager manager : managers)
                     manager.dispatchBlockLeftClick(event);
-                }
-            }
         }
     }
 
@@ -188,9 +187,8 @@ public class MechanicListenerAdapter {
                 ignoredEvents.remove(event);
                 return;
             }
-            for (MechanicManager manager : managers) {
+            for (MechanicManager manager : managers)
                 manager.dispatchSignChange(event);
-            }
         }
 
         @EventHandler(priority = EventPriority.HIGHEST)
@@ -200,9 +198,8 @@ public class MechanicListenerAdapter {
                 ignoredEvents.remove(event);
                 return;
             }
-            for (MechanicManager manager : managers) {
+            for (MechanicManager manager : managers)
                 manager.dispatchBlockBreak(event);
-            }
         }
 
         @EventHandler(priority = EventPriority.HIGHEST)
@@ -241,7 +238,7 @@ public class MechanicListenerAdapter {
 
             if (type == BlockID.REDSTONE_WIRE) {
 
-                if (CraftBookPlugin.inst().getConfiguration().indirectRedstone){
+                if (CraftBookPlugin.inst().getConfiguration().indirectRedstone) {
 
                     // power all blocks around the redstone wire on the same y level
                     // north/south
@@ -303,14 +300,24 @@ public class MechanicListenerAdapter {
                     handleDirectWireInput(new WorldVector(w, x, y + 1, z), block, oldLevel, newLevel);
                 }
                 return;
-            } else if (type == BlockID.REDSTONE_REPEATER_OFF || type == BlockID.REDSTONE_REPEATER_ON) {
+            } else if (type == BlockID.REDSTONE_REPEATER_OFF || type == BlockID.REDSTONE_REPEATER_ON || type == BlockID.COMPARATOR_OFF || type == BlockID.COMPARATOR_ON) {
 
-                Diode diode = (Diode) block.getState().getData();
+                Directional diode = (Directional) block.getState().getData();
                 BlockFace f = diode.getFacing();
                 handleDirectWireInput(new WorldVector(w, x + f.getModX(), y, z + f.getModZ()), block, oldLevel, newLevel);
                 if(block.getRelative(f).getTypeId() != 0)
                     handleDirectWireInput(new WorldVector(w, x + f.getModX(), y - 1, z + f.getModZ()), block, oldLevel, newLevel);
                 return;
+            } else if (type == BlockID.STONE_BUTTON || type == BlockID.WOODEN_BUTTON) {
+
+                Button button = (Button) block.getState().getData();
+                BlockFace f = button.getAttachedFace();
+                handleDirectWireInput(new WorldVector(w, x + f.getModX()*2, y, z + f.getModZ()*2), block, oldLevel, newLevel);
+            } else if (type == BlockID.LEVER) {
+
+                Lever lever = (Lever) block.getState().getData();
+                BlockFace f = lever.getAttachedFace();
+                handleDirectWireInput(new WorldVector(w, x + f.getModX()*2, y + f.getModY()*2, z + f.getModZ()*2), block, oldLevel, newLevel);
             }
             // For redstone wires and repeaters, the code already exited this method
             // Non-wire blocks proceed
@@ -339,9 +346,8 @@ public class MechanicListenerAdapter {
         protected void handleDirectWireInput(WorldVector pt, Block sourceBlock, int oldLevel, int newLevel) {
 
             Block block = ((BukkitWorld) pt.getWorld()).getWorld().getBlockAt(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
-            for (MechanicManager manager : managers) {
+            for (MechanicManager manager : managers)
                 manager.dispatchBlockRedstoneChange(new SourcedBlockRedstoneEvent(sourceBlock, block, oldLevel, newLevel));
-            }
         }
     }
 
@@ -388,7 +394,8 @@ public class MechanicListenerAdapter {
                 @Override
                 public void run() {
 
-                    for (MechanicManager manager : managers) { manager.enumerate(event.getChunk()); }
+                    for (MechanicManager manager : managers) 
+                        manager.enumerate(event.getChunk());
                 }
             }, 2);
         }
@@ -406,10 +413,8 @@ public class MechanicListenerAdapter {
             int chunkX = event.getChunk().getX();
             int chunkZ = event.getChunk().getZ();
 
-            for (MechanicManager manager : managers) {
-                manager.unload(new BlockWorldVector2D(BukkitUtil.getLocalWorld(event.getWorld()), chunkX, chunkZ),
-                        event);
-            }
+            for (MechanicManager manager : managers)
+                manager.unload(new BlockWorldVector2D(BukkitUtil.getLocalWorld(event.getWorld()), chunkX, chunkZ), event);
         }
     }
 }
