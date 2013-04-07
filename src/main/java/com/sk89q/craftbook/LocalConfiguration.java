@@ -33,6 +33,7 @@ public abstract class LocalConfiguration {
     public boolean pipesDiagonal;
     public int pipeInsulator;
     public boolean pipeStackPerPull;
+    public boolean pipeRequireSign;
 
     // Mechanics
     // Mechanics - AI
@@ -57,8 +58,11 @@ public abstract class LocalConfiguration {
     public int pistonMaxDistance;
     public boolean pistonsEnabled;
     public boolean pistonsCrusher;
+    public boolean pistonsCrusherInstaKill;
+    public List<Integer> pistonsCrusherBlacklist;
     public boolean pistonsSuperSticky;
     public boolean pistonsBounce;
+    public List<Integer> pistonsBounceBlacklist;
     public boolean pistonsSuperPush;
     // Mechanics - Bookcase
     public boolean bookcaseEnabled;
@@ -89,6 +93,7 @@ public abstract class LocalConfiguration {
     public boolean cookingPotFuel;
     public boolean cookingPotOres;
     public boolean cookingPotSignOpen;
+    public boolean cookingPotDestroyBuckets;
     // Mechanics - Custom Crafting
     public boolean customCraftingEnabled;
     // Mechanics - Custom Dispensing
@@ -133,6 +138,9 @@ public abstract class LocalConfiguration {
     public boolean paintingsEnabled;
     // Mechanics - Payment
     public boolean paymentEnabled;
+    // Mechanics - Lightstone
+    public boolean signCopyEnabled;
+    public int signCopyItem;
     // Mechanics - Snow
     public boolean snowPiling;
     public boolean snowTrample;

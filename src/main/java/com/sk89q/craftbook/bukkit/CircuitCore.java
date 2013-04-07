@@ -15,6 +15,7 @@ import com.sk89q.craftbook.Mechanic;
 import com.sk89q.craftbook.MechanicFactory;
 import com.sk89q.craftbook.MechanicManager;
 import com.sk89q.craftbook.bukkit.commands.CircuitCommands;
+import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.circuits.GlowStone;
 import com.sk89q.craftbook.circuits.JackOLantern;
 import com.sk89q.craftbook.circuits.Netherrack;
@@ -65,6 +66,7 @@ import com.sk89q.craftbook.circuits.gates.world.blocks.BlockLauncher;
 import com.sk89q.craftbook.circuits.gates.world.blocks.BonemealTerraformer;
 import com.sk89q.craftbook.circuits.gates.world.blocks.CombineHarvester;
 import com.sk89q.craftbook.circuits.gates.world.blocks.Cultivator;
+import com.sk89q.craftbook.circuits.gates.world.blocks.Driller;
 import com.sk89q.craftbook.circuits.gates.world.blocks.FlexibleSetBlock;
 import com.sk89q.craftbook.circuits.gates.world.blocks.Irrigator;
 import com.sk89q.craftbook.circuits.gates.world.blocks.LiquidFlood;
@@ -207,7 +209,7 @@ public class CircuitCore implements LocalComponent {
         icConfiguration = new YAMLICConfiguration(new YAMLProcessor(new File(plugin.getDataFolder(), "ic-config.yml"), true, YAMLFormat.EXTENDED), plugin.getLogger());
 
         manager = new MechanicManager();
-        plugin.registerManager(manager, true, true, true, false);
+        plugin.registerManager(manager);
 
         midiFolder = new File(plugin.getDataFolder(), "midi/");
         new File(getMidiFolder(), "playlists").mkdirs();
@@ -222,7 +224,7 @@ public class CircuitCore implements LocalComponent {
         try {
             icConfiguration.load();
         } catch (Throwable e) {
-            e.printStackTrace();
+            BukkitUtil.printStacktrace(e);
         }
     }
 
@@ -350,6 +352,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1245", "cont stacker", new ContainerStacker.Factory(server), familySISO, familyAISO);
         registerIC("MC1246", "xp spawner", new XPSpawner.Factory(server), familySISO, familyAISO); //Restricted
         //TODO Dyed Armour Spawner (MC1247) (Sign Title: DYE ARMOUR)
+        registerIC("MC1248", "driller", new Driller.Factory(server), familySISO, familyAISO); //Restricted
         registerIC("MC1250", "shoot fire", new FireShooter.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1251", "shoot fires", new FireBarrage.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1252", "flame thower", new FlameThrower.Factory(server), familySISO, familyAISO); // Restricted

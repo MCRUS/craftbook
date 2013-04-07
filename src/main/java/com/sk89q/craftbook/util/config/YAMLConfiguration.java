@@ -58,6 +58,7 @@ public class YAMLConfiguration extends LocalConfiguration {
         pipesDiagonal = config.getBoolean("circuits.pipes.allow-diagonal", false);
         pipeInsulator = config.getInt("circuits.pipes.insulator-block", BlockID.CLOTH);
         pipeStackPerPull = config.getBoolean("circuits.pipes.stack-per-move", true);
+        pipeRequireSign = config.getBoolean("circuits.pipes.require-sign", false);
 
         /* Mechanism Configuration */
 
@@ -87,8 +88,11 @@ public class YAMLConfiguration extends LocalConfiguration {
         // Better Pistons Configuration Listener
         pistonsEnabled = config.getBoolean("mechanics.better-pistons.enable", true);
         pistonsCrusher = config.getBoolean("mechanics.better-pistons.crushers", true);
+        pistonsCrusherInstaKill = config.getBoolean("mechanics.better-pistons.crushers-kill-mobs", false);
+        pistonsCrusherBlacklist = config.getIntList("mechanics.better-pistons.crusher-blacklist", new ArrayList<Integer>());
         pistonsSuperSticky = config.getBoolean("mechanics.better-pistons.super-sticky", true);
         pistonsBounce = config.getBoolean("mechanics.better-pistons.bounce", true);
+        pistonsBounceBlacklist = config.getIntList("mechanics.better-pistons.bounce-blacklist", new ArrayList<Integer>());
         pistonsSuperPush = config.getBoolean("mechanics.better-pistons.super-push", true);
         pistonMaxDistance = config.getInt("mechanics.better-pistons.max-distance", 12);
 
@@ -113,7 +117,7 @@ public class YAMLConfiguration extends LocalConfiguration {
         chairSneak = config.getBoolean("mechanics.chair.require-sneak", true);
         chairHealth = config.getBoolean("mechanics.chair.regen-health", true);
         chairBlocks = config.getIntList("mechanics.chair.blocks", Arrays.asList(53, 67, 108, 109, 114, 128, 134, 135,
-                136));
+                136, 156));
 
         // Chunk Anchor Configuration Listener
         chunkAnchorEnabled = config.getBoolean("mechanics.chunk-anchor.enable", true);
@@ -128,6 +132,7 @@ public class YAMLConfiguration extends LocalConfiguration {
         cookingPotFuel = config.getBoolean("mechanics.cooking-pot.require-fuel", true);
         cookingPotOres = config.getBoolean("mechanics.cooking-pot.cook-ores", false);
         cookingPotSignOpen = config.getBoolean("mechanics.cooking-pot.sign-click-open", true);
+        cookingPotDestroyBuckets = config.getBoolean("mechanics.cooking-pot.take-buckets", false);
 
         // Custom Crafting Configuration Listener
         customCraftingEnabled = config.getBoolean("mechanics.custom-crafting.enable", true);
@@ -185,6 +190,10 @@ public class YAMLConfiguration extends LocalConfiguration {
 
         // Payment Configuration Listener
         paymentEnabled = config.getBoolean("mechanics.payment.enable", true);
+
+        // SignCopy Configuration Listener
+        signCopyEnabled = config.getBoolean("mechanics.sign-copy.enable", true);
+        signCopyItem = config.getInt("mechanics.sign-copy.item", ItemID.INK_SACK);
 
         // Snow Configuration Listener
         snowPiling = config.getBoolean("mechanics.snow.piling", false);

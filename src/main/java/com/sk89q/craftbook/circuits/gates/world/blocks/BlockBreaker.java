@@ -104,7 +104,6 @@ public class BlockBreaker extends AbstractSelfTriggeredIC {
 
         if (data > 0 && data != broken.getData()) return false;
 
-        broken.getDrops();
         for (ItemStack blockstack : broken.getDrops()) {
 
             BlockFace back = SignUtil.getBack(BukkitUtil.toSign(getSign()).getBlock());
@@ -118,8 +117,7 @@ public class BlockBreaker extends AbstractSelfTriggeredIC {
                     List<ItemStack> items = new ArrayList<ItemStack>();
                     items.add(blockstack);
                     if (CircuitCore.inst().getPipeFactory() != null)
-                        if (CircuitCore.inst().getPipeFactory().detect(BukkitUtil.toWorldVector(pipe),
-                                items) != null) {
+                        if (CircuitCore.inst().getPipeFactory().detect(BukkitUtil.toWorldVector(pipe), items) != null) {
                             continue;
                         }
                 }

@@ -19,6 +19,7 @@ package com.sk89q.craftbook;
 import static com.sk89q.worldedit.bukkit.BukkitUtil.toWorldVector;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -60,8 +61,6 @@ import com.sk89q.worldedit.blocks.ItemID;
  * @author hash
  */
 public class MechanicManager {
-
-    public static final boolean DEBUG = false;
 
     /**
      * Logger for errors. The Minecraft namespace is required so that messages are part of Minecraft's root logger.
@@ -200,7 +199,7 @@ public class MechanicManager {
         BlockWorldVector pos = toWorldVector(event.getBlock());
 
         try {
-            List<Mechanic> mechanics = load(pos, player);
+            HashSet<Mechanic> mechanics = load(pos, player);
             if(mechanics.size() > 0) {
                 // A mechanic has been found, check if we can actually build here.
                 if (!plugin.canBuild(event.getPlayer(), event.getBlock().getLocation())) {
@@ -243,12 +242,11 @@ public class MechanicManager {
         BlockWorldVector pos = toWorldVector(event.getClickedBlock());
 
         try {
-            List<Mechanic> mechanics = load(pos, player);
+            HashSet<Mechanic> mechanics = load(pos, player);
             for (Mechanic aMechanic : mechanics) {
                 if (aMechanic != null) {
 
                     if (!plugin.canUse(event.getPlayer(), event.getClickedBlock().getLocation())) {
-                        logger.severe(aMechanic.getClass().getName());
                         player.printError("area.permissions");
                         return 0; 
                     }
@@ -285,7 +283,7 @@ public class MechanicManager {
         // See if this event could be occurring on any mechanism's triggering blocks
         BlockWorldVector pos = toWorldVector(event.getClickedBlock());
         try {
-            List<Mechanic> mechanics = load(pos, player);
+            HashSet<Mechanic> mechanics = load(pos, player);
             for (Mechanic aMechanic : mechanics) {
                 if (aMechanic != null) {
 
@@ -322,7 +320,7 @@ public class MechanicManager {
         // See if this event could be occurring on any mechanism's triggering blocks
         BlockWorldVector pos = toWorldVector(event.getBlock());
         try {
-            List<Mechanic> mechanics = load(pos, null);
+            HashSet<Mechanic> mechanics = load(pos, null);
             for (Mechanic aMechanic : mechanics) {
                 if (aMechanic != null) {
                     aMechanic.onBlockRedstoneChange(event);
@@ -349,9 +347,9 @@ public class MechanicManager {
      * @throws InvalidMechanismException if it appears that the position is intended to me a mechanism,
      *                                   but the mechanism is misconfigured and inoperable.
      */
-    protected List<Mechanic> load(BlockWorldVector pos, LocalPlayer player) throws InvalidMechanismException {
+    protected HashSet<Mechanic> load(BlockWorldVector pos, LocalPlayer player) throws InvalidMechanismException {
 
-        List<Mechanic> detectedMechanics = detect(pos);
+        HashSet<Mechanic> detectedMechanics = detect(pos);
         if(player != null)
             detectedMechanics.addAll(detect(pos,player));
 
@@ -421,10 +419,10 @@ public class MechanicManager {
      * @throws InvalidMechanismException if it appears that the position is intended to me a mechanism,
      *                                   but the mechanism is misconfigured and inoperable.
      */
-    protected List<Mechanic> load(BlockWorldVector pos, LocalPlayer player,
+    protected HashSet<Mechanic> load(BlockWorldVector pos, LocalPlayer player,
             ChangedSign sign) throws InvalidMechanismException {
 
-        List<Mechanic> detectedMechanics = detect(pos, player, sign);
+        HashSet<Mechanic> detectedMechanics = detect(pos, player, sign);
 
         Mechanic ptMechanic = triggersManager.get(pos);
 
@@ -492,9 +490,9 @@ public class MechanicManager {
      * @throws InvalidMechanismException if it appears that the position is intended to me a mechanism,
      *                                   but the mechanism is misconfigured and inoperable.
      */
-    protected List<Mechanic> detect(BlockWorldVector pos) throws InvalidMechanismException {
+    protected HashSet<Mechanic> detect(BlockWorldVector pos) throws InvalidMechanismException {
 
-        List<Mechanic> mechanics = new ArrayList<Mechanic>();
+        HashSet<Mechanic> mechanics = new HashSet<Mechanic>();
 
         for (MechanicFactory<? extends Mechanic> factory : factories) {
             Mechanic mechanic;
@@ -518,9 +516,9 @@ public class MechanicManager {
      * @throws InvalidMechanismException if it appears that the position is intended to me a mechanism,
      *                                   but the mechanism is misconfigured and inoperable.
      */
-    protected List<Mechanic> detect(BlockWorldVector pos, LocalPlayer player) throws InvalidMechanismException {
+    protected HashSet<Mechanic> detect(BlockWorldVector pos, LocalPlayer player) throws InvalidMechanismException {
 
-        List<Mechanic> mechanics = new ArrayList<Mechanic>();
+        HashSet<Mechanic> mechanics = new HashSet<Mechanic>();
 
         for (MechanicFactory<? extends Mechanic> factory : factories) {
             Mechanic mechanic;
@@ -542,10 +540,10 @@ public class MechanicManager {
      * @throws InvalidMechanismException if it appears that the position is intended to me a mechanism,
      *                                   but the mechanism is misconfigured and inoperable.
      */
-    protected List<Mechanic> detect(BlockWorldVector pos, LocalPlayer player,
+    protected HashSet<Mechanic> detect(BlockWorldVector pos, LocalPlayer player,
             ChangedSign sign) throws InvalidMechanismException {
 
-        List<Mechanic> mechanics = new ArrayList<Mechanic>();
+        HashSet<Mechanic> mechanics = new HashSet<Mechanic>();
 
         for (MechanicFactory<? extends Mechanic> factory : factories) {
             try {
@@ -644,8 +642,12 @@ public class MechanicManager {
         }
 
         try {
+            if (event != null) {
+                mechanic.unloadWithEvent(event);
+                if(event.isCancelled())
+                    return;
+            }
             mechanic.unload();
-            if (event != null) mechanic.unloadWithEvent(event);
         } catch (Throwable t) { // Mechanic failed to unload for some reason
             logger.log(Level.WARNING, "CraftBook mechanic: Failed to unload " + mechanic.getClass().getCanonicalName
                     (), t);

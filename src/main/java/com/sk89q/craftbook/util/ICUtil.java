@@ -38,9 +38,6 @@ import com.sk89q.worldedit.blocks.ItemType;
  */
 public class ICUtil {
 
-    // private static BlockFace[] REDSTONE_CONTACT_FACES =
-    // {BlockFace.DOWN, BlockFace.EAST, BlockFace.WEST, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.UP};
-
     public ICUtil() {
 
     }
@@ -81,7 +78,9 @@ public class ICUtil {
             // set the new data
             block.setData((byte) newData, true);
             // apply physics to the source block the lever is attached to
-            source.setData(source.getData(), true);
+            byte sData = source.getData();
+            source.setData((byte) (sData - 1), true);
+            source.setData(sData, true);
 
             // lets call blockredstone events on the source block and the lever
             // in order to correctly update all surrounding blocks

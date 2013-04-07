@@ -31,6 +31,7 @@ import com.sk89q.craftbook.mech.LightSwitch;
 import com.sk89q.craftbook.mech.MapChanger;
 import com.sk89q.craftbook.mech.PaintingSwitch;
 import com.sk89q.craftbook.mech.Payment;
+import com.sk89q.craftbook.mech.SignCopier;
 import com.sk89q.craftbook.mech.Snow;
 import com.sk89q.craftbook.mech.Teleporter;
 import com.sk89q.craftbook.mech.XPStorer;
@@ -97,6 +98,10 @@ public class MechanicalCore implements LocalComponent {
         BukkitConfiguration config = plugin.getConfiguration();
 
         // Let's register mechanics!
+
+        //Register Chunk Anchors first so that they are always the first mechanics to be checked for, allowing other mechanics to stay loaded in unloaded chunks.
+        if (config.chunkAnchorEnabled) registerMechanic(new ChunkAnchor.Factory());
+
         if (config.ammeterEnabled) registerMechanic(new Ammeter.Factory());
         if (config.bookcaseEnabled) {
             plugin.createDefaultConfiguration(new File(plugin.getDataFolder(), "books.txt"), "books.txt", false);
@@ -109,7 +114,6 @@ public class MechanicalCore implements LocalComponent {
         if (config.teleporterEnabled) registerMechanic(new Teleporter.Factory());
         if (config.areaEnabled) registerMechanic(new Area.Factory());
         if (config.commandSignEnabled) registerMechanic(new Command.Factory());
-        if (config.chunkAnchorEnabled) registerMechanic(new ChunkAnchor.Factory());
         if (config.lightstoneEnabled) registerMechanic(new LightStone.Factory());
         if (config.lightSwitchEnabled) registerMechanic(new LightSwitch.Factory());
         if (config.hiddenSwitchEnabled) registerMechanic(new HiddenSwitch.Factory());
@@ -118,8 +122,9 @@ public class MechanicalCore implements LocalComponent {
         if (config.cauldronEnabled) registerMechanic(new ImprovedCauldron.Factory());
         if (config.xpStorerEnabled) registerMechanic(new XPStorer.Factory());
         if (config.mapChangerEnabled) registerMechanic(new MapChanger.Factory());
+        if (config.signCopyEnabled) registerMechanic(new SignCopier.Factory());
         for(Types type : BetterPistons.Types.values())
-            if (config.pistonsEnabled) registerMechanic(new BetterPistons.Factory(type));
+            if (config.pistonsEnabled && Types.isEnabled(type)) registerMechanic(new BetterPistons.Factory(type));
 
         // Special mechanics.
         if (plugin.getEconomy() != null && config.paymentEnabled) {
