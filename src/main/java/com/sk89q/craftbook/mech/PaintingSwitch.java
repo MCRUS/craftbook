@@ -91,6 +91,7 @@ public class PaintingSwitch implements Listener {
         if(!LocationUtil.isWithinSphericalRadius(paint.getLocation(), event.getPlayer().getLocation(), 5)) {
             Painting p = players.remove(event.getPlayer().getName());
             if (p != null) {
+                player.printError("mech.painting.range");
                 paintings.remove(p);
             }
 

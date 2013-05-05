@@ -4,7 +4,6 @@ import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.circuits.ic.*;
 import com.sk89q.craftbook.util.ItemUtil;
-import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.util.yaml.YAMLProcessor;
 import org.bukkit.Server;
 import org.bukkit.block.Block;
@@ -50,7 +49,7 @@ public class ContainerStacker extends AbstractSelfTriggeredIC {
 
     public void stack() {
 
-        Block b = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock());
+        Block b = getBackBlock();
 
         int x = b.getX();
         int y = b.getY() + 1;
@@ -73,7 +72,7 @@ public class ContainerStacker extends AbstractSelfTriggeredIC {
                             if (ii == i)
                                 continue;
                             ItemStack itt = c.getInventory().getItem(ii);
-                            if (ItemUtil.isStackValid(itt) && ItemUtil.areItemsIdentical(it, itt)) {
+                            if (ItemUtil.isStackValid(itt) && ItemUtil.areItemsIdentical(it, itt) && it.getEnchantments().isEmpty() && !itt.getEnchantments().isEmpty() && !it.hasItemMeta() && !itt.hasItemMeta()) {
 
                                 if (amount + itt.getAmount() <= 64) {
                                     amount += itt.getAmount();

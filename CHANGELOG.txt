@@ -1,3 +1,88 @@
+3.6.2
+* Fixed experimental right click support.
+* Optimized advanced data support in CustomCrafting.
+* Made 'T' EntityType explosive, not just TNT Carts.
++ Added 'R' EntityType for Rideable entities.
+* Fix Payment mechanic.
+* Improve Vehicle collision code. (Fixes a few boat/cart bugs)
+* Fix pipe inclusions/exlusions filters.
+* Fix pipes finding weird signs in weird places and using them.
+* Made pipes take priority for pistons, so that a pipe with pistons extending off of it will take priority.
+* Fix CraftBook triggering Cheat Protections for Incorrect Direction of right clicks.
++ Add delay option to FlameThrower IC.
++ Added amount filters to EntitySensor IC.
+* Fix AnimalBreeder.
+* Enhanced ChestStocker so it defaults to the block above the back block, not the back block.
+* Minor optimization to ContainerSensor.
+* Fix a few peculiarities with max stack sizes of less than 64.
+* Few tweaks to Driller IC.
+* Fix a few data detecting bugs with IC's and Pipes.
++ Added a configuration option to driller to allow or disallow it to break non-natural blocks.
+* Few balance tweaks to Cooking Pot.
+* Heavily optimize pipes.
++ Added pipe support to driller.
++ Added lore support to Custom Crafting.
+* Enhanced the checks to see if an entity is standing in a block.
++ Added support for entity spawner IC's to set a mobs name.
++ Added WIP WorldEdit support to IC creation. If you select a region with WorldEdit, and put [off] on an IC sign, it should use the region centre as an offset.
+* Convert PLC folder to a new folder format. (Will be used for future stuff)
+* Fix BetterPistons using signs out of reach that it shouldn't use.
+* Fix BlockReplacer replacing incorrect blocks.
+* Tweaked location calculations to always agree with block location config value.
++ Added option to tweak minecart fall speed modifiers. Allows for minecart jumps and flying carts.
+* Fix a rare memory leak that if a component(mech/circuits/vehicles) is disabled, and /cb reload is used that it stays loaded.
+
+3.6.1
++ Added a message that occurs if you are too far away and try to change a painting.
+* Fix Potion Inducer 'm' dissapearing.
+* Small change to Item Dispenser.
+* Fixed CartLift.
+* Fixed Deposit/Collect multiple item id's.
++ Added new experimental right clicking function.
+* Fix container stacker stacking items with meta info.
+* Fix gate dupe bug.
++ Add easter eggs to startup process.
+* Made SetBridge and SetDoor output their inputs for easy compactability.
+* Fix a few redstone bugs.
+* Fix CustomDrops messing with XP.
++ Added info to the 'language' configuration node.
+* Made vehicles less laggy.
++ Added Animal Breeder IC. (MC1280)
++ Added Block Replacer IC. (MC1249)
+* Fix CartSorter erasing carts.
+* Allowed languages to use special characters. (Eg, chinese)
+* Fix pipe errors involving AIR.
+* Allow Clock IC's ticks to be set, to allow offsets.
+* Fix [Area] weird area name case issues.
+* Fixed SignCopier triggering mechanics, and made advanced-block-checks improve performance.
+* Fixed light level IC.
+* Fixed languages breaking on reload.
+* Slight changes to /cb update.
+* Fix delayer errors.
+* Minor changes to Entity Cannon.
+
+3.6
+* Fix a bridge dupe bug.
+* Fix IC's not being converted on creation.
++ Added radius and chance to Zeus Bolt IC.
+* Many changes to cooking pots.
++ Added a driller IC. Acts like a BuildCraft quarry in a 3x3 area.
++ Added a command to toggle 'Toggle Areas' from the console. (Also Command Blocks)
++ Added a blacklist to BetterPistons Bounce and Crush.
+* Removed some redundant debug code that printed weird stuff to the console.
+* Fix Sound Effect IC and Particle Effect IC not popping off if the verification failed.
+* Fix Potion Inducer radius bug.
+* Fixed entity spawning IC's spawning in unloaded chunks.
++ Added new 1.5 blocks to places that they should be added.
+* Fix an IC error.
+* Fix a chunk anchor issue.
++ Added debug mode and debug flags options. Allows a fine tuned debug mode.
+* Fix CombineHarvester radius.
+* Planter IC will now plant anything if no ID is provided.
+* Fix a few CartDeposit bugs.
++ Added exclusions to pipes, and the ability to have inclusions and exclusions on pipe put pistons.
+* Fix pipe bug where items would dissapear.
+
 3.6 Beta 4
 * Performance enhancements.
 * Bug fixes in Cooking Pot.

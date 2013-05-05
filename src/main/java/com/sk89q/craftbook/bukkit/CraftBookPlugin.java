@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 import java.util.jar.JarFile;
@@ -145,7 +146,7 @@ public class CraftBookPlugin extends JavaPlugin {
         versionConverter.put("3.5.2", "1749");
         versionConverter.put("3.5.3", "1766");
         versionConverter.put("3.5.4", "1795");
-        versionConverter.put("3.5.5b1","1816"); 
+        versionConverter.put("3.5.5b1","1816");
         versionConverter.put("3.5.5", "1828");
         versionConverter.put("3.5.6", "1839");
         versionConverter.put("3.5.7", "1853");
@@ -153,6 +154,9 @@ public class CraftBookPlugin extends JavaPlugin {
         versionConverter.put("3.6b2", "1873");
         versionConverter.put("3.6b3", "1886");
         versionConverter.put("3.6b4", "1921");
+        versionConverter.put("3.6",   "1955");
+        versionConverter.put("3.6.1", "1999");
+        versionConverter.put("3.6.2", "2051");
     }
 
     public void registerManager(MechanicManager manager) {
@@ -166,8 +170,6 @@ public class CraftBookPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
 
-        managerAdapter = new MechanicListenerAdapter();
-        mechanicClock = new MechanicClock();
         // Check plugin for checking the active states of a plugin
         Plugin checkPlugin;
 
@@ -186,6 +188,21 @@ public class CraftBookPlugin extends JavaPlugin {
                 return;
             }
         }
+
+        // Resolve ProtocolLib
+        checkPlugin = getServer().getPluginManager().getPlugin("ProtocolLib");
+        if (checkPlugin != null && checkPlugin instanceof ProtocolLibrary) {
+            protocolLib = (ProtocolLibrary) checkPlugin;
+        } else protocolLib = null;
+
+        // Resolve WorldGuard
+        checkPlugin = getServer().getPluginManager().getPlugin("WorldGuard");
+        if (checkPlugin != null && checkPlugin instanceof WorldGuardPlugin) {
+            worldGuardPlugin = (WorldGuardPlugin) checkPlugin;
+        } else worldGuardPlugin = null;
+
+        managerAdapter = new MechanicListenerAdapter();
+        mechanicClock = new MechanicClock();
 
         // Setup Config and the Commands Manager
         final CraftBookPlugin plugin = this;
@@ -221,11 +238,6 @@ public class CraftBookPlugin extends JavaPlugin {
             getServer().shutdown();
         }
 
-        // Initialize the language manager.
-        createDefaultConfiguration(new File(getDataFolder(), "en_US.txt"), "en_US.txt", false);
-        createDefaultConfiguration(new File(getDataFolder(), "ru_RU.txt"), "ru_RU.txt", false);
-        languageManager = new LanguageManager();
-
         // Resolve Vault
         try {
             RegisteredServiceProvider<Economy> economyProvider = getServer().getServicesManager().getRegistration(
@@ -236,20 +248,8 @@ public class CraftBookPlugin extends JavaPlugin {
             economy = null;
         }
 
-        // Resolve ProtocolLib
-
-        checkPlugin = getServer().getPluginManager().getPlugin("ProtocolLib");
-        if (checkPlugin != null && checkPlugin instanceof ProtocolLibrary) {
-            protocolLib = (ProtocolLibrary) checkPlugin;
-        } else protocolLib = null;
-
-        // Resolve WorldGuard
-        checkPlugin = getServer().getPluginManager().getPlugin("WorldGuard");
-        if (checkPlugin != null && checkPlugin instanceof WorldGuardPlugin) {
-            worldGuardPlugin = (WorldGuardPlugin) checkPlugin;
-        } else worldGuardPlugin = null;
-
         // Let's start the show
+        setupCraftBook();
         registerGlobalEvents();
         startComponents();
     }
@@ -257,6 +257,26 @@ public class CraftBookPlugin extends JavaPlugin {
     public boolean updateAvailable = false;
     String latestVersion = null;
     long updateSize = 0;
+
+    public String getLatestVersion() {
+
+        return latestVersion;
+    }
+
+    public boolean isUpdateAvailable() {
+
+        return updateAvailable;
+    }
+
+    /**
+     * Register basic things to the plugin. For example, languages.
+     */
+    public void setupCraftBook() {
+
+        // Initialize the language manager.
+        createDefaultConfiguration(new File(getDataFolder(), "en_US.txt"), "en_US.txt", true);
+        languageManager = new LanguageManager();
+    }
 
     /**
      * Registers events used by the main CraftBook plugin. Also registers PluginMetrics
@@ -267,53 +287,29 @@ public class CraftBookPlugin extends JavaPlugin {
 
         if(getConfiguration().updateNotifier) {
 
-            boolean exempt = false;
+            checkForUpdates();
+        }
 
-            try {
-                int ver = Integer.parseInt(getDescription().getVersion().split("-")[0]);
-                if (ver < 1541) //Not valid.
-                    exempt = true;
-            }
-            catch(Exception e) {
-                exempt = true;
-            }
+        if(getConfiguration().easterEggs) {
+            Bukkit.getScheduler().runTaskLater(this, new Runnable() {
 
-            if(!exempt) {
-                final Updater updater = new Updater(this, "CraftBook", getFile(), Updater.UpdateType.NO_DOWNLOAD, false); // Start Updater but just do a version check
-                getServer().getScheduler().runTaskLaterAsynchronously(this, new Runnable() {
+                @Override
+                public void run () {
 
-                    @Override
-                    public void run () {
-                        updateAvailable = updater.getResult() == Updater.UpdateResult.UPDATE_AVAILABLE; // Determine if there is an update ready for us
-                        latestVersion = updater.getLatestVersionString(); // Get the latest version
-                        Bukkit.getLogger().info(latestVersion);
-                        updateSize = updater.getFileSize(); // Get latest size
+                    Calendar date = Calendar.getInstance();
 
-                        if(updateAvailable) {
-
-                            for (Player player : getServer().getOnlinePlayers()) {
-                                if (hasPermission(player, "craftbook.update")) {
-                                    player.sendMessage(ChatColor.YELLOW + "An update is available: " + latestVersion + "(" + updateSize + " bytes)");
-                                    player.sendMessage(ChatColor.YELLOW + "Type /cb update if you would like to update.");
-                                }
-                            }
-
-                            getServer().getPluginManager().registerEvents(new Listener() {
-                                @EventHandler
-                                public void onPlayerJoin (PlayerJoinEvent event) {
-                                    Player player = event.getPlayer();
-                                    if (hasPermission(player, "craftbook.update")) {
-                                        player.sendMessage(ChatColor.YELLOW + "An update is available: " + latestVersion + "(" + updateSize + " bytes)");
-                                        player.sendMessage(ChatColor.YELLOW + "Type /cb update if you would like to update.");
-                                    }
-                                }
-                            }, CraftBookPlugin.inst());
-                        }
-                    }
-                }, 10L);
-            } else {
-                getLogger().info("The Auto-Updater is disabled for your version!");
-            }
+                    if(date.get(Calendar.MONTH) == Calendar.JUNE && date.get(Calendar.DAY_OF_MONTH) == 22) //Me4502 reddit cakeday
+                        getLogger().info("Happy " + (date.get(Calendar.YEAR) - 2012) + "th reddit cakeday me4502!");
+                    else if(date.get(Calendar.MONTH) == Calendar.OCTOBER && date.get(Calendar.DAY_OF_MONTH) == 16) //Me4502 birthday
+                        getLogger().info("Happy birthday me4502!");
+                    else if(date.get(Calendar.MONTH) == Calendar.JANUARY && date.get(Calendar.DAY_OF_MONTH) == 1) //New Years
+                        getLogger().info("Happy new years! Happy " + date.get(Calendar.YEAR) + "!!!");
+                    else if(date.get(Calendar.MONTH) == Calendar.OCTOBER && date.get(Calendar.DAY_OF_MONTH) == 22) //CraftBook birthday
+                        getLogger().info("Happy " + (date.get(Calendar.YEAR) - 2010) + "th birthday CraftBook!");
+                    else if(date.get(Calendar.MONTH) == Calendar.APRIL && date.get(Calendar.DAY_OF_MONTH) == 24) //Me4502ian CraftBook birthday
+                        getLogger().info("CraftBook has been under Me4502's 'harsh dictatorship :P' for " + (date.get(Calendar.YEAR) - 2012) + " year(s) today!");
+                }
+            }, 20L);
         }
 
         try {
@@ -365,6 +361,51 @@ public class CraftBookPlugin extends JavaPlugin {
                 });
         } catch (Throwable e1) {
             BukkitUtil.printStacktrace(e1);
+        }
+    }
+
+    public void checkForUpdates() {
+
+        boolean exempt = false;
+
+        try {
+            int ver = Integer.parseInt(getDescription().getVersion().split("-")[0]);
+            if (ver < 1541) //Not valid prior to this version.
+                exempt = true;
+        }
+        catch(Exception e) {
+            exempt = true;
+        }
+
+        if(!exempt) {
+            final Updater updater = new Updater(this, "CraftBook", getFile(), Updater.UpdateType.NO_DOWNLOAD, false); // Start Updater but just do a version check
+            updateAvailable = updater.getResult() == Updater.UpdateResult.UPDATE_AVAILABLE; // Determine if there is an update ready for us
+            latestVersion = updater.getLatestVersionString(); // Get the latest version
+            getLogger().info(latestVersion + " is the latest version available, and the updatability of it is: " + updater.getResult().name());
+            updateSize = updater.getFileSize(); // Get latest size
+
+            if(updateAvailable) {
+
+                for (Player player : getServer().getOnlinePlayers()) {
+                    if (hasPermission(player, "craftbook.update")) {
+                        player.sendMessage(ChatColor.YELLOW + "An update is available: " + latestVersion + "(" + updateSize + " bytes)");
+                        player.sendMessage(ChatColor.YELLOW + "Type /cb update if you would like to update.");
+                    }
+                }
+
+                getServer().getPluginManager().registerEvents(new Listener() {
+                    @EventHandler
+                    public void onPlayerJoin (PlayerJoinEvent event) {
+                        Player player = event.getPlayer();
+                        if (hasPermission(player, "craftbook.update")) {
+                            player.sendMessage(ChatColor.YELLOW + "An update is available: " + latestVersion + "(" + updateSize + " bytes)");
+                            player.sendMessage(ChatColor.YELLOW + "Type /cb update if you would like to update.");
+                        }
+                    }
+                }, CraftBookPlugin.inst());
+            }
+        } else {
+            getLogger().info("The Auto-Updater is disabled for your version!");
         }
     }
 
@@ -711,6 +752,7 @@ public class CraftBookPlugin extends JavaPlugin {
         config.load();
         managerAdapter = new MechanicListenerAdapter();
         mechanicClock = new MechanicClock();
+        setupCraftBook();
         registerGlobalEvents();
         startComponents();
     }
@@ -885,11 +927,11 @@ public class CraftBookPlugin extends JavaPlugin {
      *
      * @see GlobalRegionManager#canBuild(org.bukkit.entity.Player, org.bukkit.Location)
      */
-    public boolean canUse(Player player, Location loc) {
+    public boolean canUse(Player player, Location loc, BlockFace face) {
 
         if (config.advancedBlockChecks) {
 
-            PlayerInteractEvent event = new PlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, player.getItemInHand(), loc.getBlock(), BlockFace.UP);
+            PlayerInteractEvent event = new PlayerInteractEvent(player, Action.RIGHT_CLICK_BLOCK, player.getItemInHand(), loc.getBlock(), face == null ? BlockFace.SELF : face);
             MechanicListenerAdapter.ignoredEvents.add(event);
             getServer().getPluginManager().callEvent(event);
             if(event.isCancelled())
@@ -927,5 +969,19 @@ public class CraftBookPlugin extends JavaPlugin {
         PrintWriter pw = new PrintWriter(out);
         ex.printStackTrace(pw);
         return out.toString();
+    }
+
+    public static boolean isDebugFlagEnabled(String flag) {
+
+        if(!inst().getConfiguration().debugMode || inst().getConfiguration().debugFlags == null || inst().getConfiguration().debugFlags.isEmpty())
+            return false;
+
+        for(String testflag : inst().getConfiguration().debugFlags) {
+
+            if(testflag.equalsIgnoreCase(flag))
+                return true;
+        }
+
+        return false;
     }
 }

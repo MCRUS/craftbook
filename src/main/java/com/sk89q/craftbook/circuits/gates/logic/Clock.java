@@ -57,6 +57,14 @@ public class Clock extends AbstractSelfTriggeredIC {
 
     }
 
+    @Override
+    public void think(ChipState chip) {
+
+        if (((Factory)getFactory()).inverted ? chip.getInput(0) : !chip.getInput(0)) {
+            triggerClock(chip);
+        }
+    }
+
     short tick, reset;
 
     protected void triggerClock(ChipState chip) {
@@ -116,7 +124,18 @@ public class Clock extends AbstractSelfTriggeredIC {
             interval = Math.min(interval, 150);
 
             sign.setLine(2, Integer.toString(interval));
-            sign.setLine(3, "0");
+
+            int tick;
+            try {
+                tick = Integer.parseInt(sign.getLine(3));
+            } catch (NumberFormatException e) {
+                tick = 0;
+            }
+
+            tick = Math.max(tick, 0);
+            tick = Math.min(tick, interval);
+
+            sign.setLine(3, Integer.toString(tick));
             sign.update(false);
         }
 
@@ -129,8 +148,7 @@ public class Clock extends AbstractSelfTriggeredIC {
         @Override
         public String[] getLineHelp() {
 
-            String[] lines = new String[] {"ticks required", "current ticks"};
-            return lines;
+            return new String[] {"ticks required", "current ticks"};
         }
 
         @Override
@@ -143,20 +161,6 @@ public class Clock extends AbstractSelfTriggeredIC {
         public boolean needsConfiguration() {
 
             return true;
-        }
-    }
-
-    @Override
-    public boolean isActive() {
-
-        return true;
-    }
-
-    @Override
-    public void think(ChipState chip) {
-
-        if (((Factory)getFactory()).inverted ? chip.getInput(0) : !chip.getInput(0)) {
-            triggerClock(chip);
         }
     }
 }

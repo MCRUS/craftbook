@@ -19,17 +19,19 @@ package com.sk89q.craftbook.util;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.event.block.BlockRedstoneEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Lever;
 
 import com.sk89q.craftbook.ChangedSign;
+import com.sk89q.craftbook.LocalPlayer;
+import com.sk89q.craftbook.bukkit.BukkitPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.circuits.ic.ICVerificationException;
+import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BlockID;
-import com.sk89q.worldedit.blocks.BlockType;
-import com.sk89q.worldedit.blocks.ItemType;
+import com.sk89q.worldedit.regions.CuboidRegionSelector;
+import com.sk89q.worldedit.regions.RegionSelector;
 
 /**
  * IC utility functions.
@@ -92,6 +94,66 @@ public class ICUtil {
         }
 
         return false;
+    }
+
+    public static void parseSignFlags(LocalPlayer player, ChangedSign sign) {
+
+        for(int i = 2; i < 4; i++) {
+
+            if(sign.getLine(i).contains("[off]")) {
+
+                if(CraftBookPlugin.inst().getWorldEdit() == null) {
+                    sign.setLine(i, sign.getLine(i).replace("[off]", ""));
+                    player.printError("worldedit.ic.notfound");
+                } else {
+
+                    if(CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()) != null && CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()).getRegionSelector() != null && CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()).getRegionSelector().isDefined()) {
+
+                        RegionSelector selector = CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()).getRegionSelector();
+
+                        try {
+                            if(selector instanceof CuboidRegionSelector) {
+
+                                Vector centre = selector.getRegion().getMaximumPoint().add(selector.getRegion().getMinimumPoint());
+
+                                centre = centre.divide(2);
+
+                                Vector offset = sign.getBlockVector().subtract(centre);
+
+                                String x,y,z;
+
+                                x = Double.toString(offset.getX() == offset.getBlockX() ? offset.getBlockX() : offset.getX());
+                                if (x.endsWith(".0"))
+                                    x = x.substring(x.length() - 2);
+
+                                y = Double.toString(offset.getY() == offset.getBlockY() ? offset.getBlockY() : offset.getY());
+                                if (y.endsWith(".0"))
+                                    y = y.substring(y.length() - 2);
+
+                                z = Double.toString(offset.getZ() == offset.getBlockZ() ? offset.getBlockZ() : offset.getZ());
+                                if (z.endsWith(".0"))
+                                    z = z.substring(z.length() - 2);
+
+                                sign.setLine(i, sign.getLine(i).replace("[off]", "&" + x + ":" + y + ":" + z));
+                                //} else if (selector instanceof SphereRegionSelector) {
+
+                                //TODO spherical reions.
+                            } else { // Unsupported.
+                                sign.setLine(i, sign.getLine(i).replace("[off]", ""));
+                                player.printError("worldedit.ic.unsupported");
+                            }
+                        }
+                        catch(IncompleteRegionException e) {
+                            player.printError("worldedit.ic.noselection");
+                        }
+                    } else {
+                        player.printError("worldedit.ic.noselection");
+                    }
+                }
+            }
+        }
+
+        sign.update(false);
     }
 
     public static Block parseBlockLocation(ChangedSign sign, int lPos, LocationCheckType relative) {
@@ -197,7 +259,11 @@ public class ICUtil {
 
     public static Vector parseRadius(ChangedSign sign, int lPos) {
 
-        String line = sign.getLine(lPos);
+        return parseRadius(sign.getLine(lPos));
+    }
+
+    public static Vector parseRadius(String line) {
+
         Vector radius = new Vector(10,10,10); // default radius is 10.
         try {
             String[] radians = RegexUtil.COMMA_PATTERN.split(RegexUtil.EQUALS_PATTERN.split(line, 2)[0]);
@@ -215,48 +281,6 @@ public class ICUtil {
             // do nothing and use default radius
         }
         return radius;
-    }
-
-    public static ItemStack getItem(String line) {
-
-        if (line == null || line.isEmpty()) {
-            return null;
-        }
-        try {
-            if (line.contains(":")) {
-                String[] split = RegexUtil.COLON_PATTERN.split(line, 2);
-                int id = 0;
-                int data = 0;
-                try {
-                    id = Integer.parseInt(split[0]);
-                    data = Integer.parseInt(split[1]);
-                } catch (NumberFormatException e) {
-                    try {
-                        id = BlockType.lookup(split[0]).getID();
-                        if (id < 0) throw new NullPointerException();
-                    } catch (Exception ee) {
-                        id = ItemType.lookup(split[0]).getID();
-                    }
-                    data = Integer.parseInt(split[1]);
-                }
-                return new ItemStack(id, 1, (short) data);
-            } else {
-                int id = 0;
-                try {
-                    id = Integer.parseInt(line);
-                } catch (NumberFormatException e) {
-                    try {
-                        id = BlockType.lookup(line).getID();
-                        if (id < 0) throw new NullPointerException();
-                    } catch (Exception ee) {
-                        id = ItemType.lookup(line).getID();
-                    }
-                }
-                return new ItemStack(id, 1, (short) 0);
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
     }
 
     public enum LocationCheckType {

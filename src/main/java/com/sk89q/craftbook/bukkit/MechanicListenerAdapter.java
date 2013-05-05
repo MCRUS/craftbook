@@ -33,11 +33,11 @@ import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.material.Button;
+import org.bukkit.material.Attachable;
 import org.bukkit.material.Directional;
-import org.bukkit.material.Lever;
 
 import com.sk89q.craftbook.MechanicManager;
+import com.sk89q.craftbook.RightClickBlockEvent;
 import com.sk89q.craftbook.SourcedBlockRedstoneEvent;
 import com.sk89q.worldedit.BlockWorldVector;
 import com.sk89q.worldedit.BlockWorldVector2D;
@@ -96,9 +96,15 @@ public class MechanicListenerAdapter implements Listener {
             return;
         }
 
-        if (event.getAction() == Action.RIGHT_CLICK_BLOCK)
+        boolean isRightClick = false;
+
+        if(CraftBookPlugin.inst().getConfiguration().experimentalClicks && event.getAction() == Action.RIGHT_CLICK_AIR) {
+            isRightClick = event.getPlayer().getTargetBlock(null, 5).getTypeId() != 0;
+        }
+
+        if (event.getAction() == Action.RIGHT_CLICK_BLOCK || isRightClick)
             for (MechanicManager manager : managerList)
-                manager.dispatchBlockRightClick(event);
+                manager.dispatchBlockRightClick(isRightClick ? new RightClickBlockEvent(event, event.getPlayer().getTargetBlock(null, 5)) : event);
 
         if (event.getAction() == Action.LEFT_CLICK_BLOCK)
             for (MechanicManager manager : managerList)
@@ -258,19 +264,20 @@ public class MechanicListenerAdapter implements Listener {
             Directional diode = (Directional) block.getState().getData();
             BlockFace f = diode.getFacing();
             handleDirectWireInput(new WorldVector(w, x + f.getModX(), y, z + f.getModZ()), block, oldLevel, newLevel);
-            if(block.getRelative(f).getTypeId() != 0)
+            if(block.getRelative(f).getTypeId() != 0) {
                 handleDirectWireInput(new WorldVector(w, x + f.getModX(), y - 1, z + f.getModZ()), block, oldLevel, newLevel);
+                handleDirectWireInput(new WorldVector(w, x + f.getModX(), y + 1, z + f.getModZ()), block, oldLevel, newLevel);
+                handleDirectWireInput(new WorldVector(w, x + f.getModX() + 1, y - 1, z + f.getModZ()), block, oldLevel, newLevel);
+                handleDirectWireInput(new WorldVector(w, x + f.getModX() - 1, y - 1, z + f.getModZ()), block, oldLevel, newLevel);
+                handleDirectWireInput(new WorldVector(w, x + f.getModX() + 1, y - 1, z + f.getModZ() + 1), block, oldLevel, newLevel);
+                handleDirectWireInput(new WorldVector(w, x + f.getModX() - 1, y - 1, z + f.getModZ() - 1), block, oldLevel, newLevel);
+            }
             return;
-        } else if (type == BlockID.STONE_BUTTON || type == BlockID.WOODEN_BUTTON) {
+        } else if (type == BlockID.STONE_BUTTON || type == BlockID.WOODEN_BUTTON || type == BlockID.LEVER) {
 
-            Button button = (Button) block.getState().getData();
+            Attachable button = (Attachable) block.getState().getData();
             BlockFace f = button.getAttachedFace();
             handleDirectWireInput(new WorldVector(w, x + f.getModX()*2, y, z + f.getModZ()*2), block, oldLevel, newLevel);
-        } else if (type == BlockID.LEVER) {
-
-            Lever lever = (Lever) block.getState().getData();
-            BlockFace f = lever.getAttachedFace();
-            handleDirectWireInput(new WorldVector(w, x + f.getModX()*2, y + f.getModY()*2, z + f.getModZ()*2), block, oldLevel, newLevel);
         }
         // For redstone wires and repeaters, the code already exited this method
         // Non-wire blocks proceed
@@ -299,6 +306,8 @@ public class MechanicListenerAdapter implements Listener {
     protected void handleDirectWireInput(WorldVector pt, Block sourceBlock, int oldLevel, int newLevel) {
 
         Block block = ((BukkitWorld) pt.getWorld()).getWorld().getBlockAt(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        if(block.getLocation().equals(sourceBlock.getLocation())) //The same block, don't run.
+            return;
         for (MechanicManager manager : managerList)
             manager.dispatchBlockRedstoneChange(new SourcedBlockRedstoneEvent(sourceBlock, block, oldLevel, newLevel));
     }
@@ -313,12 +322,12 @@ public class MechanicListenerAdapter implements Listener {
             ignoredEvents.remove(event);
             return;
         }
-        CraftBookPlugin.server().getScheduler().scheduleSyncDelayedTask(CraftBookPlugin.inst(), new Runnable() {
+        CraftBookPlugin.server().getScheduler().runTaskLater(CraftBookPlugin.inst(), new Runnable() {
 
             @Override
             public void run() {
 
-                for (MechanicManager manager : managerList) 
+                for (MechanicManager manager : managerList)
                     manager.enumerate(event.getChunk());
             }
         }, 2);

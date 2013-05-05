@@ -209,6 +209,10 @@ public class MechanicManager {
             }
             for (Mechanic aMechanic : mechanics) {
                 if (aMechanic != null) {
+
+                    if(plugin.getConfiguration().advancedBlockChecks && event.isCancelled())
+                        return returnValue;
+
                     aMechanic.onBlockBreak(event);
                     returnValue++;
                 }
@@ -246,7 +250,10 @@ public class MechanicManager {
             for (Mechanic aMechanic : mechanics) {
                 if (aMechanic != null) {
 
-                    if (!plugin.canUse(event.getPlayer(), event.getClickedBlock().getLocation())) {
+                    if(plugin.getConfiguration().advancedBlockChecks && event.isCancelled())
+                        return returnValue;
+
+                    if (!plugin.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace())) {
                         player.printError("area.permissions");
                         return 0; 
                     }
@@ -287,7 +294,10 @@ public class MechanicManager {
             for (Mechanic aMechanic : mechanics) {
                 if (aMechanic != null) {
 
-                    if (!plugin.canUse(event.getPlayer(), event.getClickedBlock().getLocation())) {
+                    if(plugin.getConfiguration().advancedBlockChecks && event.isCancelled())
+                        return returnValue;
+
+                    if (!plugin.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace())) {
                         player.printError("area.permissions");
                         return 0;
                     }

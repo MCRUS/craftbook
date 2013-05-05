@@ -3,6 +3,7 @@ package com.sk89q.craftbook.circuits.gates.world.entity;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.entity.Entity;
+import org.bukkit.util.Vector;
 
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
@@ -15,7 +16,6 @@ import com.sk89q.craftbook.circuits.ic.RestrictedIC;
 import com.sk89q.craftbook.util.EntityType;
 import com.sk89q.craftbook.util.LocationUtil;
 import com.sk89q.craftbook.util.RegexUtil;
-import com.sk89q.worldedit.Vector;
 
 public class EntityCannon extends AbstractSelfTriggeredIC {
 
@@ -45,15 +45,36 @@ public class EntityCannon extends AbstractSelfTriggeredIC {
     }
 
     @Override
-    public boolean isActive() {
-
-        return true;
-    }
-
-    @Override
     public void think(ChipState state) {
 
         state.setOutput(0, shoot());
+    }
+
+    double x,y,z;
+    EntityType type;
+    Location location;
+
+    @Override
+    public void load() {
+
+        location = BukkitUtil.toSign(getSign()).getLocation();
+        type = EntityType.MOB_HOSTILE;
+
+        if (!getSign().getLine(3).isEmpty()) {
+            type = EntityType.fromString(getSign().getLine(3));
+        }
+
+        try {
+            String[] split = RegexUtil.COLON_PATTERN.split(getSign().getLine(2));
+            x = Double.parseDouble(split[0]);
+            y = Double.parseDouble(split[1]);
+            z = Double.parseDouble(split[2]);
+        }
+        catch(Exception e) {
+            x = 0;
+            y = 1;
+            z = 0;
+        }
     }
 
     /**
@@ -64,32 +85,18 @@ public class EntityCannon extends AbstractSelfTriggeredIC {
     protected boolean shoot() {
 
         boolean resultBoolean = false;
-        Location location = BukkitUtil.toSign(getSign()).getLocation();
-        EntityType type = EntityType.MOB_HOSTILE;
 
-        if (!getSign().getLine(3).isEmpty()) {
-            type = EntityType.fromString(getSign().getLine(3));
-        }
+        for (Entity e : LocationUtil.getNearbyEntities(location, BukkitUtil.toVector(new Vector(3,3,3)))) {
 
-        try {
-            for (Entity e : LocationUtil.getNearbyEntities(location, new Vector(3,3,3))) {
-                if (e.isDead() || !e.isValid()) {
-                    continue;
-                }
-                if (!type.is(e)) {
-                    continue;
-                }
+            if (e.isDead() || !e.isValid())
+                continue;
 
-                String[] split = RegexUtil.COLON_PATTERN.split(getSign().getLine(2));
-                double x = Double.parseDouble(split[0]);
-                double y = Double.parseDouble(split[1]);
-                double z = Double.parseDouble(split[2]);
+            if (!type.is(e))
+                continue;
 
-                e.setVelocity(new org.bukkit.util.Vector(x, y, z).add(e.getVelocity()));
+            e.setVelocity(new Vector(x, y, z).add(e.getVelocity()));
 
-                resultBoolean = true;
-            }
-        } catch (Exception ignored) {
+            resultBoolean = true;
         }
 
         return resultBoolean;

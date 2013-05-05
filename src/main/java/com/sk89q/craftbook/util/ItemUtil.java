@@ -1,6 +1,7 @@
 package com.sk89q.craftbook.util;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.bukkit.entity.Item;
@@ -9,27 +10,95 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 
 import com.sk89q.worldedit.blocks.BlockID;
+import com.sk89q.worldedit.blocks.BlockType;
 import com.sk89q.worldedit.blocks.ItemID;
+import com.sk89q.worldedit.blocks.ItemType;
 
 public class ItemUtil {
 
-    private ItemUtil() {
-
-    }
-
+    /**
+     * Add an itemstack to an existing itemstack.
+     * 
+     * @param base The itemstack to be added to.
+     * @param toAdd The itemstack to add to the base.
+     * @return The unaddable items.
+     */
     public static ItemStack addToStack(ItemStack base, ItemStack toAdd) {
 
         if (!areItemsIdentical(base, toAdd)) return toAdd;
 
-        if (base.getAmount() + toAdd.getAmount() > 64) {
+        if (base.getAmount() + toAdd.getAmount() > base.getMaxStackSize()) {
 
-            toAdd.setAmount(base.getAmount() + toAdd.getAmount() - 64);
-            base.setAmount(64);
+            toAdd.setAmount(base.getAmount() + toAdd.getAmount() - base.getMaxStackSize());
+            base.setAmount(base.getMaxStackSize());
             return toAdd;
         } else {
             base.setAmount(base.getAmount() + toAdd.getAmount());
             return null;
         }
+    }
+
+    /**
+     * Filter a list of items by inclusions and exclusions.
+     * 
+     * @param stacks The base list of items.
+     * @param inclusions The list of items to include, skipped if empty.
+     * @param exclusions The list of items to exclude, skipped if empty.
+     * @return The list of items that have been filtered.
+     */
+    public static List<ItemStack> filterItems(List<ItemStack> stacks, HashSet<ItemStack> inclusions, HashSet<ItemStack> exclusions) {
+
+        List<ItemStack> ret = new ArrayList<ItemStack>();
+
+        for(ItemStack stack : stacks) {
+
+            if(doesItemPassFilters(stack, inclusions, exclusions))
+                ret.add(stack);
+        }
+
+        return ret;
+    }
+
+    /**
+     * Check whether or not an item passes filters.
+     * 
+     * @param stacks The item to check if it passes.
+     * @param inclusions The list of items to include, skipped if empty.
+     * @param exclusions The list of items to exclude, skipped if empty.
+     * @return If the item passes the filters.
+     */
+    public static boolean doesItemPassFilters(ItemStack stack, HashSet<ItemStack> inclusions, HashSet<ItemStack> exclusions) {
+
+        boolean passesFilters = true;
+        if(inclusions.size() > 0) {
+            for (ItemStack fil : inclusions) {
+
+                if(!ItemUtil.isStackValid(fil))
+                    continue;
+                passesFilters = false;
+                if(ItemUtil.areItemsIdentical(fil, stack)) {
+                    passesFilters = true;
+                    break;
+                }
+            }
+            if(!passesFilters)
+                return false;
+        }
+        if(exclusions.size() > 0) {
+            for (ItemStack fil : exclusions) {
+
+                if(!ItemUtil.isStackValid(fil))
+                    continue;
+                if(ItemUtil.areItemsIdentical(fil, stack)) {
+                    passesFilters = false;
+                    break;
+                }
+            }
+            if(!passesFilters)
+                return false;
+        }
+
+        return passesFilters;
     }
 
     public static ItemStack[] removeNulls(ItemStack[] array) {
@@ -82,7 +151,7 @@ public class ItemUtil {
 
     public static boolean areItemsIdentical(MaterialData data, MaterialData comparedData) {
 
-        return data.getItemTypeId() == comparedData.getItemTypeId() && data.getData() == data.getData();
+        return data.getItemTypeId() == comparedData.getItemTypeId() && (data.getData() == comparedData.getData() || data.getData() < 0 || comparedData.getData() < 0);
     }
 
     public static void setItemTypeAndData(ItemStack item, int type, byte data) {
@@ -171,28 +240,72 @@ public class ItemUtil {
         }
     }
 
+    /**
+     * Checks whether the item is usable as a fuel in a furnace.
+     * 
+     * @param item The item to check.
+     * @return Whether it is usable in a furnace.
+     */
     public static boolean isAFuel(ItemStack item) {
 
-        int i = item.getTypeId();
-        return i == ItemID.COAL || i == BlockID.LOG || i == BlockID.WOOD || i == BlockID.WOODEN_STEP || i == BlockID
-                .SAPLING || i == ItemID.WOOD_AXE
-                || i == ItemID.WOOD_HOE || i == ItemID.WOOD_PICKAXE || i == ItemID.WOOD_SHOVEL || i == ItemID.WOOD_SWORD
-                || i == BlockID.WOODEN_PRESSURE_PLATE || i == ItemID.STICK || i == BlockID.FENCE || i == BlockID
-                .WOODEN_STAIRS
-                || i == BlockID.TRAP_DOOR || i == BlockID.WORKBENCH || i == BlockID.CHEST || i == BlockID.JUKEBOX ||
-                i == BlockID.NOTE_BLOCK
-                || i == BlockID.BROWN_MUSHROOM_CAP || i == BlockID.RED_MUSHROOM_CAP || i == ItemID.BLAZE_ROD || i ==
-                ItemID.LAVA_BUCKET;
+        switch(item.getTypeId()) {
+            case ItemID.COAL:
+            case BlockID.LOG:
+            case BlockID.WOOD:
+            case BlockID.WOODEN_STEP:
+            case BlockID.SAPLING:
+            case ItemID.WOOD_AXE:
+            case ItemID.WOOD_HOE:
+            case ItemID.WOOD_PICKAXE:
+            case ItemID.WOOD_SHOVEL:
+            case ItemID.WOOD_SWORD:
+            case BlockID.WOODEN_PRESSURE_PLATE:
+            case ItemID.STICK:
+            case BlockID.FENCE:
+            case BlockID.FENCE_GATE:
+            case BlockID.WOODEN_STAIRS:
+            case BlockID.TRAP_DOOR:
+            case BlockID.WORKBENCH:
+            case BlockID.CHEST:
+            case BlockID.TRAPPED_CHEST:
+            case BlockID.JUKEBOX:
+            case BlockID.NOTE_BLOCK:
+            case BlockID.BROWN_MUSHROOM_CAP:
+            case BlockID.RED_MUSHROOM_CAP:
+            case ItemID.BLAZE_ROD:
+            case ItemID.LAVA_BUCKET:
+            case BlockID.BOOKCASE:
+                return true;
+            default:
+                return false;
+        }
     }
 
+    /**
+     * Checks whether an item is a potion ingredient.
+     * 
+     * @param item The item to check.
+     * @return If the item is a potion ingredient.
+     */
     public static boolean isAPotionIngredient(ItemStack item) {
 
-        int i = item.getTypeId();
-        return i == ItemID.NETHER_WART_SEED || i == ItemID.LIGHTSTONE_DUST || i == ItemID.REDSTONE_DUST || i ==
-                ItemID.SPIDER_EYE
-                || i == ItemID.MAGMA_CREAM || i == ItemID.SUGAR || i == ItemID.GLISTERING_MELON || i == ItemID
-                .GHAST_TEAR || i == ItemID.BLAZE_POWDER
-                || i == ItemID.FERMENTED_SPIDER_EYE || i == ItemID.SULPHUR;
+        switch(item.getTypeId()) {
+            case ItemID.NETHER_WART_SEED:
+            case ItemID.LIGHTSTONE_DUST:
+            case ItemID.REDSTONE_DUST:
+            case ItemID.SPIDER_EYE:
+            case ItemID.MAGMA_CREAM:
+            case ItemID.SUGAR:
+            case ItemID.GLISTERING_MELON:
+            case ItemID.GHAST_TEAR:
+            case ItemID.BLAZE_POWDER:
+            case ItemID.FERMENTED_SPIDER_EYE:
+            case ItemID.SULPHUR:
+            case ItemID.GOLDEN_CARROT:
+                return true;
+            default:
+                return false;
+        }
     }
 
     public static boolean containsRawFood(Inventory inv) {
@@ -252,5 +365,51 @@ public class ItemUtil {
         }
 
         return smallest;
+    }
+
+    /**
+     * Parse an item from a line of text.
+     * 
+     * @param line The line to parse it from.
+     * @return The item to create.
+     */
+    public static ItemStack getItem(String line) {
+
+        if (line == null || line.isEmpty())
+            return null;
+
+        int id = 0;
+        int data = -1;
+        int amount = 1;
+
+        String[] amountSplit = RegexUtil.ASTERISK_PATTERN.split(line, 2);
+        String[] dataSplit = RegexUtil.COLON_PATTERN.split(amountSplit[0], 2);
+        try {
+            id = Integer.parseInt(dataSplit[0]);
+        } catch (NumberFormatException e) {
+            try {
+                id = BlockType.lookup(dataSplit[0]).getID();
+                if (id < 0) id = 0;
+            } catch (Exception ee) {
+                try {
+                    id = ItemType.lookup(dataSplit[0]).getID();
+                }
+                catch(Exception eee){}
+            }
+        }
+        try {
+            if (dataSplit.length > 1)
+                data = Integer.parseInt(dataSplit[1]);
+        }
+        catch(Exception e){}
+        try {
+            if(amountSplit.length > 1)
+                amount = Integer.parseInt(amountSplit[1]);
+        }
+        catch(Exception e){}
+
+        ItemStack rVal = new ItemStack(id, amount, (short) data);
+        rVal.setData(new MaterialData(id, (byte)data));
+        return rVal;
     }
 }

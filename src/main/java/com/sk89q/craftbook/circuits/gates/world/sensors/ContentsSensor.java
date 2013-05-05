@@ -11,7 +11,6 @@ import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.ic.ICVerificationException;
-import com.sk89q.craftbook.util.ICUtil;
 import com.sk89q.craftbook.util.ItemUtil;
 
 public class ContentsSensor extends AbstractSelfTriggeredIC {
@@ -23,12 +22,15 @@ public class ContentsSensor extends AbstractSelfTriggeredIC {
     @Override
     public void load() {
 
-        item = ICUtil.getItem(getLine(2));
-        try {
-            slot = Integer.parseInt(getLine(3));
-        } catch (Exception e) {
-
+        item = ItemUtil.getItem(getLine(2));
+        if(getLine(3).isEmpty())
             slot = -1;
+        else {
+            try {
+                slot = Integer.parseInt(getLine(3));
+            } catch (Exception e) {
+                slot = -1;
+            }
         }
     }
 
@@ -63,8 +65,8 @@ public class ContentsSensor extends AbstractSelfTriggeredIC {
         if (getBackBlock().getRelative(0, 1, 0).getState() instanceof InventoryHolder) {
 
             InventoryHolder inv = (InventoryHolder) getBackBlock().getRelative(0, 1, 0).getState();
-            if(slot < 0)
-                return inv.getInventory().containsAtLeast(item, 1);
+            if(slot < 0 || slot > inv.getInventory().getContents().length)
+                return inv.getInventory().contains(item);
             else
                 return ItemUtil.areItemsIdentical(item, inv.getInventory().getItem(slot));
         }
@@ -88,7 +90,7 @@ public class ContentsSensor extends AbstractSelfTriggeredIC {
         @Override
         public void verify(ChangedSign sign) throws ICVerificationException {
 
-            ItemStack item = ICUtil.getItem(sign.getLine(2));
+            ItemStack item = ItemUtil.getItem(sign.getLine(2));
             if(item == null)
                 throw new ICVerificationException("Invalid item to detect!");
         }
@@ -105,10 +107,5 @@ public class ContentsSensor extends AbstractSelfTriggeredIC {
             String[] lines = new String[] {"item id:data", "slot (optional)"};
             return lines;
         }
-    }
-
-    @Override
-    public boolean isActive () {
-        return true;
     }
 }

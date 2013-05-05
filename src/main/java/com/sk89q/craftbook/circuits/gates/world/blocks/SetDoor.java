@@ -113,10 +113,10 @@ public class SetDoor extends AbstractIC {
             if (relativeOffset) {
                 center = LocationUtil.getRelativeOffset(getSign(), offsetX, offsetY, offsetZ);
             } else {
-                center = LocationUtil.getOffset(SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock()), offsetX, offsetY, offsetZ);
+                center = LocationUtil.getOffset(getBackBlock(), offsetX, offsetY, offsetZ);
             }
         } else {
-            center = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock()).getRelative(BlockFace.UP);
+            center = getBackBlock().getRelative(BlockFace.UP);
         }
     }
 
@@ -140,6 +140,8 @@ public class SetDoor extends AbstractIC {
         } else {
             setDoor(false);
         }
+
+        chip.setOutput(0, chip.getInput(0));
     }
 
     private void setDoor(boolean open) {

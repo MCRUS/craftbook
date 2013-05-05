@@ -1,6 +1,7 @@
 package com.sk89q.craftbook.circuits.gates.world.items;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -17,11 +18,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
-import org.bukkit.material.PistonBaseMaterial;
 
 import com.sk89q.craftbook.ChangedSign;
-import com.sk89q.craftbook.bukkit.CircuitCore;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.circuits.Pipes;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
 import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
@@ -30,7 +30,6 @@ import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.ic.PipeInputIC;
 import com.sk89q.craftbook.mech.crafting.CustomCrafting;
 import com.sk89q.craftbook.util.ItemUtil;
-import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.worldedit.BlockWorldVector;
 import com.sk89q.worldedit.blocks.BlockID;
 
@@ -115,22 +114,8 @@ public class AutomaticCrafter extends AbstractSelfTriggeredIC implements PipeInp
 
         boolean pipes = false;
 
-        if (CircuitCore.inst().getPipeFactory() != null) {
-            Block b = disp.getBlock().getRelative(((org.bukkit.material.Dispenser) disp.getData()).getFacing());
-            if (b.getTypeId() == BlockID.PISTON_STICKY_BASE) {
-
-                PistonBaseMaterial p = (PistonBaseMaterial) b.getState().getData();
-                if (p.getFacing() == ((org.bukkit.material.Dispenser) disp.getData()).getFacing().getOppositeFace()) {
-                    List<ItemStack> items = new ArrayList<ItemStack>();
-                    items.add(CustomCrafting.craftItem(recipe) != null ? CustomCrafting.craftItem(recipe) : recipe.getResult());
-                    if (CircuitCore.inst().getPipeFactory() != null)
-                        if (CircuitCore.inst().getPipeFactory()
-                                .detect(BukkitUtil.toWorldVector(b), items) != null) {
-                            pipes = true;
-                        }
-                }
-            }
-        }
+        if(Pipes.Factory.setupPipes(disp.getBlock().getRelative(((org.bukkit.material.Dispenser) disp.getData()).getFacing()), disp.getBlock(), Arrays.asList(CustomCrafting.craftItem(recipe) != null ? CustomCrafting.craftItem(recipe) : recipe.getResult())) != null)
+            pipes = true;
 
         if (!pipes) {
             disp.getInventory().addItem(CustomCrafting.craftItem(recipe) != null ? CustomCrafting.craftItem(recipe) : recipe.getResult());
@@ -163,7 +148,7 @@ public class AutomaticCrafter extends AbstractSelfTriggeredIC implements PipeInp
                         ItemStack it = ItemUtil.getSmallestStackOfType(disp.getInventory().getContents(),
                                 item.getItemStack());
                         if (it == null) continue outer;
-                        if (it.getAmount() < 64) {
+                        if (it.getAmount() < it.getMaxStackSize()) {
                             it.setAmount(it.getAmount() + 1);
                             newAmount -= 1;
                         } else if (newAmount > 0) {
@@ -191,7 +176,7 @@ public class AutomaticCrafter extends AbstractSelfTriggeredIC implements PipeInp
     public boolean doStuff(boolean craft, boolean collect) {
 
         boolean ret = false;
-        Block crafter = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock()).getRelative(0, 1, 0);
+        Block crafter = getBackBlock().getRelative(0, 1, 0);
         if (crafter.getTypeId() == BlockID.DISPENSER) {
             Dispenser disp = (Dispenser) crafter.getState();
             if (collect) {
@@ -307,7 +292,7 @@ public class AutomaticCrafter extends AbstractSelfTriggeredIC implements PipeInp
     @Override
     public List<ItemStack> onPipeTransfer(BlockWorldVector pipe, List<ItemStack> items) {
 
-        Block crafter = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock()).getRelative(0, 1, 0);
+        Block crafter = getBackBlock().getRelative(0, 1, 0);
         if (crafter.getTypeId() == BlockID.DISPENSER) {
             Dispenser disp = (Dispenser) crafter.getState();
 
@@ -321,7 +306,7 @@ public class AutomaticCrafter extends AbstractSelfTriggeredIC implements PipeInp
                 for (int i = 0; i < ite.getAmount(); i++) {
                     ItemStack it = ItemUtil.getSmallestStackOfType(disp.getInventory().getContents(), ite);
                     if (!ItemUtil.isStackValid(it) || !ItemUtil.areItemsIdentical(ite, it)) continue;
-                    if (it.getAmount() < 64) {
+                    if (it.getAmount() < it.getMaxStackSize()) {
                         it.setAmount(it.getAmount() + 1);
                         newAmount -= 1;
                     } else {

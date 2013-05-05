@@ -18,9 +18,7 @@ import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
-import com.sk89q.craftbook.util.ICUtil;
 import com.sk89q.craftbook.util.ItemUtil;
-import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.worldedit.blocks.BlockID;
 
 /**
@@ -45,7 +43,7 @@ public class ContainerDispenser extends AbstractSelfTriggeredIC {
             amount = 1;
         }
 
-        item = ICUtil.getItem(getLine(3));
+        item = ItemUtil.getItem(getLine(3));
         if(item != null)
             item.setAmount(amount);
     }
@@ -71,12 +69,6 @@ public class ContainerDispenser extends AbstractSelfTriggeredIC {
     }
 
     @Override
-    public boolean isActive() {
-
-        return true;
-    }
-
-    @Override
     public void think(ChipState chip) {
 
         chip.setOutput(0, dispense());
@@ -89,7 +81,7 @@ public class ContainerDispenser extends AbstractSelfTriggeredIC {
      */
     protected boolean dispense() {
 
-        Block b = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock());
+        Block b = getBackBlock();
 
         int x = b.getX();
         int y = b.getY() + 1;

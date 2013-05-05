@@ -18,7 +18,6 @@ import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.util.ICUtil;
 import com.sk89q.craftbook.util.ItemUtil;
 import com.sk89q.craftbook.util.LocationUtil;
-import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.blocks.BlockType;
@@ -47,15 +46,15 @@ public class Planter extends AbstractSelfTriggeredIC {
     @Override
     public void load() {
 
-        item = ICUtil.getItem(getLine(2));
+        item = ItemUtil.getItem(getLine(2));
 
-        onBlock = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock());
+        onBlock = getBackBlock();
 
         radius = ICUtil.parseRadius(getSign(), 3);
         if (getLine(3).contains("=")) {
             target = ICUtil.parseBlockLocation(getSign(), 3);
         } else {
-            target = SignUtil.getBackBlock(BukkitUtil.toSign(getSign()).getBlock());
+            target = getBackBlock();
         }
     }
 
@@ -171,6 +170,7 @@ public class Planter extends AbstractSelfTriggeredIC {
             case BlockID.YELLOW_FLOWER:
             case BlockID.RED_MUSHROOM:
             case BlockID.BROWN_MUSHROOM:
+            case BlockID.LILY_PAD:
                 return true;
             default:
                 return false;
@@ -197,6 +197,8 @@ public class Planter extends AbstractSelfTriggeredIC {
             case BlockID.RED_MUSHROOM:
             case BlockID.BROWN_MUSHROOM:
                 return !BlockType.canPassThrough(blockId);
+            case BlockID.LILY_PAD:
+                return blockId == BlockID.WATER || blockId == BlockID.STATIONARY_WATER;
         }
         return false;
     }
@@ -228,8 +230,10 @@ public class Planter extends AbstractSelfTriggeredIC {
                 return BlockID.RED_MUSHROOM;
             case BlockID.BROWN_MUSHROOM:
                 return BlockID.BROWN_MUSHROOM;
+            case BlockID.LILY_PAD:
+                return BlockID.LILY_PAD;
             default:
-                return BlockID.AIR;
+                return itemId;
         }
     }
 
@@ -255,7 +259,7 @@ public class Planter extends AbstractSelfTriggeredIC {
         @Override
         public String[] getLineHelp() {
 
-            String[] lines = new String[] {"Item to plant id{:data}", "+oradius=x:y:z offset"};
+            String[] lines = new String[] {"+oItem to plant id{:data}", "+oradius=x:y:z offset"};
             return lines;
         }
     }

@@ -85,10 +85,8 @@ public class PotionInducer extends AbstractSelfTriggeredIC {
             mobs = false;
         }
         line4 = line4.replace("m", "").replace("p", "");
-        getSign().setLine(3, line4);
-        radius = ICUtil.parseRadius(getSign(), 3);
+        radius = ICUtil.parseRadius(line4);
         offset = ICUtil.parseBlockLocation(getSign(), 3).getLocation();
-        getSign().setLine(3, line4 + (mobs ? "m" : "") + (players ? "p" : ""));
     }
 
     public boolean induce() {
@@ -120,12 +118,6 @@ public class PotionInducer extends AbstractSelfTriggeredIC {
     public void think(ChipState state) {
 
         state.setOutput(0, induce());
-    }
-
-    @Override
-    public boolean isActive() {
-
-        return true;
     }
 
     public static class Factory extends AbstractICFactory implements RestrictedIC {
