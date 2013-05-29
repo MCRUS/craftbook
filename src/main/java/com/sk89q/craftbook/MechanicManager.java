@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -89,7 +88,7 @@ public class MechanicManager {
     /**
      * List of mechanics that think on a routine basis.
      */
-    private final Set<SelfTriggeringMechanic> thinkingMechanics = new LinkedHashSet<SelfTriggeringMechanic>();
+    public final Set<SelfTriggeringMechanic> thinkingMechanics = new LinkedHashSet<SelfTriggeringMechanic>();
 
     /**
      * Construct the manager.
@@ -255,7 +254,7 @@ public class MechanicManager {
 
                     if (!plugin.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace())) {
                         player.printError("area.permissions");
-                        return 0; 
+                        return 0;
                     }
 
                     aMechanic.onRightClick(event);
@@ -357,16 +356,15 @@ public class MechanicManager {
      * @throws InvalidMechanismException if it appears that the position is intended to me a mechanism,
      *                                   but the mechanism is misconfigured and inoperable.
      */
-    protected HashSet<Mechanic> load(BlockWorldVector pos, LocalPlayer player) throws InvalidMechanismException {
+    public HashSet<Mechanic> load(BlockWorldVector pos, LocalPlayer player) throws InvalidMechanismException {
 
         HashSet<Mechanic> detectedMechanics = detect(pos);
         if(player != null)
             detectedMechanics.addAll(detect(pos,player));
 
-        Mechanic ptMechanic = triggersManager.get(pos);
+        PersistentMechanic ptMechanic = triggersManager.get(pos);
 
-        if (ptMechanic != null && ptMechanic instanceof PersistentMechanic && !((PersistentMechanic) ptMechanic)
-                .isActive()) {
+        if (ptMechanic != null && !ptMechanic.isActive()) {
             unload(ptMechanic, null);
             ptMechanic = null;
         }
@@ -434,10 +432,9 @@ public class MechanicManager {
 
         HashSet<Mechanic> detectedMechanics = detect(pos, player, sign);
 
-        Mechanic ptMechanic = triggersManager.get(pos);
+        PersistentMechanic ptMechanic = triggersManager.get(pos);
 
-        if (ptMechanic != null && ptMechanic instanceof PersistentMechanic && !((PersistentMechanic) ptMechanic)
-                .isActive()) {
+        if (ptMechanic != null && !ptMechanic.isActive()) {
             unload(ptMechanic, null);
             ptMechanic = null;
         }
@@ -596,21 +593,23 @@ public class MechanicManager {
                 if (state == null) continue;
                 if (state instanceof Sign) {
                     try {
-                        load(toWorldVector(state.getBlock()), null);
+                        load(BukkitUtil.toWorldVector(state.getBlock()), null);
                     } catch (InvalidMechanismException ignored) {
                     } catch (Throwable t) {
                         BukkitUtil.printStacktrace(t);
                     }
                 }
             }
+        } catch (NullPointerException e) {
+            // Ignore: Generally thrown by Bukkit even for valid chunks
         } catch (Throwable error) {
 
             BukkitUtil.printStacktrace(error);
-            Bukkit.getLogger().severe("A corruption issue has been found at chunk ("
+            CraftBookPlugin.logger().severe("A corruption issue has been found at chunk ("
                     + chunk.getX() + ", " + chunk.getZ() + ") Self-Triggering mechanics " +
                     "may not work as expected until this is resolved!");
             // TODO This probably needs formatted better
-            Bukkit.getLogger().severe("Chunk (" + chunk.getX() + ", " + chunk.getZ() + ") starts at " +
+            CraftBookPlugin.logger().severe("Chunk (" + chunk.getX() + ", " + chunk.getZ() + ") starts at " +
                     chunk.getBlock(0, 0, 0).getLocation().toString() + " and ends at " +
                     chunk.getBlock(15, 255, 15).getLocation().toString() + '.');
         }
@@ -625,6 +624,25 @@ public class MechanicManager {
         // Find mechanics that we need to unload
         Set<PersistentMechanic> applicable = triggersManager.getByChunk(chunk);
         applicable.addAll(watchBlockManager.getByChunk(chunk));
+
+        for (Mechanic m : applicable) {
+            if (event != null && event.isCancelled())
+                return;
+            unload(m, event);
+        }
+    }
+
+    /**
+     * Unloads the mechanics at the given position.
+     * 
+     * @param position
+     * @param event
+     */
+    public void unload(BlockWorldVector position, ChunkUnloadEvent event) {
+
+        Set<PersistentMechanic> applicable = new HashSet<PersistentMechanic>();
+        applicable.add(triggersManager.get(position));
+        applicable.addAll(watchBlockManager.get(position));
 
         for (Mechanic m : applicable) {
             if (event != null && event.isCancelled())
@@ -659,8 +677,7 @@ public class MechanicManager {
             }
             mechanic.unload();
         } catch (Throwable t) { // Mechanic failed to unload for some reason
-            logger.log(Level.WARNING, "CraftBook mechanic: Failed to unload " + mechanic.getClass().getCanonicalName
-                    (), t);
+            logger.log(Level.WARNING, "CraftBook mechanic: Failed to unload " + mechanic.getClass().getSimpleName());
             BukkitUtil.printStacktrace(t);
         }
 
@@ -695,12 +712,17 @@ public class MechanicManager {
                 try {
                     mechanic.think();
                 } catch (Throwable t) { // Mechanic failed to think for some reason
-                    logger.log(Level.WARNING, "CraftBook mechanic: Failed to think for " + mechanic.getClass()
-                            .getCanonicalName(), t);
+                    logger.log(Level.WARNING, "CraftBook mechanic: Failed to think for " + mechanic.getClass().getSimpleName());
                     BukkitUtil.printStacktrace(t);
                 }
             } else {
                 unload(mechanic, null);
+                if(mechanic instanceof ICMechanic) {
+                    try {
+                        load(((ICMechanic) mechanic).getIC().getSign().getBlockVector(), null);
+                    } catch (InvalidMechanismException e) {
+                    }
+                }
             }
         }
     }

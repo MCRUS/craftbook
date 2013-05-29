@@ -39,7 +39,7 @@ public class PlayerSensor extends AbstractSelfTriggeredIC {
     @Override
     public String getSignTitle() {
 
-        return "P-DETECTION"; 
+        return "P-DETECTION";
     }
 
     @Override
@@ -74,7 +74,7 @@ public class PlayerSensor extends AbstractSelfTriggeredIC {
 
         invertOutput = getLine(3).contains("!");
 
-        nameLine = getLine(3).replace("g:", "").replace("p:", "").replace("!", "").trim();
+        nameLine = getLine(3).replace("g:", "").replace("p:", "").replace("n:", "").replace("!", "").trim();
 
         try {
             String locInfo = getLine(2);
@@ -132,6 +132,8 @@ public class PlayerSensor extends AbstractSelfTriggeredIC {
                     return true;
                 } else if (type == Type.GROUP && CraftBookPlugin.inst().inGroup(e, nameLine)) {
                     return true;
+                } else if (type == Type.PERMISSION_NODE && e.hasPermission(nameLine)) {
+                    return true;
                 }
             }
         }
@@ -141,7 +143,7 @@ public class PlayerSensor extends AbstractSelfTriggeredIC {
 
     private enum Type {
 
-        PLAYER('p'), GROUP('g');
+        PLAYER('p'), GROUP('g'), PERMISSION_NODE('n');
 
         private Type(char prefix) {
 
@@ -180,11 +182,10 @@ public class PlayerSensor extends AbstractSelfTriggeredIC {
         @Override
         public String[] getLineHelp() {
 
-            String[] lines = new String[] {
+            return new String[] {
                     "radius=x:y:z offset, or r:regionname for WorldGuard regions",
-                    "p:playername or g:permissiongroup"
+                    "p:playername, g:permgroup or n:permnode"
             };
-            return lines;
         }
     }
 }

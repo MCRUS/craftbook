@@ -66,7 +66,10 @@ public class ParticleEffect extends AbstractSelfTriggeredIC {
         try {
             effectID = Integer.parseInt(eff[0]);
         } catch (Exception e) {
-            effectID = Effect.valueOf(eff[0]).getId();
+            try {
+                effectID = Effect.valueOf(eff[0]).getId();
+            }
+            catch(Exception ee){}
         }
         if (Effect.getById(effectID) == null) return;
         try {
@@ -118,8 +121,7 @@ public class ParticleEffect extends AbstractSelfTriggeredIC {
         @Override
         public String[] getLineHelp() {
 
-            String[] lines = new String[] {"effectID:effectData=xOff:yOff:zOff", "amount of particles"};
-            return lines;
+            return new String[] {"effectID:effectData=xOff:yOff:zOff", "amount of particles"};
         }
 
         @Override
@@ -127,11 +129,14 @@ public class ParticleEffect extends AbstractSelfTriggeredIC {
 
             try {
                 String[] eff = RegexUtil.COLON_PATTERN.split(RegexUtil.EQUALS_PATTERN.split(sign.getLine(2))[0], 2);
-                int effectID, effectData;
+                int effectID = 0, effectData;
                 try {
                     effectID = Integer.parseInt(eff[0]);
                 } catch (Exception e) {
-                    effectID = Effect.valueOf(eff[0]).getId();
+                    try {
+                        effectID = Effect.valueOf(eff[0]).getId();
+                    }
+                    catch(Exception ee){}
                 }
                 if (Effect.getById(effectID) == null) throw new ICVerificationException("Invalid effect!");
                 try {

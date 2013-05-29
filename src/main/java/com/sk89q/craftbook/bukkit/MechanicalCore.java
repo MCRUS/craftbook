@@ -2,14 +2,13 @@ package com.sk89q.craftbook.bukkit;
 import java.io.File;
 import java.util.Iterator;
 
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 
 import com.sk89q.craftbook.LocalComponent;
-import com.sk89q.craftbook.Mechanic;
-import com.sk89q.craftbook.MechanicFactory;
-import com.sk89q.craftbook.MechanicManager;
 import com.sk89q.craftbook.bukkit.commands.MechanismCommands;
-import com.sk89q.craftbook.mech.AIMechanic;
 import com.sk89q.craftbook.mech.Ammeter;
 import com.sk89q.craftbook.mech.BetterPhysics;
 import com.sk89q.craftbook.mech.BetterPistons;
@@ -24,7 +23,9 @@ import com.sk89q.craftbook.mech.CookingPot;
 import com.sk89q.craftbook.mech.CustomDrops;
 import com.sk89q.craftbook.mech.Door;
 import com.sk89q.craftbook.mech.Elevator;
+import com.sk89q.craftbook.mech.Footprints;
 import com.sk89q.craftbook.mech.Gate;
+import com.sk89q.craftbook.mech.HeadDrops;
 import com.sk89q.craftbook.mech.HiddenSwitch;
 import com.sk89q.craftbook.mech.LightStone;
 import com.sk89q.craftbook.mech.LightSwitch;
@@ -35,6 +36,7 @@ import com.sk89q.craftbook.mech.SignCopier;
 import com.sk89q.craftbook.mech.Snow;
 import com.sk89q.craftbook.mech.Teleporter;
 import com.sk89q.craftbook.mech.XPStorer;
+import com.sk89q.craftbook.mech.ai.AIMechanic;
 import com.sk89q.craftbook.mech.area.Area;
 import com.sk89q.craftbook.mech.area.CopyManager;
 import com.sk89q.craftbook.mech.cauldron.ImprovedCauldron;
@@ -52,7 +54,7 @@ public class MechanicalCore implements LocalComponent {
 
     private CraftBookPlugin plugin = CraftBookPlugin.inst();
     private final CopyManager copyManager = new CopyManager();
-    private MechanicManager manager;
+    private CustomCrafting customCrafting;
 
     public static boolean isEnabled() {
 
@@ -74,9 +76,6 @@ public class MechanicalCore implements LocalComponent {
 
         plugin.registerCommands(MechanismCommands.class);
 
-        manager = new MechanicManager();
-        plugin.registerManager(manager);
-
         registerMechanics();
         registerEvents();
     }
@@ -84,13 +83,29 @@ public class MechanicalCore implements LocalComponent {
     @Override
     public void disable() {
 
-        unregisterAllMechanics();
+        Iterator<String> it = Elevator.flyingPlayers.iterator();
+        while(it.hasNext()) {
+            OfflinePlayer op = Bukkit.getOfflinePlayer(it.next());
+            if(!op.isOnline()) {
+                it.remove();
+                continue;
+            }
+            op.getPlayer().setFlying(false);
+            op.getPlayer().setAllowFlight(op.getPlayer().getGameMode() == GameMode.CREATIVE);
+            it.remove();
+        }
         instance = null;
+        DispenserRecipes.unload();
     }
 
     public CopyManager getCopyManager() {
 
         return copyManager;
+    }
+
+    public CustomCrafting getCustomCrafting() {
+
+        return customCrafting;
     }
 
     private void registerMechanics() {
@@ -100,36 +115,34 @@ public class MechanicalCore implements LocalComponent {
         // Let's register mechanics!
 
         //Register Chunk Anchors first so that they are always the first mechanics to be checked for, allowing other mechanics to stay loaded in unloaded chunks.
-        if (config.chunkAnchorEnabled) registerMechanic(new ChunkAnchor.Factory());
+        if (config.chunkAnchorEnabled) plugin.registerMechanic(new ChunkAnchor.Factory());
 
-        if (config.signCopyEnabled) registerMechanic(new SignCopier.Factory()); // Keep SignCopy close to the start, so it can copy mechanics without triggering them.
-        if (config.ammeterEnabled) registerMechanic(new Ammeter.Factory());
+        if (config.signCopyEnabled) plugin.registerMechanic(new SignCopier.Factory()); // Keep SignCopy close to the start, so it can copy mechanics without triggering them.
+        if (config.ammeterEnabled) plugin.registerMechanic(new Ammeter.Factory());
         if (config.bookcaseEnabled) {
             plugin.createDefaultConfiguration(new File(plugin.getDataFolder(), "books.txt"), "books.txt", false);
-            registerMechanic(new Bookcase.Factory());
+            plugin.registerMechanic(new Bookcase.Factory());
         }
-        if (config.gateEnabled) registerMechanic(new Gate.Factory());
-        if (config.bridgeEnabled) registerMechanic(new Bridge.Factory());
-        if (config.doorEnabled) registerMechanic(new Door.Factory());
-        if (config.elevatorEnabled) registerMechanic(new Elevator.Factory());
-        if (config.teleporterEnabled) registerMechanic(new Teleporter.Factory());
-        if (config.areaEnabled) registerMechanic(new Area.Factory());
-        if (config.commandSignEnabled) registerMechanic(new Command.Factory());
-        if (config.lightstoneEnabled) registerMechanic(new LightStone.Factory());
-        if (config.lightSwitchEnabled) registerMechanic(new LightSwitch.Factory());
-        if (config.hiddenSwitchEnabled) registerMechanic(new HiddenSwitch.Factory());
-        if (config.cookingPotEnabled) registerMechanic(new CookingPot.Factory());
-        if (config.legacyCauldronEnabled) registerMechanic(new Cauldron.Factory());
-        if (config.cauldronEnabled) registerMechanic(new ImprovedCauldron.Factory());
-        if (config.xpStorerEnabled) registerMechanic(new XPStorer.Factory());
-        if (config.mapChangerEnabled) registerMechanic(new MapChanger.Factory());
+        if (config.gateEnabled) plugin.registerMechanic(new Gate.Factory());
+        if (config.bridgeEnabled) plugin.registerMechanic(new Bridge.Factory());
+        if (config.doorEnabled) plugin.registerMechanic(new Door.Factory());
+        if (config.elevatorEnabled) plugin.registerMechanic(new Elevator.Factory());
+        if (config.teleporterEnabled) plugin.registerMechanic(new Teleporter.Factory());
+        if (config.areaEnabled) plugin.registerMechanic(new Area.Factory());
+        if (config.commandSignEnabled) plugin.registerMechanic(new Command.Factory());
+        if (config.lightstoneEnabled) plugin.registerMechanic(new LightStone.Factory());
+        if (config.lightSwitchEnabled) plugin.registerMechanic(new LightSwitch.Factory());
+        if (config.hiddenSwitchEnabled) plugin.registerMechanic(new HiddenSwitch.Factory());
+        if (config.cookingPotEnabled) plugin.registerMechanic(new CookingPot.Factory());
+        if (config.legacyCauldronEnabled) plugin.registerMechanic(new Cauldron.Factory());
+        if (config.cauldronEnabled) plugin.registerMechanic(new ImprovedCauldron.Factory());
+        if (config.xpStorerEnabled) plugin.registerMechanic(new XPStorer.Factory());
+        if (config.mapChangerEnabled) plugin.registerMechanic(new MapChanger.Factory());
         for(Types type : BetterPistons.Types.values())
-            if (config.pistonsEnabled && Types.isEnabled(type)) registerMechanic(new BetterPistons.Factory(type));
+            if (config.pistonsEnabled && Types.isEnabled(type)) plugin.registerMechanic(new BetterPistons.Factory(type));
 
         // Special mechanics.
-        if (plugin.getEconomy() != null && config.paymentEnabled) {
-            registerMechanic(new Payment.Factory());
-        }
+        if (plugin.getEconomy() != null && config.paymentEnabled) plugin.registerMechanic(new Payment.Factory());
     }
 
     protected void registerEvents() {
@@ -138,7 +151,7 @@ public class MechanicalCore implements LocalComponent {
         BukkitConfiguration config = plugin.getConfiguration();
 
         if (config.customCraftingEnabled) {
-            server.getPluginManager().registerEvents(new CustomCrafting(), plugin);
+            server.getPluginManager().registerEvents(customCrafting = new CustomCrafting(), plugin);
         }
         if (config.customDispensingEnabled) {
             server.getPluginManager().registerEvents(new DispenserRecipes(), plugin);
@@ -156,6 +169,10 @@ public class MechanicalCore implements LocalComponent {
             if (plugin.hasProtocolLib()) server.getPluginManager().registerEvents(new Chair(), plugin);
             else plugin.getLogger().warning("Chairs require ProtocolLib! They will not function without it!");
         }
+        if (config.footprintsEnabled) {
+            if (plugin.hasProtocolLib()) server.getPluginManager().registerEvents(new Footprints(), plugin);
+            else plugin.getLogger().warning("Footprints require ProtocolLib! They will not function without it!");
+        }
         if (config.paintingsEnabled) {
             server.getPluginManager().registerEvents(new PaintingSwitch(), plugin);
         }
@@ -163,46 +180,15 @@ public class MechanicalCore implements LocalComponent {
         if (config.physicsEnabled) {
             server.getPluginManager().registerEvents(new BetterPhysics(), plugin);
         }
+
+        if (config.headDropsEnabled) {
+            server.getPluginManager().registerEvents(new HeadDrops(), plugin);
+        }
         /*
          * TODO if (getLocalConfiguration().elementalArrowSettings.enable) { getServer().getPluginManager()
          * .registerEvents(new
          * ElementalArrowsMechanic(this), this); }
          */
-    }
-
-    /**
-     * Register a mechanic if possible
-     *
-     * @param factory
-     */
-    private void registerMechanic(MechanicFactory<? extends Mechanic> factory) {
-
-        manager.register(factory);
-    }
-
-    /**
-     * Unregister a mechanic if possible TODO Ensure no remnants are left behind
-     *
-     * @param factory
-     *
-     * @return true if the mechanic was successfully unregistered.
-     */
-    @SuppressWarnings("unused")
-    private boolean unregisterMechanic(MechanicFactory<? extends Mechanic> factory) {
-
-        return manager.unregister(factory);
-    }
-
-    private boolean unregisterAllMechanics() {
-
-        Iterator<MechanicFactory<? extends Mechanic>> iterator = manager.factories.iterator();
-
-        while (iterator.hasNext()) {
-            iterator.next();
-            manager.unregister(iterator);
-        }
-
-        return true;
     }
 
     /**

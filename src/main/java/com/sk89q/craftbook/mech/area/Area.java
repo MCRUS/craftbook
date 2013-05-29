@@ -45,8 +45,7 @@ public class Area extends AbstractMechanic {
          * @throws ProcessedMechanismException
          */
         @Override
-        public Area detect(BlockWorldVector pt, LocalPlayer player,
-                ChangedSign sign) throws InvalidMechanismException, ProcessedMechanismException {
+        public Area detect(BlockWorldVector pt, LocalPlayer player, ChangedSign sign) throws InvalidMechanismException, ProcessedMechanismException {
 
             if (!plugin.getConfiguration().areaEnabled) return null;
 
@@ -198,9 +197,12 @@ public class Area extends AbstractMechanic {
             String id = sign.getLine(2).replace("-", "").toLowerCase();
             String inactiveID = sign.getLine(3).replace("-", "").toLowerCase();
 
-            CuboidCopy copy = CopyManager.getInstance().load(world, namespace, id);
+            CuboidCopy copy;
 
             if (isToggledOn()) {
+
+                copy = CopyManager.getInstance().load(world, namespace, id);
+
                 // if this is a save area save it before toggling off
                 if (saveOnToggle) {
                     copy.copy();
@@ -215,12 +217,16 @@ public class Area extends AbstractMechanic {
                 }
                 setToggledState(sign, false);
             } else {
+
                 // toggle the area on
                 // if this is a save area save it before toggling off
                 if (saveOnToggle && !inactiveID.isEmpty() && !inactiveID.equals("--")) {
+                    copy = CopyManager.getInstance().load(world, namespace, inactiveID);
                     copy.copy();
                     CopyManager.getInstance().save(world, namespace, inactiveID, copy);
                 }
+
+                copy = CopyManager.getInstance().load(world, namespace, id);
                 copy.paste();
                 setToggledState(sign, true);
             }
@@ -248,9 +254,12 @@ public class Area extends AbstractMechanic {
             String id = sign.getLine(2).replace("-", "").toLowerCase();
             String inactiveID = sign.getLine(3).replace("-", "").toLowerCase();
 
-            CuboidCopy copy = CopyManager.getInstance().load(world, namespace, id);
+            CuboidCopy copy;
 
             if (toggleOn) {
+
+                copy = CopyManager.getInstance().load(world, namespace, id);
+
                 // if this is a save area save it before toggling off
                 if (save) {
                     copy.copy();
@@ -265,12 +274,15 @@ public class Area extends AbstractMechanic {
                 }
                 setToggledState(sign, false);
             } else {
+
                 // toggle the area on
                 // if this is a save area save it before toggling off
                 if (save && !inactiveID.isEmpty() && !inactiveID.equals("--")) {
+                    copy = CopyManager.getInstance().load(world, namespace, inactiveID);
                     copy.copy();
                     CopyManager.getInstance().save(world, namespace, inactiveID, copy);
-                }
+                } else
+                    copy = CopyManager.getInstance().load(world, namespace, id);
                 copy.paste();
                 setToggledState(sign, true);
             }

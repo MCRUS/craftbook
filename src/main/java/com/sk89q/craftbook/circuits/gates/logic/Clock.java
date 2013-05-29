@@ -22,6 +22,7 @@ import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
 import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
+import com.sk89q.craftbook.circuits.ic.ConfigurableIC;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.ic.ICVerificationException;
@@ -69,6 +70,18 @@ public class Clock extends AbstractSelfTriggeredIC {
 
     protected void triggerClock(ChipState chip) {
 
+        tick++;
+
+        if (tick == reset) {
+            tick = 0;
+            chip.setOutput(0, !chip.getOutput(0));
+        }
+
+        getSign().setLine(3, Short.toString(tick));
+    }
+
+    @Override
+    public void load() {
         try {
             reset = Short.parseShort(getSign().getLine(2));
         } catch (NumberFormatException e) {
@@ -84,18 +97,9 @@ public class Clock extends AbstractSelfTriggeredIC {
             getSign().setLine(3, Short.toString(tick));
             getSign().update(false);
         }
-
-        tick++;
-
-        if (tick == reset) {
-            tick = 0;
-            chip.setOutput(0, !chip.getOutput(0));
-        }
-
-        getSign().setLine(3, Short.toString(tick));
     }
 
-    public static class Factory extends AbstractICFactory {
+    public static class Factory extends AbstractICFactory implements ConfigurableIC {
 
         public boolean inverted = false;
 
@@ -155,12 +159,6 @@ public class Clock extends AbstractSelfTriggeredIC {
         public void addConfiguration(YAMLProcessor config, String path) {
 
             inverted = config.getBoolean(path + "inverted", false);
-        }
-
-        @Override
-        public boolean needsConfiguration() {
-
-            return true;
         }
     }
 }

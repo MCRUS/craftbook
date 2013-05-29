@@ -16,7 +16,7 @@
 
 package com.sk89q.craftbook.circuits.ic;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 
@@ -60,7 +60,7 @@ public class ICMechanic extends PersistentMechanic {
     public boolean equals(Object o) {
 
         if(o instanceof ICMechanic)
-            return ((ICMechanic) o).id.equals(id) && pos.getBlockX() == ((ICMechanic) o).pos.getBlockX() && pos.getBlockY() == ((ICMechanic) o).pos.getBlockY() && pos.getBlockZ() == ((ICMechanic) o).pos.getBlockZ() && ic.getSignTitle().equalsIgnoreCase(((ICMechanic)o).ic.getSignTitle()) && ic.getSignTitle().equalsIgnoreCase(((ICMechanic)o).ic.getSignTitle());
+            return ((ICMechanic) o).id.equals(id) && pos.getWorld().equals(((ICMechanic) o).pos.getWorld()) && pos.getBlockX() == ((ICMechanic) o).pos.getBlockX() && pos.getBlockY() == ((ICMechanic) o).pos.getBlockY() && pos.getBlockZ() == ((ICMechanic) o).pos.getBlockZ() && ic.getSignTitle().equalsIgnoreCase(((ICMechanic)o).ic.getSignTitle()) && ic.getTitle().equalsIgnoreCase(((ICMechanic)o).ic.getTitle());
 
         return false;
     }
@@ -68,7 +68,7 @@ public class ICMechanic extends PersistentMechanic {
     @Override
     public int hashCode() {
 
-        return (pos.getBlockX() * 1103515245 + 12345 ^ pos.getBlockY() * 1103515245 + 12345 ^ pos.getBlockZ() * 1103515245 + 12345 ^ id.hashCode() * 1103515245 + 12345 ^ ic.getSignTitle().hashCode() * 1103515245 + 12345) * 1103515245 + 12345;
+        return (pos.getBlockX() * 1103515245 + 12345 ^ pos.getBlockY() * 1103515245 + 12345 ^ pos.getBlockZ() * 1103515245 + 12345 ^ id.hashCode() * 1103515245 + 12345 ^ ic.getSignTitle().hashCode() * 1103515245 + 12345 ^ pos.getWorld().hashCode() * 1103515245 + 12345) * 1103515245 + 12345;
     }
 
     @Override
@@ -90,16 +90,21 @@ public class ICMechanic extends PersistentMechanic {
                 public void run() {
 
                     if (block.getTypeId() != BlockID.WALL_SIGN) return;
-                    ChipState chipState = family.detect(BukkitUtil.toWorldVector(source),
-                            BukkitUtil.toChangedSign(block));
-                    int cnt = 0;
-                    for (int i = 0; i < chipState.getInputCount(); i++) {
-                        if (chipState.isTriggered(i)) {
-                            cnt++;
+                    try {
+                        ChipState chipState = family.detect(BukkitUtil.toWorldVector(source),
+                                BukkitUtil.toChangedSign(block));
+                        int cnt = 0;
+                        for (int i = 0; i < chipState.getInputCount(); i++) {
+                            if (chipState.isTriggered(i)) {
+                                cnt++;
+                            }
                         }
-                    }
-                    if (cnt > 0) {
-                        ic.trigger(chipState);
+                        if (cnt > 0) {
+                            ic.trigger(chipState);
+                        }
+                    } catch (IllegalArgumentException ex) {
+                        // Exclude these exceptions so that we don't spam consoles because of Bukkit
+                        if (!ex.getMessage().contains("Null ChangedSign found")) throw ex;
                     }
                 }
             };
@@ -128,11 +133,15 @@ public class ICMechanic extends PersistentMechanic {
         Block block = BukkitUtil.toWorld(pt).getBlockAt(BukkitUtil.toLocation(pt));
 
         if (block.getTypeId() == BlockID.WALL_SIGN) {
+
             ChangedSign sign = BukkitUtil.toChangedSign(block);
+            if (sign == null) {
+                return false;
+            }
 
             Matcher matcher = RegexUtil.IC_PATTERN.matcher(sign.getLine(1));
 
-            return matcher.matches() && matcher.group(1).equalsIgnoreCase(id) && ic instanceof PersistentIC && ((PersistentIC) ic).isActive();
+            return matcher.matches() && matcher.group(1).equalsIgnoreCase(id) && ic instanceof PersistentIC && ((PersistentIC) ic).isActive() && (!CraftBookPlugin.inst().getConfiguration().ICCached || ICManager.isCachedIC(pt) && ICManager.getCachedIC(pt).equals(ic));
         }
 
         return false;
@@ -143,7 +152,7 @@ public class ICMechanic extends PersistentMechanic {
         // this seems a little strange; you'd think you'd be watching the input blocks, right?
         // nope. redstone events get reported to blocks adjacent to the redstone,
         // so we don't have to do that for any single-block IC.
-        return new ArrayList<BlockWorldVector>();
+        return Collections.emptyList();
     }
 
     @Override

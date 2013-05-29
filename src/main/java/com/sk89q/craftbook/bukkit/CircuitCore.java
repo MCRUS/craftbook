@@ -2,7 +2,6 @@ package com.sk89q.craftbook.bukkit;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -11,9 +10,6 @@ import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.sk89q.craftbook.LocalComponent;
-import com.sk89q.craftbook.Mechanic;
-import com.sk89q.craftbook.MechanicFactory;
-import com.sk89q.craftbook.MechanicManager;
 import com.sk89q.craftbook.bukkit.commands.CircuitCommands;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.circuits.GlowStone;
@@ -97,6 +93,7 @@ import com.sk89q.craftbook.circuits.gates.world.items.ContainerStacker;
 import com.sk89q.craftbook.circuits.gates.world.items.Distributer;
 import com.sk89q.craftbook.circuits.gates.world.items.ItemDispenser;
 import com.sk89q.craftbook.circuits.gates.world.items.ItemFan;
+import com.sk89q.craftbook.circuits.gates.world.items.RangedCollector;
 import com.sk89q.craftbook.circuits.gates.world.items.Sorter;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.ArrowBarrage;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.ArrowShooter;
@@ -112,6 +109,7 @@ import com.sk89q.craftbook.circuits.gates.world.miscellaneous.PotionInducer;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.ProgrammableFireworkShow;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.RadioPlayer;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.RadioStation;
+import com.sk89q.craftbook.circuits.gates.world.miscellaneous.SentryGun;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.SoundEffect;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.TimedExplosion;
 import com.sk89q.craftbook.circuits.gates.world.miscellaneous.Tune;
@@ -167,7 +165,7 @@ public class CircuitCore implements LocalComponent {
 
     private static CircuitCore instance;
     private CraftBookPlugin plugin = CraftBookPlugin.inst();
-    private MechanicManager manager;
+
     private ICManager icManager;
 
     private YAMLICConfiguration icConfiguration;
@@ -210,9 +208,6 @@ public class CircuitCore implements LocalComponent {
         plugin.createDefaultConfiguration(new File(plugin.getDataFolder(), "ic-config.yml"), "ic-config.yml", false);
         icConfiguration = new YAMLICConfiguration(new YAMLProcessor(new File(plugin.getDataFolder(), "ic-config.yml"), true, YAMLFormat.EXTENDED), plugin.getLogger());
 
-        manager = new MechanicManager();
-        plugin.registerManager(manager);
-
         midiFolder = new File(plugin.getDataFolder(), "midi/");
         new File(getMidiFolder(), "playlists").mkdirs();
 
@@ -233,9 +228,11 @@ public class CircuitCore implements LocalComponent {
     @Override
     public void disable() {
 
-        unregisterAllMechanics();
+        for(RegisteredICFactory factory : icManager.registered.values()) {
+            factory.getFactory().unload();
+        }
         ICManager.emptyCache();
-        icConfiguration.unload();
+        icManager.registered.clear();
         instance = null;
     }
 
@@ -273,14 +270,14 @@ public class CircuitCore implements LocalComponent {
 
         if (config.ICEnabled) {
             registerICs();
-            registerMechanic(ICFactory = new ICMechanicFactory(getIcManager()));
+            plugin.registerMechanic(ICFactory = new ICMechanicFactory(getIcManager()));
         }
 
         // Let's register mechanics!
-        if (config.netherrackEnabled) registerMechanic(new Netherrack.Factory());
-        if (config.pumpkinsEnabled) registerMechanic(new JackOLantern.Factory());
-        if (config.glowstoneEnabled) registerMechanic(new GlowStone.Factory());
-        if (config.pipesEnabled) registerMechanic(pipeFactory = new Pipes.Factory());
+        if (config.netherrackEnabled) plugin.registerMechanic(new Netherrack.Factory());
+        if (config.pumpkinsEnabled) plugin.registerMechanic(new JackOLantern.Factory());
+        if (config.glowstoneEnabled) plugin.registerMechanic(new GlowStone.Factory());
+        if (config.pipesEnabled) plugin.registerMechanic(pipeFactory = new Pipes.Factory());
     }
 
     private void registerICs() {
@@ -322,7 +319,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1211", "set bridge", new SetBridge.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1212", "set door", new SetDoor.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1213", "sound", new SoundEffect.Factory(server), familySISO, familyAISO); // Restricted
-        //TODO empty slot.
+        registerIC("MC1214", "range coll", new RangedCollector.Factory(server), familySISO, familyAISO);
         registerIC("MC1215", "set a chest", new SetBlockAboveChest.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1216", "set b chest", new SetBlockBelowChest.Factory(server), familySISO, familyAISO); // Restricted
         registerIC("MC1217", "pot induce", new PotionInducer.Factory(server), familySISO, familyAISO);
@@ -378,6 +375,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1275", "tune", new Tune.Factory(server), familySISO, familyAISO);
         registerIC("MC1276", "radio station", new RadioStation.Factory(server), familySISO, familyAISO);
         registerIC("MC1277", "radio player", new RadioPlayer.Factory(server), familySISO, familyAISO);
+        registerIC("MC1278", "sentry gun", new SentryGun.Factory(server), familySISO, familyAISO); //Restricted
         registerIC("MC1280", "animal breed", new AnimalBreeder.Factory(server), familySISO, familyAISO);
         registerIC("MC1420", "divide clock", new ClockDivider.Factory(server), familySISO, familyAISO);
         registerIC("MC1421", "clock", new Clock.Factory(server), familySISO, familyAISO);
@@ -448,56 +446,10 @@ public class CircuitCore implements LocalComponent {
      */
     public boolean registerIC(String name, String longName, ICFactory factory, ICFamily... families) {
 
-        for(String ic : CraftBookPlugin.inst().getConfiguration().disabledICs)
+        for(String ic : CraftBookPlugin.inst().getConfiguration().ICsDisabled)
             if(ic.equalsIgnoreCase(name))
                 return false;
         return getIcManager().register(name, longName, factory, families);
-    }
-
-    /**
-     * Register a mechanic if possible
-     *
-     * @param factory
-     */
-    public void registerMechanic(MechanicFactory<? extends Mechanic> factory) {
-
-        manager.register(factory);
-    }
-
-    /**
-     * Register a array of mechanics if possible
-     *
-     * @param factories
-     */
-    protected void registerMechanic(MechanicFactory<? extends Mechanic>[] factories) {
-
-        for (MechanicFactory<? extends Mechanic> aFactory : factories) {
-            registerMechanic(aFactory);
-        }
-    }
-
-    /**
-     * Unregister a mechanic if possible TODO Ensure no remnants are left behind
-     *
-     * @param factory
-     *
-     * @return true if the mechanic was successfully unregistered.
-     */
-    protected boolean unregisterMechanic(MechanicFactory<? extends Mechanic> factory) {
-
-        return manager.unregister(factory);
-    }
-
-    protected boolean unregisterAllMechanics() {
-
-        Iterator<MechanicFactory<? extends Mechanic>> iterator = manager.factories.iterator();
-
-        while (iterator.hasNext()) {
-            iterator.next();
-            manager.unregister(iterator);
-        }
-
-        return true;
     }
 
     public List<RegisteredICFactory> getICList() {

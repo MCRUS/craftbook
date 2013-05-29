@@ -16,6 +16,10 @@
 
 package com.sk89q.craftbook.circuits.ic;
 
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -23,6 +27,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.worldedit.BlockWorldVector;
 
@@ -104,6 +109,19 @@ public class ICManager {
             }
             longRegistered.put(toRegister, id);
         }
+
+        if(factory instanceof PersistentDataIC && CraftBookPlugin.inst().getConfiguration().ICSavePersistentData) {
+            try {
+                if(((PersistentDataIC) factory).getStorageFile().exists())
+                    ((PersistentDataIC) factory).loadPersistentData(new DataInputStream(new FileInputStream(((PersistentDataIC) factory).getStorageFile())));
+            } catch (FileNotFoundException e) {
+                BukkitUtil.printStacktrace(e);
+            } catch (IOException e) {
+                CraftBookPlugin.logger().severe("An invalid ic save file was found!");
+                BukkitUtil.printStacktrace(e);
+            }
+        }
+
         return true;
     }
 
@@ -187,6 +205,14 @@ public class ICManager {
     public static void emptyCache() {
 
         cachedICs.clear();
+    }
+
+    /**
+     * Gets the IC Cache map.
+     */
+    public static Map<BlockWorldVector, IC> getCachedICs() {
+
+        return cachedICs;
     }
 
     public boolean hasCustomPrefix(String prefix) {

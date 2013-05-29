@@ -5,40 +5,38 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.logging.Logger;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
 
 import com.sk89q.craftbook.LocalConfiguration;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.util.RegexUtil;
+import com.sk89q.craftbook.util.ItemUtil;
 import com.sk89q.util.yaml.YAMLProcessor;
 
 public class RecipeManager extends LocalConfiguration {
 
     public static RecipeManager INSTANCE;
-    private Collection<Recipe> recipes;
-    protected final YAMLProcessor config;
-    protected final Logger logger;
+    private HashSet<Recipe> recipes;
+    protected static YAMLProcessor config;
 
-    public RecipeManager(YAMLProcessor config, Logger logger) {
+    public RecipeManager(YAMLProcessor config) {
 
         INSTANCE = this;
-        this.config = config;
-        this.logger = logger;
+        RecipeManager.config = config;
         load();
     }
 
     @Override
     public void load() {
 
-        recipes = new ArrayList<Recipe>();
+        recipes = new HashSet<Recipe>();
         if (config == null) {
-            Bukkit.getLogger().severe("Failure loading recipes! Config is null!");
+            CraftBookPlugin.logger().severe("Failure loading recipes! Config is null!");
             return; // If the config is null, it can't continue.
         }
 
@@ -48,16 +46,49 @@ public class RecipeManager extends LocalConfiguration {
             e.printStackTrace();
         }
 
+        config.setHeader(
+                "# CraftBook Custom Recipes. CraftBook Version: " + CraftBookPlugin.inst().getDescription().getVersion(),
+                "# For more information on setting up custom recipes, see the wiki:",
+                "# http://wiki.sk89q.com/wiki/CraftBook/Custom_crafting",
+                "",
+                "");
+
         List<String> keys = config.getKeys("crafting-recipes");
         if (keys != null) {
             for (String key : keys) {
                 try {
                     recipes.add(new Recipe(key, config));
                 } catch (InvalidCraftingException e) {
-                    logger.warning(e.getMessage());
+                    BukkitUtil.printStacktrace(e);
                 }
             }
         }
+    }
+
+    public void save() {
+
+        if (config == null) {
+            CraftBookPlugin.logger().severe("Failure saving recipes! Config is null!");
+            return; // If the config is null, it can't continue.
+        }
+
+        config.clear();
+
+        config.setHeader(
+                "# CraftBook Custom Recipes. CraftBook Version: " + CraftBookPlugin.inst().getDescription().getVersion(),
+                "# For more information on setting up custom recipes, see the wiki:",
+                "# http://wiki.sk89q.com/wiki/CraftBook/Custom_crafting",
+                "",
+                "");
+
+        config.addNode("crafting-recipes");
+        for(Recipe recipe : recipes) {
+            recipe.save();
+        }
+
+        config.save();
+
+        load();
     }
 
     public Collection<Recipe> getRecipes() {
@@ -65,25 +96,123 @@ public class RecipeManager extends LocalConfiguration {
         return recipes;
     }
 
+    public void addRecipe(Recipe rec) {
+
+        recipes.add(rec);
+    }
+
+    public boolean removeRecipe(String name) {
+
+        Iterator<Recipe> recs = recipes.iterator();
+        while(recs.hasNext()) {
+
+            Recipe rec = recs.next();
+            if(rec.getId().equalsIgnoreCase(name)) {
+                recs.remove();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static final class Recipe {
 
         private final String id;
-        private final YAMLProcessor config;
 
         private RecipeType type;
         private Collection<CraftingItemStack> ingredients;
-        private HashMap<CraftingItemStack, Character> items;
+        private LinkedHashMap<CraftingItemStack, Character> items;
         private CraftingItemStack result;
         private List<String> shape;
 
+        @Override
+        public boolean equals(Object o) {
+
+            if(o instanceof Recipe && o != null) {
+                if(shape != null)
+                    if(shape.size() != ((Recipe)o).shape.size())
+                        return false;
+                if(ingredients != null) {
+                    if(ingredients.size() != ((Recipe)o).ingredients.size())
+                        return false;
+                    List<CraftingItemStack> stacks = new ArrayList<CraftingItemStack>();
+                    stacks.addAll(ingredients);
+                    for(CraftingItemStack st : ((Recipe)o).ingredients) {
+
+                        if(stacks.size() <= 0)
+                            return false;
+                        Iterator<CraftingItemStack> it = stacks.iterator();
+                        while(it.hasNext()) {
+                            CraftingItemStack sta = it.next();
+                            if(st.equals(sta)) {
+                                it.remove();
+                                break;
+                            }
+                        }
+                    }
+
+                    if(stacks.size() > 0)
+                        return false;
+                }
+                if(items != null) {
+                    if(items.size() != ((Recipe)o).items.size())
+                        return false;
+
+                    List<CraftingItemStack> stacks = new ArrayList<CraftingItemStack>();
+                    stacks.addAll(items.keySet());
+                    for(CraftingItemStack st : ((Recipe)o).items.keySet()) {
+
+                        if(stacks.size() <= 0)
+                            return false;
+                        Iterator<CraftingItemStack> it = stacks.iterator();
+                        while(it.hasNext()) {
+                            CraftingItemStack sta = it.next();
+                            if(st.equals(sta)) {
+                                it.remove();
+                                break;
+                            }
+                        }
+                    }
+
+                    if(stacks.size() > 0)
+                        return false;
+                }
+                if(advancedData != null)
+                    if(advancedData.size() != ((Recipe)o).advancedData.size())
+                        return false;
+                return ((Recipe) o).getId() == id && type == ((Recipe)o).type && result.equals(((Recipe)o).result);
+            }
+            else
+                return false;
+        }
+
+        @Override
+        public int hashCode() {
+
+            int ret = id.hashCode();
+            if(ingredients != null)
+                ret += ingredients.hashCode();
+            else if (items != null)
+                ret += items.hashCode();
+            ret += result.hashCode();
+            if(shape != null)
+                ret += shape.hashCode();
+            return ret + advancedData.hashCode();
+        }
+
         public boolean hasAdvancedData() {
-            for(CraftingItemStack stack : ingredients)
-                if(!stack.hasAdvancedData())
-                    return true;
-            for(CraftingItemStack stack : items.keySet())
-                if(!stack.hasAdvancedData())
-                    return true;
-            if(!result.hasAdvancedData())
+            if(ingredients != null) {
+                for(CraftingItemStack stack : ingredients)
+                    if(stack.hasAdvancedData())
+                        return true;
+            }
+            if(items != null) {
+                for(CraftingItemStack stack : items.keySet())
+                    if(stack.hasAdvancedData())
+                        return true;
+            }
+            if(result.hasAdvancedData())
                 return true;
 
             return !advancedData.isEmpty();
@@ -92,10 +221,28 @@ public class RecipeManager extends LocalConfiguration {
         private Recipe(String id, YAMLProcessor config) throws InvalidCraftingException {
 
             this.id = id;
-            this.config = config;
             ingredients = new ArrayList<CraftingItemStack>();
-            items = new HashMap<CraftingItemStack, Character>();
+            items = new LinkedHashMap<CraftingItemStack, Character>();
             load();
+        }
+
+        public Recipe(String id, RecipeType type, LinkedHashMap<CraftingItemStack, Character> items, List<String> shape, CraftingItemStack result, HashMap<String, Object> advancedData) throws InvalidCraftingException {
+
+            this.id = id;
+            this.type = type;
+            this.items = items;
+            this.shape = shape;
+            this.result = result;
+            this.advancedData = advancedData;
+        }
+
+        public Recipe(String id, RecipeType type, List<CraftingItemStack> ingredients, CraftingItemStack result, HashMap<String, Object> advancedData) throws InvalidCraftingException {
+
+            this.id = id;
+            this.type = type;
+            this.ingredients = ingredients;
+            this.result = result;
+            this.advancedData = advancedData;
         }
 
         private void load() throws InvalidCraftingException {
@@ -104,7 +251,7 @@ public class RecipeManager extends LocalConfiguration {
             if (type != RecipeType.SHAPED) {
                 ingredients = getItems("crafting-recipes." + id + ".ingredients");
             } else {
-                items = getHashItems("crafting-recipes." + id + ".ingredients");
+                items = getShapeIngredients("crafting-recipes." + id + ".ingredients");
                 shape = config.getStringList("crafting-recipes." + id + ".shape", Arrays.asList(""));
             }
             Iterator<CraftingItemStack> iterator = getItems("crafting-recipes." + id + ".results").iterator();
@@ -125,34 +272,57 @@ public class RecipeManager extends LocalConfiguration {
                 addAdvancedData("permission-node", permNode);
         }
 
-        private HashMap<CraftingItemStack, Character> getHashItems(String path) {
+        @SuppressWarnings("unchecked")
+        public void save() {
 
-            HashMap<CraftingItemStack, Character> items = new HashMap<CraftingItemStack, Character>();
+            config.addNode("crafting-recipes." + id);
+            config.setProperty("crafting-recipes." + id + ".type", type.name);
+            if(type != RecipeType.SHAPED) {
+                LinkedHashMap<String, Integer> resz = new LinkedHashMap<String, Integer>();
+                for(CraftingItemStack stack : ingredients)
+                    resz.put(stack.toString() + " ", stack.getItemStack().getAmount());
+                config.setProperty("crafting-recipes." + id + ".ingredients", resz);
+            } else {
+                LinkedHashMap<String, Character> resz = new LinkedHashMap<String, Character>();
+                for(CraftingItemStack stack : items.keySet())
+                    resz.put(stack.toString() + " ", items.get(stack));
+                config.setProperty("crafting-recipes." + id + ".ingredients", resz);
+                config.setProperty("crafting-recipes." + id + ".shape", shape);
+            }
+
+            LinkedHashMap<String, Integer> resz = new LinkedHashMap<String, Integer>();
+            resz.put(result.toString() + " ", result.getItemStack().getAmount());
+            if(hasAdvancedData("extra-results")) {
+
+                ArrayList<CraftingItemStack> extraResults = new ArrayList<CraftingItemStack>();
+                extraResults.addAll((Collection<? extends CraftingItemStack>) getAdvancedData("extra-results"));
+                for(CraftingItemStack s : extraResults)
+                    resz.put(s.toString() + " ", s.getItemStack().getAmount());
+            }
+            config.setProperty("crafting-recipes." + id + ".results", resz);
+            if(hasAdvancedData("permission-node"))
+                config.setProperty("crafting-recipes." + id + ".permission-node", getAdvancedData("permission-node"));
+        }
+
+        private LinkedHashMap<CraftingItemStack, Character> getShapeIngredients(String path) {
+
+            LinkedHashMap<CraftingItemStack, Character> items = new LinkedHashMap<CraftingItemStack, Character>();
             try {
                 for (Object oitem : config.getKeys(path)) {
-                    String item = String.valueOf(oitem);
-                    if (item == null || item.isEmpty()) continue;
-                    String[] split = RegexUtil.COLON_PATTERN.split(item);
-                    Material material;
-                    try {
-                        material = Material.getMaterial(Integer.parseInt(split[0]));
-                    } catch (NumberFormatException e) {
-                        // use the name
-                        material = Material.getMaterial(split[0].toUpperCase());
-                    }
-                    if (material != null) {
-                        CraftingItemStack itemStack = new CraftingItemStack(material);
-                        if (split.length > 1) {
-                            itemStack.setData(Short.parseShort(split[1]));
-                        } else {
-                            itemStack.setData((short) 0);
-                        }
-                        itemStack.setAmount(1);
-                        items.put(itemStack, config.getString(path + "." + item, "a").charAt(0));
+                    String okey = String.valueOf(oitem);
+                    String item = okey.trim();
+
+                    ItemStack stack = ItemUtil.makeItemValid(ItemUtil.getItem(item));
+
+                    if (stack != null) {
+
+                        stack.setAmount(1);
+                        CraftingItemStack itemStack = new CraftingItemStack(stack);
+                        items.put(itemStack, config.getString(path + "." + okey, "a").charAt(0));
                     }
                 }
             } catch (Exception e) {
-                Bukkit.getLogger().severe("An error occured generating ingredients for recipe: " + id);
+                CraftBookPlugin.inst().getLogger().severe("An error occured generating ingredients for recipe: " + id);
                 BukkitUtil.printStacktrace(e);
             }
             return items;
@@ -163,36 +333,20 @@ public class RecipeManager extends LocalConfiguration {
             Collection<CraftingItemStack> items = new ArrayList<CraftingItemStack>();
             try {
                 for (Object oitem : config.getKeys(path)) {
-                    String item = String.valueOf(oitem);
-                    if (item == null || item.isEmpty()) continue;
-                    item = RegexUtil.PIPE_PATTERN.split(item)[0];
-                    String[] split = RegexUtil.COLON_PATTERN.split(item);
-                    Material material;
-                    try {
-                        material = Material.getMaterial(Integer.parseInt(split[0]));
-                    } catch (NumberFormatException e) {
-                        // use the name
-                        material = Material.getMaterial(split[0].toUpperCase());
-                    }
-                    if (material != null) {
-                        CraftingItemStack itemStack = new CraftingItemStack(material);
-                        if (split.length > 1) {
-                            itemStack.setData(Short.parseShort(split[1]));
-                        } else {
-                            itemStack.setData((short) 0);
-                        }
-                        itemStack.setAmount(config.getInt(path + "." + item, 1));
-                        if(RegexUtil.PIPE_PATTERN.split(String.valueOf(oitem)).length > 1) {
-                            itemStack.addAdvancedData("name", RegexUtil.PIPE_PATTERN.split(String.valueOf(oitem))[1]);
-                        }
-                        if(RegexUtil.PIPE_PATTERN.split(String.valueOf(oitem)).length > 2) {
-                            itemStack.addAdvancedData("lore", Arrays.asList(RegexUtil.PIPE_PATTERN.split(String.valueOf(oitem))).subList(2, RegexUtil.PIPE_PATTERN.split(String.valueOf(oitem)).length));
-                        }
+                    String okey = String.valueOf(oitem);
+                    String item = okey.trim();
+
+                    ItemStack stack = ItemUtil.makeItemValid(ItemUtil.getItem(item));
+
+                    if (stack != null) {
+
+                        stack.setAmount(config.getInt(path + "." + okey, 1));
+                        CraftingItemStack itemStack = new CraftingItemStack(stack);
                         items.add(itemStack);
                     }
                 }
             } catch (Exception e) {
-                Bukkit.getLogger().severe("An error occured generating ingredients for recipe: " + id);
+                CraftBookPlugin.inst().getLogger().severe("An error occured generating ingredients for recipe: " + id);
                 BukkitUtil.printStacktrace(e);
             }
             return items;
@@ -218,7 +372,7 @@ public class RecipeManager extends LocalConfiguration {
             return shape.toArray(new String[shape.size()]);
         }
 
-        public HashMap<CraftingItemStack, Character> getShapedIngredients() {
+        public LinkedHashMap<CraftingItemStack, Character> getShapedIngredients() {
 
             return items;
         }
@@ -226,36 +380,6 @@ public class RecipeManager extends LocalConfiguration {
         public CraftingItemStack getResult() {
 
             return result;
-        }
-
-        public enum RecipeType {
-            SHAPELESS("Shapeless"), FURNACE("Furnace"), SHAPED("Shaped");
-
-            private String name;
-
-            private RecipeType(String name) {
-
-                this.name = name;
-            }
-
-            public String getName() {
-
-                return name;
-            }
-
-            public static RecipeType getTypeFromName(String name) {
-
-                if(name.equalsIgnoreCase("Shaped2x2") || name.equalsIgnoreCase("Shaped3x3")) {
-                    CraftBookPlugin.logger().warning("You are using deprecated recipe type '" + name + "', we recommend you change it to 'shaped'!");
-                    return SHAPED;
-                }
-
-                for (RecipeType t : RecipeType.values()) {
-                    if (t.getName().equalsIgnoreCase(name))
-                        return t;
-                }
-                return SHAPELESS; // Default to shapeless
-            }
         }
 
         //Advanced data
@@ -270,8 +394,39 @@ public class RecipeManager extends LocalConfiguration {
         }
 
         public void addAdvancedData(String key, Object data) {
-            Bukkit.getLogger().info("Adding advanced data of type: " + key + " to an ItemStack!");
+            if(CraftBookPlugin.isDebugFlagEnabled("advanced-data"))
+                CraftBookPlugin.logger().info("Adding advanced data of type: " + key + " to an ItemStack!");
             advancedData.put(key, data);
+        }
+    }
+
+    public enum RecipeType {
+        SHAPELESS("Shapeless"), FURNACE("Furnace"), SHAPED("Shaped");
+
+        private String name;
+
+        private RecipeType(String name) {
+
+            this.name = name;
+        }
+
+        public String getName() {
+
+            return name;
+        }
+
+        public static RecipeType getTypeFromName(String name) {
+
+            if(name.equalsIgnoreCase("Shaped2x2") || name.equalsIgnoreCase("Shaped3x3")) {
+                CraftBookPlugin.logger().warning("You are using deprecated recipe type '" + name + "', we recommend you change it to 'shaped'!");
+                return SHAPED;
+            }
+
+            for (RecipeType t : RecipeType.values()) {
+                if (t.getName().equalsIgnoreCase(name))
+                    return t;
+            }
+            return SHAPELESS; // Default to shapeless
         }
     }
 }

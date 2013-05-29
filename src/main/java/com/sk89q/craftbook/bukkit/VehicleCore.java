@@ -3,7 +3,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
@@ -129,6 +128,7 @@ public class VehicleCore implements LocalComponent {
                     if (!(event.getEntity() instanceof LivingEntity)) break enterOnImpact;
                     vehicle.setPassenger(event.getEntity());
 
+                    event.setCollisionCancelled(true);
                     return;
                 }
             }
@@ -142,6 +142,7 @@ public class VehicleCore implements LocalComponent {
                 else
                     ((Item) entity).setItemStack(leftovers.toArray(new ItemStack[1])[0]);
 
+                event.setCollisionCancelled(true);
                 return;
             }
 
@@ -232,7 +233,7 @@ public class VehicleCore implements LocalComponent {
         @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
         public void onVehicleEnter(VehicleEnterEvent event) {
 
-            if(!event.getVehicle().getWorld().isChunkLoaded(event.getVehicle().getLocation().getChunk()))
+            if(!event.getVehicle().getWorld().isChunkLoaded(event.getVehicle().getLocation().getBlockX() >> 4, event.getVehicle().getLocation().getBlockZ() >> 4))
                 return;
             Vehicle vehicle = event.getVehicle();
 
@@ -255,8 +256,7 @@ public class VehicleCore implements LocalComponent {
             if (plugin.getConfiguration().minecartRemoveOnExit) {
                 vehicle.remove();
             } else if (plugin.getConfiguration().minecartDecayWhenEmpty) {
-                Bukkit.getScheduler().runTaskLater(plugin, new Decay((Minecart) vehicle),
-                        plugin.getConfiguration().minecartDecayTime);
+                plugin.getServer().getScheduler().runTaskLater(plugin, new Decay((Minecart) vehicle), plugin.getConfiguration().minecartDecayTime);
             }
         }
 
@@ -353,8 +353,7 @@ public class VehicleCore implements LocalComponent {
                     if (!ent.isEmpty()) {
                         continue;
                     }
-                    Bukkit.getScheduler().runTaskLater(plugin, new Decay((Minecart) ent),
-                            plugin.getConfiguration().minecartDecayTime);
+                    plugin.getServer().getScheduler().runTaskLater(plugin, new Decay((Minecart) ent), plugin.getConfiguration().minecartDecayTime);
                 }
             }
         }
@@ -378,8 +377,7 @@ public class VehicleCore implements LocalComponent {
                             lineFound = sign;
                             lineNum = 1;
                             break;
-                        } else if (mech.getName().equalsIgnoreCase("messager") && lines[0].equalsIgnoreCase("[" +
-                                sign + "]")) {
+                        } else if (mech.getName().equalsIgnoreCase("messager") && lines[0].equalsIgnoreCase("[" + sign + "]")) {
                             found = true;
                             lineFound = sign;
                             lineNum = 0;
@@ -416,9 +414,8 @@ public class VehicleCore implements LocalComponent {
         @Override
         public void run() {
 
-            if (cart.isEmpty()) {
-                cart.setDamage(41);
-            }
+            if (cart.isEmpty())
+                cart.remove();
         }
 
     }

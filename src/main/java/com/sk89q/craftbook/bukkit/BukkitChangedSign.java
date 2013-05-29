@@ -26,7 +26,7 @@ import com.sk89q.worldedit.LocalWorld;
 
 public class BukkitChangedSign implements ChangedSign {
 
-    private final Sign sign;
+    private Sign sign;
     private String[] lines;
 
     public BukkitChangedSign(Sign sign, String[] lines) {
@@ -99,7 +99,7 @@ public class BukkitChangedSign implements ChangedSign {
     @Override
     public String getLine(int index) throws IndexOutOfBoundsException {
 
-        return lines[index];
+        return CraftBookPlugin.inst().parseVariables(lines[index]);
     }
 
     @Override
@@ -161,5 +161,47 @@ public class BukkitChangedSign implements ChangedSign {
     public void flushLines () {
 
         lines = sign.getLines();
+    }
+
+    @Override
+    public boolean updateSign(ChangedSign sign) {
+
+        if(!equals(sign)) {
+            this.sign = ((BukkitChangedSign) sign).getSign();
+            flushLines();
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+
+        if(o instanceof BukkitChangedSign) {
+
+            if(((BukkitChangedSign) o).getTypeId() != getTypeId())
+                return false;
+            if(((BukkitChangedSign) o).getRawData() != getRawData())
+                return false;
+            for(int i = 0; i < 4; i++)
+                if(!((BukkitChangedSign) o).getLine(i).equals(getLine(i)))
+                    return false;
+            if(((BukkitChangedSign) o).getX() != getX())
+                return false;
+            if(((BukkitChangedSign) o).getY() != getY())
+                return false;
+            if(((BukkitChangedSign) o).getZ() != getZ())
+                return false;
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean hasVariable(String var) {
+
+        return lines[0].contains("%" + var + "%") || lines[1].contains("%" + var + "%") || lines[2].contains("%" + var + "%") || lines[3].contains("%" + var + "%");
     }
 }

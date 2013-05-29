@@ -65,8 +65,11 @@ public class ContentsSensor extends AbstractSelfTriggeredIC {
         if (getBackBlock().getRelative(0, 1, 0).getState() instanceof InventoryHolder) {
 
             InventoryHolder inv = (InventoryHolder) getBackBlock().getRelative(0, 1, 0).getState();
-            if(slot < 0 || slot > inv.getInventory().getContents().length)
-                return inv.getInventory().contains(item);
+            if(slot < 0 || slot > inv.getInventory().getContents().length) {
+                for(ItemStack cont : inv.getInventory().getContents())
+                    if(ItemUtil.areItemsIdentical(cont, item))
+                        return true;
+            }
             else
                 return ItemUtil.areItemsIdentical(item, inv.getInventory().getItem(slot));
         }
@@ -104,8 +107,7 @@ public class ContentsSensor extends AbstractSelfTriggeredIC {
         @Override
         public String[] getLineHelp() {
 
-            String[] lines = new String[] {"item id:data", "slot (optional)"};
-            return lines;
+            return new String[] {"item id:data", "slot (optional)"};
         }
     }
 }

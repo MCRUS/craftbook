@@ -92,6 +92,8 @@ public class Counter extends AbstractIC {
         if (curVal != oldVal) {
             getSign().setLine(3, String.valueOf(curVal));
         }
+
+        getSign().update(false);
     }
 
     public static class Factory extends AbstractICFactory {
@@ -116,8 +118,7 @@ public class Counter extends AbstractIC {
         @Override
         public String[] getLineHelp() {
 
-            String[] lines = new String[] {"reset ticks:(Optional)INF", "current ticks"};
-            return lines;
+            return new String[] {"reset ticks:(Optional)INF", "current ticks"};
         }
     }
 }

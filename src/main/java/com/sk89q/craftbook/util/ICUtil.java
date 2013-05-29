@@ -31,7 +31,9 @@ import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.regions.CuboidRegionSelector;
+import com.sk89q.worldedit.regions.EllipsoidRegion;
 import com.sk89q.worldedit.regions.RegionSelector;
+import com.sk89q.worldedit.regions.SphereRegionSelector;
 
 /**
  * IC utility functions.
@@ -39,10 +41,6 @@ import com.sk89q.worldedit.regions.RegionSelector;
  * @author sk89q
  */
 public class ICUtil {
-
-    public ICUtil() {
-
-    }
 
     /**
      * Set an IC's output state at a block.
@@ -58,9 +56,9 @@ public class ICUtil {
 
         // return if the lever is not attached to our IC block
         Lever lever = (Lever) block.getState().getData();
-        if (!block.getRelative(lever.getAttachedFace()).equals(source)) {
+
+        if (!block.getRelative(lever.getAttachedFace()).equals(source))
             return false;
-        }
 
         // check if the lever was toggled on
         boolean wasOn = (block.getData() & 0x8) > 0;
@@ -106,8 +104,7 @@ public class ICUtil {
                     sign.setLine(i, sign.getLine(i).replace("[off]", ""));
                     player.printError("worldedit.ic.notfound");
                 } else {
-
-                    if(CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()) != null && CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()).getRegionSelector() != null && CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()).getRegionSelector().isDefined()) {
+                    if(CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()) != null && CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()).getRegionSelector() != null) {
 
                         RegionSelector selector = CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()).getRegionSelector();
 
@@ -118,28 +115,100 @@ public class ICUtil {
 
                                 centre = centre.divide(2);
 
-                                Vector offset = sign.getBlockVector().subtract(centre);
+                                Vector offset = centre.subtract(sign.getBlockVector());
 
                                 String x,y,z;
 
-                                x = Double.toString(offset.getX() == offset.getBlockX() ? offset.getBlockX() : offset.getX());
+                                x = Double.toString(offset.getX());
                                 if (x.endsWith(".0"))
-                                    x = x.substring(x.length() - 2);
+                                    x = x.replace(".0", "");
 
-                                y = Double.toString(offset.getY() == offset.getBlockY() ? offset.getBlockY() : offset.getY());
+                                y = Double.toString(offset.getY());
                                 if (y.endsWith(".0"))
-                                    y = y.substring(y.length() - 2);
+                                    y = y.replace(".0", "");
 
-                                z = Double.toString(offset.getZ() == offset.getBlockZ() ? offset.getBlockZ() : offset.getZ());
+                                z = Double.toString(offset.getZ());
                                 if (z.endsWith(".0"))
-                                    z = z.substring(z.length() - 2);
+                                    z = z.replace(".0", "");
 
                                 sign.setLine(i, sign.getLine(i).replace("[off]", "&" + x + ":" + y + ":" + z));
-                                //} else if (selector instanceof SphereRegionSelector) {
+                            } else if (selector instanceof SphereRegionSelector) {
 
-                                //TODO spherical reions.
+                                Vector centre = ((SphereRegionSelector)selector).getRegion().getCenter();
+
+                                Vector offset = centre.subtract(sign.getBlockVector());
+
+                                String x,y,z;
+
+                                x = Double.toString(offset.getX());
+                                if (x.endsWith(".0"))
+                                    x = x.replace(".0", "");
+
+                                y = Double.toString(offset.getY());
+                                if (y.endsWith(".0"))
+                                    y = y.replace(".0", "");
+
+                                z = Double.toString(offset.getZ());
+                                if (z.endsWith(".0"))
+                                    z = z.replace(".0", "");
+
+                                sign.setLine(i, sign.getLine(i).replace("[off]", "&" + x + ":" + y + ":" + z));
                             } else { // Unsupported.
                                 sign.setLine(i, sign.getLine(i).replace("[off]", ""));
+                                player.printError("worldedit.ic.unsupported");
+                            }
+                        }
+                        catch(IncompleteRegionException e) {
+                            player.printError("worldedit.ic.noselection");
+                        }
+                    } else {
+                        player.printError("worldedit.ic.noselection");
+                    }
+                }
+            }
+
+            if(sign.getLine(i).contains("[rad]")) {
+
+                if(CraftBookPlugin.inst().getWorldEdit() == null) {
+                    sign.setLine(i, sign.getLine(i).replace("[rad]", ""));
+                    player.printError("worldedit.ic.notfound");
+                } else {
+
+                    if(CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()) != null && CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()).getRegionSelector() != null) {
+
+                        RegionSelector selector = CraftBookPlugin.inst().getWorldEdit().getSelection(((BukkitPlayer) player).getPlayer()).getRegionSelector();
+
+                        try {
+                            if(selector instanceof CuboidRegionSelector) {
+
+                                String x,y,z;
+
+                                x = Double.toString(Math.abs(selector.getRegion().getMaximumPoint().getX() - selector.getRegion().getMinimumPoint().getX())/2);
+                                if (x.endsWith(".0"))
+                                    x = x.replace(".0", "");
+
+                                y = Double.toString(Math.abs(selector.getRegion().getMaximumPoint().getY() - selector.getRegion().getMinimumPoint().getY())/2);
+                                if (y.endsWith(".0"))
+                                    y = y.replace(".0", "");
+
+                                z = Double.toString(Math.abs(selector.getRegion().getMaximumPoint().getZ() - selector.getRegion().getMinimumPoint().getZ())/2);
+                                if (z.endsWith(".0"))
+                                    z = z.replace(".0", "");
+
+                                sign.setLine(i, sign.getLine(i).replace("[rad]", x + "," + y + "," + z));
+                            } else if (selector instanceof SphereRegionSelector) {
+
+                                String x;
+
+                                double amounts = ((EllipsoidRegion) selector.getRegion()).getRadius().getX();
+
+                                x = Double.toString(amounts);
+                                if (x.endsWith(".0"))
+                                    x = x.replace(".0", "");
+
+                                sign.setLine(i, sign.getLine(i).replace("[rad]", x));
+                            } else { // Unsupported.
+                                sign.setLine(i, sign.getLine(i).replace("[rad]", ""));
                                 player.printError("worldedit.ic.unsupported");
                             }
                         }
@@ -160,49 +229,40 @@ public class ICUtil {
 
         Block target = SignUtil.getBackBlock(BukkitUtil.toSign(sign).getBlock());
         String line = sign.getLine(lPos);
-        if (line.contains("!")) {
+
+        if (line.contains("!"))
             relative = LocationCheckType.getTypeFromChar('!');
-            line = line.replace("!", "");
-        } else if (line.contains("^")) {
+        else if (line.contains("^"))
             relative = LocationCheckType.getTypeFromChar('^');
-            line = line.replace("^", "");
-        } else if (line.contains("&")) {
+        else if (line.contains("&"))
             relative = LocationCheckType.getTypeFromChar('&');
-            line = line.replace("&", "");
-        }
-        line = line.replace("!", "").replace("^", "").replace("&", ""); //in case it had multiples.
-        int offsetX = 0;
-        int offsetY = 0;
-        int offsetZ = 0;
-        if (line.contains("=")) {
-            String[] split = RegexUtil.EQUALS_PATTERN.split(line);
-            line = split[1];
-        }
+
+        line = line.replace("!", "").replace("^", "").replace("&", "");
+        int offsetX = 0, offsetY = 0, offsetZ = 0;
+
+        if (line.contains("="))
+            line = RegexUtil.EQUALS_PATTERN.split(line)[1];
         try {
             String[] split = RegexUtil.COLON_PATTERN.split(line);
             if (split.length > 1) {
                 offsetX = Integer.parseInt(split[0]);
                 offsetY = Integer.parseInt(split[1]);
                 offsetZ = Integer.parseInt(split[2]);
-            } else {
+            } else
                 offsetY = Integer.parseInt(line);
-            }
         } catch (NumberFormatException e) {
-            // do nothing and use defaults
         } catch (ArrayIndexOutOfBoundsException e) {
-            // do nothing and use defaults
         }
 
         if(offsetX == 0 && offsetY == 0 && offsetZ == 0)
             return target;
 
-        if (relative == LocationCheckType.RELATIVE) {
+        if (relative == LocationCheckType.RELATIVE)
             target = LocationUtil.getRelativeOffset(sign, offsetX, offsetY, offsetZ);
-        } else if (relative == LocationCheckType.OFFSET){
+        else if (relative == LocationCheckType.OFFSET)
             target = LocationUtil.getOffset(target, offsetX, offsetY, offsetZ);
-        } else {
+        else
             target = new Location(target.getWorld(), offsetX, offsetY, offsetZ).getBlock();
-        }
         return target;
     }
 
@@ -235,13 +295,11 @@ public class ICUtil {
                     Integer.parseInt(rads[0]);
                     Integer.parseInt(rads[1]);
                     Integer.parseInt(rads[2]);
-                }
-                else
+                } else
                     Integer.parseInt(split[0]);
                 strings = RegexUtil.COLON_PATTERN.split(split[1], 3);
-            } else {
+            } else
                 strings = RegexUtil.COLON_PATTERN.split(line);
-            }
             if (strings.length > 1) {
                 Integer.parseInt(strings[1]);
                 Integer.parseInt(strings[2]);
@@ -264,7 +322,7 @@ public class ICUtil {
 
     public static Vector parseRadius(String line) {
 
-        Vector radius = new Vector(10,10,10); // default radius is 10.
+        Vector radius = new Vector(10,10,10);
         try {
             String[] radians = RegexUtil.COMMA_PATTERN.split(RegexUtil.EQUALS_PATTERN.split(line, 2)[0]);
             if(radians.length > 1) {
@@ -274,11 +332,11 @@ public class ICUtil {
                 return new Vector(x,y,z);
             }
             else {
-                int r = VerifyUtil.verifyRadius(Integer.parseInt(radians[0]), CraftBookPlugin.inst().getConfiguration().ICMaxRange);
+                int r = Integer.parseInt(radians[0]);
+                r = VerifyUtil.verifyRadius(r, CraftBookPlugin.inst().getConfiguration().ICMaxRange);
                 return new Vector(r,r,r);
             }
         } catch (NumberFormatException e) {
-            // do nothing and use default radius
         }
         return radius;
     }

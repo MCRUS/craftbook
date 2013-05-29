@@ -133,8 +133,8 @@ class WatchBlockManager {
                 continue;
             }
 
-            int curChunkX = (int) Math.floor(pos.getBlockX() / 16.0);
-            int curChunkZ = (int) Math.floor(pos.getBlockZ() / 16.0);
+            int curChunkX = pos.getBlockX() >> 4;
+            int curChunkZ = pos.getBlockZ() >> 4;
             // Not involved in this chunk!
             if (curChunkX != chunkX || curChunkZ != chunkZ) {
                 continue;
@@ -142,6 +142,22 @@ class WatchBlockManager {
 
             folks.addAll(entry.getValue());
         }
+        return folks;
+    }
+
+    /**
+     * Get the mechanics at a specified location.
+     * 
+     * @param pos location
+     * 
+     * @return the mechanic set.
+     */
+    public Set<PersistentMechanic> get(BlockWorldVector pos) {
+
+        Set<PersistentMechanic> folks = new HashSet<PersistentMechanic>();
+        if(watchBlocks.get(pos) == null)
+            return folks;
+        folks.addAll(watchBlocks.get(pos));
         return folks;
     }
 }

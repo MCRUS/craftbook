@@ -1,3 +1,79 @@
+3.6.6
++ Added a slow mode to elevators, to smoothly move the player to the destination. (xTwisteDx from LegendaryChaos.Zapto.org insired me to do it)
+
+3.6.5
++ Added HeadDrops mechanic. Adds the ability for players to drop their heads, and for animals that can't drop heads in vanilla mc to drop heads. (Blazes, Silverfish, Bats, Etc)
+* Fix an inventory related error.
+* Tweak /cb report -i
++ Added IC Docs to FlexSet IC.
++ Added persistent data IC's.
++ Added persistent data to wireless IC's.
++ Added commands to get and set wireless IC bands.
+* Optimized many IC's.
+* Fix BlockLauncher requiring data.
++ Added support for BlockLauncher to read block names.
+* Fixed an error that occurs sometimes (Thanks to Score_Under)
+* Fixed weird issues with being unable to extinguish netherrack (Thanks to Score_Under)
+
+3.6.4
++ Added footprint mechanic. (Adds footprints when you walk)
+* Fix CombineHarvester offset.
+* Made Melody IC require restricted perms to broadcast globally.
+* Few improvements to IC Caching systems.
+* Few improvements to Chunk Anchor.
++ Add support for names, lore, enchants in most places items are parsed from strings.
++ Add enchantment support to CustomCrafting.
++ Added Variables to CraftBook. (Vid tut: https://www.youtube.com/watch?v=Ndsx0xx-fXA)
+* Fix a pipe error with null items.
+* Fix some issues with CustomCrafting in certain circumstances.
+* Minor optimizations to ContainerCollector.
+* Fix a ParticleEffect IC Error.
+* Stop AnimalBreeder crazily breeding hundreds of mobs instantly.
++ Added MC1214, Ranged Collector. (Like MC1209, but is ranged)
++ Added PermissionNode sensing support to MC1272
+* Tweak a few IC Docs.
+* Replaced the 2 Managers with 1 Manager. Should make CraftBook more optimized and generally more stable/faster.
+* Fix a few bugs with item comparing, and shaped Auto Crafter crafting.
++ Added a flag to /cb report to print the location and text of all IC's. (/cb report -i)
+
+3.6.3r3
+* Fixed a CustomCrafting error with Furnace Recipes.
+* Fixed a few console messages not having [CraftBook] at the start.
+* Fixed ContentSensor being incredibly pedantic about the amount of items.
+
+3.6.3
++ Added /cb update -c to force an update.
+* Enhanced [off] formatting.
+* Fixed an error relating to item parsing.
+* Enhanced a few CraftBook easter eggs.
+* Fix CartDeposit removing metadata. Eg, name, enchants, book text.
+* Few tweaks to Cooking Pot.
+* Heavily optimized AI Mechanics.
+* Made AutoCrafter more stable.
+* Fix IC's not having MultiWorld support.
+* Fixed redstone not updating things when broken.
++ Add tests for CraftBook. Should minimise bugs in the areas it tests.
+* Fixed SaveArea's overwriting wrong areas.
++ Added the ability to add Custom Crafting recipes ingame.
+* Few minor error fixes.
+* Small tweak to Sound Effect IC.
+* Made Netherrack mechanic only block destruction if actually lit.
++ Added option to change Flamethrower max distance.
+* Fixed Bridges/Doors having seperate inventories on both signs.
+* Made AI Mechanics scale difficulty dependent on world difficulty.
++ Added option to make Cooking Pot's super fast.
+* Fixed some area commands not supporting shortened namespaces if name is too long.
++ Added sphere support to [off]
++ Added [rad] support to IC's. Setting radius based on WE selection.
+* Fix minecart decay on mc 1.5+
+* Major optimizations to the Clock IC.
++ Added Dropper support for AutoCrafter. Recommended as Dispensers now use up a fair few items. (But with dispensers, you can have compact minecart creaters/spawners)
+* Updated to 1.5.2
+* CartDeposit now looks for a wider range of chests.
+* Fix BlockBreak error.
+* Fixed AnimalBreeder error.
++ Added support for more different item names/block names to CustomCrafting.
+
 3.6.2
 * Fixed experimental right click support.
 * Optimized advanced data support in CustomCrafting.

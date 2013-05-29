@@ -4,11 +4,18 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
 
+import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.blocks.BlockType;
 import com.sk89q.worldedit.blocks.ItemID;
@@ -70,21 +77,22 @@ public class ItemUtil {
     public static boolean doesItemPassFilters(ItemStack stack, HashSet<ItemStack> inclusions, HashSet<ItemStack> exclusions) {
 
         boolean passesFilters = true;
-        if(inclusions.size() > 0) {
+        if(inclusions != null && inclusions.size() > 0) {
             for (ItemStack fil : inclusions) {
 
                 if(!ItemUtil.isStackValid(fil))
                     continue;
-                passesFilters = false;
+
                 if(ItemUtil.areItemsIdentical(fil, stack)) {
                     passesFilters = true;
                     break;
-                }
+                } else
+                    passesFilters = false;
             }
             if(!passesFilters)
                 return false;
         }
-        if(exclusions.size() > 0) {
+        if(exclusions != null && exclusions.size() > 0) {
             for (ItemStack fil : exclusions) {
 
                 if(!ItemUtil.isStackValid(fil))
@@ -99,16 +107,6 @@ public class ItemUtil {
         }
 
         return passesFilters;
-    }
-
-    public static ItemStack[] removeNulls(ItemStack[] array) {
-
-        List<ItemStack> list = new ArrayList<ItemStack>();
-        for(ItemStack t : array)
-            if(t != null)
-                list.add(t);
-
-        return list.toArray(new ItemStack[list.size()]).clone();
     }
 
     public static boolean areItemsSimilar(ItemStack item, int type) {
@@ -131,32 +129,58 @@ public class ItemUtil {
         return data.getItemTypeId() == comparedData.getItemTypeId();
     }
 
-    public static boolean areItemsIdentical(ItemStack item, int type, byte data) {
-
-        return areItemsIdentical(item, new MaterialData(type, data));
-    }
-
-    public static boolean areItemsIdentical(ItemStack item, MaterialData data) {
-
-        return areItemsIdentical(item.getData(), data);
-    }
-
     public static boolean areItemsIdentical(ItemStack item, ItemStack item2) {
+
+        if(!isStackValid(item) || !isStackValid(item2)) {
+            if(CraftBookPlugin.isDebugFlagEnabled("item-checks"))
+                CraftBookPlugin.logger().info("An invalid item was compared!");
+            return !isStackValid(item) && !isStackValid(item2);
+        }
+        else {
+            if(!areBaseItemsIdentical(item,item2))
+                return false;
+            if(CraftBookPlugin.isDebugFlagEnabled("item-checks"))
+                CraftBookPlugin.logger().info("The item is basically identical!");
+            if(item.hasItemMeta() != item2.hasItemMeta())
+                return false;
+            if(CraftBookPlugin.isDebugFlagEnabled("item-checks"))
+                CraftBookPlugin.logger().info("Both share the same state of metadata existence!");
+            if(item.hasItemMeta()) {
+                if(CraftBookPlugin.isDebugFlagEnabled("item-checks"))
+                    CraftBookPlugin.logger().info("Both have metadata!");
+                if(item.getItemMeta().hasDisplayName() == item2.getItemMeta().hasDisplayName()) {
+                    if(CraftBookPlugin.isDebugFlagEnabled("item-checks"))
+                        CraftBookPlugin.logger().info("Both share display name existance!");
+                    if(item.getItemMeta().hasDisplayName() && CraftBookPlugin.isDebugFlagEnabled("item-checks"))
+                        CraftBookPlugin.logger().info("ItemStack1 Display Name: " + item.getItemMeta().getDisplayName() + ". ItemStack2 Display Name: " + item2.getItemMeta().getDisplayName());
+                    if(item.getItemMeta().hasDisplayName() && !ChatColor.stripColor(item.getItemMeta().getDisplayName().trim().replace("'", "")).equals(ChatColor.stripColor(item2.getItemMeta().getDisplayName().trim().replace("'", ""))))
+                        return false;
+                    if(CraftBookPlugin.isDebugFlagEnabled("item-checks"))
+                        CraftBookPlugin.logger().info("Items share display name!");
+                } else
+                    return false;
+            }
+
+            if(CraftBookPlugin.isDebugFlagEnabled("item-checks"))
+                CraftBookPlugin.logger().info("Items are identical!");
+
+            return true;
+        }
+    }
+
+    public static boolean areBaseItemsIdentical(ItemStack item, ItemStack item2) {
 
         if(!isStackValid(item) || !isStackValid(item2))
             return !isStackValid(item) && !isStackValid(item2);
-        else
-            return areItemsIdentical(item.getData(), item2.getData());
-    }
+        else {
 
-    public static boolean areItemsIdentical(MaterialData data, MaterialData comparedData) {
+            if(item.getTypeId() != item2.getTypeId())
+                return false;
+            if(item.getData().getData() != item2.getData().getData() && item.getData().getData() >= 0 && item2.getData().getData() >= 0)
+                return false;
 
-        return data.getItemTypeId() == comparedData.getItemTypeId() && (data.getData() == comparedData.getData() || data.getData() < 0 || comparedData.getData() < 0);
-    }
-
-    public static void setItemTypeAndData(ItemStack item, int type, byte data) {
-
-        item.setData(new MaterialData(type, data));
+            return true;
+        }
     }
 
     public static boolean isStackValid(ItemStack item) {
@@ -164,7 +188,13 @@ public class ItemUtil {
         return item != null && item.getAmount() > 0 && item.getTypeId() > 0;
     }
 
-    public static boolean takeFromEntity(Item item) {
+    /**
+     * Removes a specified amount from an item entity.
+     * 
+     * @param item
+     * @return true if success, otherwise false.
+     */
+    public static boolean takeFromEntity(Item item, int amount) {
 
         if (item == null || item.isDead()) return false;
 
@@ -173,7 +203,10 @@ public class ItemUtil {
             return false;
         }
 
-        item.getItemStack().setAmount(item.getItemStack().getAmount() - 1);
+        if(item.getItemStack().getAmount() < amount)
+            return false;
+
+        item.getItemStack().setAmount(item.getItemStack().getAmount() - amount);
 
         if (!isStackValid(item.getItemStack())) {
             item.remove();
@@ -184,7 +217,7 @@ public class ItemUtil {
 
     public static boolean isCookable(ItemStack item) {
 
-        return getCookedResult(item) != null && !item.getItemMeta().hasDisplayName();
+        return getCookedResult(item) != null && !item.hasItemMeta();
     }
 
     public static ItemStack getCookedResult(ItemStack item) {
@@ -207,7 +240,7 @@ public class ItemUtil {
 
     public static boolean isSmeltable(ItemStack item) {
 
-        return getSmeletedResult(item) != null && !item.getItemMeta().hasDisplayName();
+        return getSmeletedResult(item) != null && !item.hasItemMeta();
     }
 
     public static ItemStack getSmeletedResult(ItemStack item) {
@@ -310,13 +343,19 @@ public class ItemUtil {
 
     public static boolean containsRawFood(Inventory inv) {
 
-        for (ItemStack it : inv.getContents()) { if (it != null && isCookable(it)) return true; }
+        for (ItemStack it : inv.getContents()) {
+            if (isStackValid(it) && isCookable(it))
+                return true;
+        }
         return false;
     }
 
     public static boolean containsRawMinerals(Inventory inv) {
 
-        for (ItemStack it : inv.getContents()) { if (it != null && isSmeltable(it)) return true; }
+        for (ItemStack it : inv.getContents()) {
+            if (isStackValid(it) && isSmeltable(it))
+                return true;
+        }
         return false;
     }
 
@@ -382,19 +421,25 @@ public class ItemUtil {
         int data = -1;
         int amount = 1;
 
-        String[] amountSplit = RegexUtil.ASTERISK_PATTERN.split(line, 2);
+        String[] nameLoreSplit = RegexUtil.PIPE_PATTERN.split(line);
+        String[] enchantSplit = RegexUtil.SEMICOLON_PATTERN.split(nameLoreSplit[0]);
+        String[] amountSplit = RegexUtil.ASTERISK_PATTERN.split(enchantSplit[0], 2);
         String[] dataSplit = RegexUtil.COLON_PATTERN.split(amountSplit[0], 2);
         try {
             id = Integer.parseInt(dataSplit[0]);
         } catch (NumberFormatException e) {
             try {
                 id = BlockType.lookup(dataSplit[0]).getID();
-                if (id < 0) id = 0;
+                if (id < 1) id = 1;
             } catch (Exception ee) {
                 try {
                     id = ItemType.lookup(dataSplit[0]).getID();
+                    if (id < 1) id = 1;
                 }
-                catch(Exception eee){}
+                catch(Exception eee){
+                    id = Material.getMaterial(dataSplit[0]).getId();
+                    if (id < 1) id = 1;
+                }
             }
         }
         try {
@@ -408,8 +453,88 @@ public class ItemUtil {
         }
         catch(Exception e){}
 
+        if(id < 1)
+            id = 1;
+
         ItemStack rVal = new ItemStack(id, amount, (short) data);
         rVal.setData(new MaterialData(id, (byte)data));
+
+        if(nameLoreSplit.length > 1 && id > 0) {
+
+            ItemMeta meta = rVal.getItemMeta();
+            meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', nameLoreSplit[1]));
+            if(nameLoreSplit.length > 2) {
+
+                List<String> lore = new ArrayList<String>();
+                for(int i = 2; i < nameLoreSplit.length; i++)
+                    lore.add(ChatColor.translateAlternateColorCodes('&', nameLoreSplit[i]));
+
+                meta.setLore(lore);
+            }
+
+            rVal.setItemMeta(meta);
+        }
+        if(enchantSplit.length > 1) {
+
+            for(int i = 1; i < enchantSplit.length; i++) {
+
+                try {
+                    String[] sp = RegexUtil.COLON_PATTERN.split(enchantSplit[i]);
+                    Enchantment ench = Enchantment.getByName(sp[0]);
+                    if(ench == null)
+                        ench = Enchantment.getById(Integer.parseInt(sp[0]));
+                    rVal.addUnsafeEnchantment(ench, Integer.parseInt(sp[1]));
+                }
+                catch(Exception e){}
+            }
+        }
+
         return rVal;
+    }
+
+    public static ItemStack makeItemValid(ItemStack invalid) {
+
+        if(invalid == null)
+            return null;
+
+        ItemStack valid = invalid.clone();
+
+        if(valid.getDurability() < 0)
+            valid.setDurability((short) 0);
+        if(valid.getData().getData() < 0)
+            valid.getData().setData((byte) 0);
+        if(valid.getTypeId() < 1)
+            valid.setTypeId(1);
+        if(valid.getAmount() < 1)
+            valid.setAmount(1);
+
+        return valid;
+    }
+
+    /**
+     * Gets all {@link Item}s at a certain {@link Block}.
+     * 
+     * @param block The {@link Block} to check for items at.
+     * @return A {@link ArrayList} of {@link Item}s.
+     */
+    public static List<Item> getItemsAtBlock(Block block) {
+
+        List<Item> items = new ArrayList<Item>();
+
+        for (Entity en : block.getChunk().getEntities()) {
+            if (!(en instanceof Item)) {
+                continue;
+            }
+            Item item = (Item) en;
+            if (item.isDead() || !item.isValid())
+                continue;
+
+            if (EntityUtil.isEntityInBlock(en, block)) {
+
+                items.add(item);
+            }
+        }
+
+        return items;
     }
 }

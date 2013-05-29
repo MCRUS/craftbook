@@ -40,6 +40,12 @@ public class TopLevelCommands {
 
         }
 
+        @Command(aliases = {"var"}, desc = "Variable commands")
+        @NestedCommand(VariableCommands.class)
+        public void variableCmds(CommandContext context, CommandSender sender) {
+
+        }
+
         @Command(aliases = "reload", desc = "Reloads the CraftBook Common config")
         @CommandPermissions("craftbook.reload")
         public void reload(CommandContext context, CommandSender sender) {
@@ -83,18 +89,23 @@ public class TopLevelCommands {
         public void about(CommandContext context, CommandSender sender) {
 
             String ver = CraftBookPlugin.inst().getDescription().getVersion();
-            if(CraftBookPlugin.inst().versionConverter.inverse().get(ver) != null)
-                ver = CraftBookPlugin.inst().versionConverter.inverse().get(ver) + " (" + CraftBookPlugin.inst().getDescription().getVersion() + ")";
+            if(CraftBookPlugin.inst().versionConverter.inverse().get(ver.split("-")[0]) != null)
+                ver = CraftBookPlugin.inst().versionConverter.inverse().get(ver.split("-")[0]) + " (" + CraftBookPlugin.inst().getDescription().getVersion() + ")";
             sender.sendMessage(ChatColor.YELLOW + "CraftBook version " + ver);
             sender.sendMessage(ChatColor.YELLOW + "Founded by sk89q, and currently developed by me4502 & Dark_Arc");
         }
 
-        @Command(aliases = {"report"}, desc = "Writes a report on CraftBook", flags = "p", max = 0)
+        @Command(aliases = {"report"}, desc = "Writes a report on CraftBook", flags = "pi", max = 0)
         @CommandPermissions({"craftbook.report"})
         public void report(CommandContext args, final CommandSender sender) throws CommandPermissionsException {
 
             File dest = new File(CraftBookPlugin.inst().getDataFolder(), "report.txt");
             ReportWriter report = new ReportWriter(CraftBookPlugin.inst());
+
+            if(args.hasFlag('i'))
+                report.appendFlags("i");
+
+            report.generate();
 
             try {
                 report.write(dest);
@@ -123,7 +134,6 @@ public class TopLevelCommands {
                     }
                 });
             }
-
         }
     }
 }

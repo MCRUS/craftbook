@@ -34,10 +34,6 @@ import com.sk89q.worldedit.blocks.ItemID;
  */
 public class Snow implements Listener {
 
-    public Snow() {
-
-    }
-
     private HashMap<Location, Integer> tasks = new HashMap<Location, Integer>();
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -49,7 +45,7 @@ public class Snow implements Listener {
             Block block = event.getEntity().getLocation().getBlock();
             if (event.getEntity().getShooter() != null && event.getEntity().getShooter() instanceof Player) {
 
-                if (!CraftBookPlugin.inst().canBuild((Player)event.getEntity().getShooter(), block.getLocation())) {
+                if (CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !CraftBookPlugin.inst().canBuild((Player)event.getEntity().getShooter(), block.getLocation())) {
                     return;
                 }
 
@@ -100,13 +96,13 @@ public class Snow implements Listener {
         if (CraftBookPlugin.inst().getRandom().nextInt(30) == 0) {
             Block b = event.getPlayer().getWorld().getBlockAt(event.getPlayer().getLocation());
             if (b.getTypeId() == 78) {
-                if (!CraftBookPlugin.inst().canBuild(event.getPlayer(), event.getPlayer().getLocation())) return;
+                if (CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !CraftBookPlugin.inst().canBuild(event.getPlayer(), event.getPlayer().getLocation())) return;
                 lowerData(b);
             }
 
             b = event.getPlayer().getWorld().getBlockAt(event.getPlayer().getLocation().subtract(0, 1, 0));
             if (b.getTypeId() == 78) {
-                if (!CraftBookPlugin.inst().canBuild(event.getPlayer(), event.getPlayer().getLocation())) return;
+                if (CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !CraftBookPlugin.inst().canBuild(event.getPlayer(), event.getPlayer().getLocation())) return;
                 lowerData(b);
             }
         }
@@ -154,7 +150,7 @@ public class Snow implements Listener {
                 (), new MakeSnow(loc),
                 delay * 20L, delay * 20L);
         if (taskID == -1)
-            Bukkit.getLogger().log(Level.SEVERE, "[CraftBookMechanisms] Snow Mechanic failed to schedule!");
+            CraftBookPlugin.logger().log(Level.SEVERE, "Snow Mechanic failed to schedule!");
         else tasks.put(loc, taskID);
     }
 

@@ -1,10 +1,14 @@
 package com.sk89q.craftbook.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Damageable;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Minecart;
 
 public class EntityUtil {
 
@@ -45,5 +49,30 @@ public class EntityUtil {
             ((Damageable) ent).damage(((Damageable) ent).getHealth());
         else
             ent.remove();
+    }
+
+    /**
+     * Damages an entity using the proper way for it's entity type.
+     * 
+     * @param ent The entity to damage.
+     * @param damage The amount to damage it by.
+     */
+    public static void damageEntity(Entity ent, int damage) {
+
+        if(ent instanceof Damageable)
+            ((Damageable) ent).damage(damage);
+        else if (ent instanceof Minecart)
+            ((Minecart) ent).setDamage(((Minecart) ent).getDamage() + damage);
+        else
+            ent.remove();
+    }
+
+    public static org.bukkit.entity.EntityType[] parseEntityList(List<String> list) {
+
+        List<org.bukkit.entity.EntityType> ents = new ArrayList<org.bukkit.entity.EntityType>();
+        for(String s : list)
+            ents.add(org.bukkit.entity.EntityType.fromName(s));
+
+        return ents.toArray(new org.bukkit.entity.EntityType[ents.size()]);
     }
 }

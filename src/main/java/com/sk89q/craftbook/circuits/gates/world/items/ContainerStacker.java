@@ -1,17 +1,23 @@
 package com.sk89q.craftbook.circuits.gates.world.items;
 
-import com.sk89q.craftbook.ChangedSign;
-import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.circuits.ic.*;
-import com.sk89q.craftbook.util.ItemUtil;
-import com.sk89q.util.yaml.YAMLProcessor;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.Server;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.sk89q.craftbook.ChangedSign;
+import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
+import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
+import com.sk89q.craftbook.circuits.ic.ChipState;
+import com.sk89q.craftbook.circuits.ic.ConfigurableIC;
+import com.sk89q.craftbook.circuits.ic.IC;
+import com.sk89q.craftbook.circuits.ic.ICFactory;
+import com.sk89q.craftbook.util.ItemUtil;
+import com.sk89q.util.yaml.YAMLProcessor;
 
 public class ContainerStacker extends AbstractSelfTriggeredIC {
 
@@ -102,7 +108,7 @@ public class ContainerStacker extends AbstractSelfTriggeredIC {
         }
     }
 
-    public static class Factory extends AbstractICFactory {
+    public static class Factory extends AbstractICFactory implements ConfigurableIC {
 
         List<Integer> blacklist = new ArrayList<Integer>();
 
@@ -124,22 +130,8 @@ public class ContainerStacker extends AbstractSelfTriggeredIC {
         }
 
         @Override
-        public String[] getLineHelp() {
-
-            String[] lines = new String[] {null, null};
-            return lines;
-        }
-
-        @Override
         public void addConfiguration(YAMLProcessor config, String path) {
             blacklist = config.getIntList(path + "blacklist", blacklist);
         }
-
-        @Override
-        public boolean needsConfiguration() {
-
-            return true;
-        }
-
     }
 }

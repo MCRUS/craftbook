@@ -18,9 +18,10 @@ public abstract class LocalConfiguration {
     public boolean ICCached;
     public boolean ICShortHandEnabled;
     public int ICMaxRange;
-    public List<String> disabledICs;
+    public List<String> ICsDisabled;
     public boolean ICKeepLoaded;
     public LocationCheckType ICdefaultCoordinate;
+    public boolean ICSavePersistentData;
 
     // Circuits - Wiring
     public boolean netherrackEnabled;
@@ -38,8 +39,8 @@ public abstract class LocalConfiguration {
     // Mechanics
     // Mechanics - AI
     public boolean aiEnabled;
-    public boolean aiZombieEnabled;
-    public boolean aiSkeletonEnabled;
+    public List<String> aiVisionEnabled;
+    public List<String> aiCritBowEnabled;
     // Mechanics - Ammeter
     public boolean ammeterEnabled;
     public int ammeterItem;
@@ -94,6 +95,7 @@ public abstract class LocalConfiguration {
     public boolean cookingPotOres;
     public boolean cookingPotSignOpen;
     public boolean cookingPotDestroyBuckets;
+    public boolean cookingPotSuperFast;
     // Mechanics - Custom Crafting
     public boolean customCraftingEnabled;
     // Mechanics - Custom Dispensing
@@ -112,6 +114,11 @@ public abstract class LocalConfiguration {
     public boolean elevatorEnabled;
     public boolean elevatorButtonEnabled;
     public boolean elevatorLoop;
+    public boolean elevatorSlowMove;
+    public double elevatorMoveSpeed;
+    // Mechanics - Footprints
+    public boolean footprintsEnabled;
+    public List<Integer> footprintsBlocks;
     // Mechanics - Gate
     public boolean gateEnabled;
     public boolean gateAllowRedstone;
@@ -119,6 +126,14 @@ public abstract class LocalConfiguration {
     public int gateColumnLimit;
     public List<Integer> gateBlocks;
     public boolean gateEnforceType;
+    // Mechanics - Head Drops
+    public boolean headDropsEnabled;
+    public boolean headDropsMobs;
+    public boolean headDropsPlayers;
+    public boolean headDropsPlayerKillOnly;
+    public boolean headDropsMiningDrops;
+    public double headDropsDropRate;
+    public double headDropsLootingRateModifier;
     // Mechanics - Hidden Switch
     public boolean hiddenSwitchEnabled;
     public boolean hiddenSwitchAnyside;

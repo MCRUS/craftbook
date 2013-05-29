@@ -1,6 +1,6 @@
 package com.sk89q.craftbook.mech;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.bukkit.block.Block;
@@ -56,10 +56,6 @@ public class CookingPot extends PersistentMechanic implements SelfTriggeringMech
     }
 
     public static class Factory extends AbstractMechanicFactory<CookingPot> {
-
-        public Factory() {
-
-        }
 
         @Override
         public CookingPot detect(BlockWorldVector pt) {
@@ -127,18 +123,10 @@ public class CookingPot extends PersistentMechanic implements SelfTriggeringMech
         lastTick = Math.max(lastTick, 0);
         Block b = SignUtil.getBackBlock(block);
         Block cb = b.getRelative(0, 2, 0);
-        if (!CraftBookPlugin.inst().getRandom().nextBoolean())
-            return;
         if (cb.getTypeId() == BlockID.CHEST) {
-            if(getMultiplier(sign) < 0) {
-                increaseMultiplier(sign, 1);
-                return;
-            }
-            if (ItemUtil.containsRawFood(((Chest) cb.getState()).getInventory())
-                    || ItemUtil.containsRawMinerals(((Chest) cb.getState()).getInventory())
-                    && plugin.getConfiguration().cookingPotOres) {
+            if (ItemUtil.containsRawFood(((Chest) cb.getState()).getInventory()) || ItemUtil.containsRawMinerals(((Chest) cb.getState()).getInventory()) && plugin.getConfiguration().cookingPotOres) {
                 if(lastTick < 500) {
-                    lastTick += 1;
+                    lastTick = Math.min(500, CraftBookPlugin.inst().getConfiguration().cookingPotSuperFast ? lastTick *= getMultiplier(sign) : lastTick + getMultiplier(sign));
                     if(getMultiplier(sign) > 0)
                         decreaseMultiplier(sign, 1);
                 }
@@ -160,10 +148,10 @@ public class CookingPot extends PersistentMechanic implements SelfTriggeringMech
                         if (chest.getInventory().addItem(cooked).isEmpty()) {
                             chest.getInventory().removeItem(new ItemStack(i.getType(), 1, i.getDurability()));
                             chest.update();
+                            lastTick -= 50;
                             break;
                         }
                     }
-                    lastTick -= 50;
                 } else
                     lastTick = 0;
             }
@@ -173,11 +161,6 @@ public class CookingPot extends PersistentMechanic implements SelfTriggeringMech
             sign.setLine(2, String.valueOf(lastTick));
             sign.update();
         }
-    }
-
-    @Override
-    public void unload() {
-
     }
 
     @Override
@@ -278,15 +261,13 @@ public class CookingPot extends PersistentMechanic implements SelfTriggeringMech
             setMultiplier(sign, multiplier);
         }
         if (multiplier <= 0 && !plugin.getConfiguration().cookingPotFuel) return 1;
-        return multiplier;
+        return Math.max(0, multiplier);
     }
 
     @Override
     public List<BlockWorldVector> getWatchedPositions() {
 
-        List<BlockWorldVector> bwv = new ArrayList<BlockWorldVector>();
-        bwv.add(pt);
-        return bwv;
+        return Arrays.asList(pt);
     }
 
     private enum Ingredients {

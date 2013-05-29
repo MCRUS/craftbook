@@ -37,7 +37,7 @@ public class Planter extends AbstractSelfTriggeredIC {
         super(server, block, factory);
     }
 
-    ItemStack item; 
+    ItemStack item;
 
     Block target;
     Block onBlock;
@@ -120,7 +120,7 @@ public class Planter extends AbstractSelfTriggeredIC {
                         Block b = null;
 
                         if ((b = searchBlocks(itemEnt.getItemStack())) != null) {
-                            if (ItemUtil.takeFromEntity(itemEnt)) {
+                            if (ItemUtil.takeFromEntity(itemEnt, 1)) {
                                 b.setTypeIdAndData(getBlockByItem(itemEnt.getItemStack().getTypeId()), (byte) itemEnt.getItemStack().getDurability(), true);
                                 return true;
                             }
@@ -259,8 +259,7 @@ public class Planter extends AbstractSelfTriggeredIC {
         @Override
         public String[] getLineHelp() {
 
-            String[] lines = new String[] {"+oItem to plant id{:data}", "+oradius=x:y:z offset"};
-            return lines;
+            return new String[] {"+oItem to plant id{:data}", "+oradius=x:y:z offset"};
         }
     }
 }

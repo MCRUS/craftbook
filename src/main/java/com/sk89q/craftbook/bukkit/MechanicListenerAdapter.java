@@ -17,8 +17,9 @@
 package com.sk89q.craftbook.bukkit;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
 
+import org.bukkit.GameMode;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -31,14 +32,16 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.material.Attachable;
 import org.bukkit.material.Directional;
+import org.bukkit.material.PressureSensor;
 
-import com.sk89q.craftbook.MechanicManager;
 import com.sk89q.craftbook.RightClickBlockEvent;
 import com.sk89q.craftbook.SourcedBlockRedstoneEvent;
+import com.sk89q.craftbook.mech.Elevator;
 import com.sk89q.worldedit.BlockWorldVector;
 import com.sk89q.worldedit.BlockWorldVector2D;
 import com.sk89q.worldedit.LocalWorld;
@@ -55,8 +58,6 @@ import com.sk89q.worldedit.bukkit.BukkitWorld;
  */
 public class MechanicListenerAdapter implements Listener {
 
-    private List<MechanicManager> managerList = new ArrayList<MechanicManager>();
-
     public static ArrayList<Event> ignoredEvents = new ArrayList<Event>();
 
     /**
@@ -65,27 +66,20 @@ public class MechanicListenerAdapter implements Listener {
     public MechanicListenerAdapter() {
     }
 
-    public List<MechanicManager> getManagers() {
+    @EventHandler
+    public void onPlayerLeave(PlayerQuitEvent event) {
 
-        return managerList;
-    }
-
-    /**
-     * Clears all the managers from the listeners.
-     */
-    public void clear() {
-
-        managerList.clear();
-    }
-
-    /**
-     * Register events.
-     *
-     * @param manager
-     */
-    public void register(MechanicManager manager) {
-
-        managerList.add(manager);
+        //Clean up mechanics that store players that we don't want anymore.
+        Iterator<String> it = Elevator.flyingPlayers.iterator();
+        while(it.hasNext()) {
+            String p = it.next();
+            if(event.getPlayer().getName().equalsIgnoreCase(p)) {
+                event.getPlayer().setFlying(false);
+                event.getPlayer().setAllowFlight(event.getPlayer().getGameMode() == GameMode.CREATIVE);
+                it.remove();
+                break;
+            }
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -103,12 +97,10 @@ public class MechanicListenerAdapter implements Listener {
         }
 
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK || isRightClick)
-            for (MechanicManager manager : managerList)
-                manager.dispatchBlockRightClick(isRightClick ? new RightClickBlockEvent(event, event.getPlayer().getTargetBlock(null, 5)) : event);
+            CraftBookPlugin.inst().getManager().dispatchBlockRightClick(isRightClick ? new RightClickBlockEvent(event, event.getPlayer().getTargetBlock(null, 5)) : event);
 
         if (event.getAction() == Action.LEFT_CLICK_BLOCK)
-            for (MechanicManager manager : managerList)
-                manager.dispatchBlockLeftClick(event);
+            CraftBookPlugin.inst().getManager().dispatchBlockLeftClick(event);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -118,8 +110,7 @@ public class MechanicListenerAdapter implements Listener {
             ignoredEvents.remove(event);
             return;
         }
-        for (MechanicManager manager : managerList)
-            manager.dispatchSignChange(event);
+        CraftBookPlugin.inst().getManager().dispatchSignChange(event);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -129,36 +120,51 @@ public class MechanicListenerAdapter implements Listener {
             ignoredEvents.remove(event);
             return;
         }
-        for (MechanicManager manager : managerList)
-            manager.dispatchBlockBreak(event);
 
-        BlockWorldVector v = BukkitUtil.toWorldVector(event.getBlock());
+        if(!(CraftBookPlugin.inst().getConfiguration().advancedBlockChecks && event.isCancelled())) {
+            switch(event.getBlock().getTypeId()) {
 
-        LocalWorld w = BukkitUtil.getLocalWorld(event.getBlock().getWorld());
-        int x = v.getBlockX();
-        int y = v.getBlockY();
-        int z = v.getBlockZ();
-
-        switch(event.getBlock().getTypeId()) {
-
-            case BlockID.REDSTONE_TORCH_ON:
-            case BlockID.REDSTONE_BLOCK:
-
-                handleDirectWireInput(new WorldVector(w, x - 1, y, z), event.getBlock(), 15, 0);
-                handleDirectWireInput(new WorldVector(w, x + 1, y, z), event.getBlock(), 15, 0);
-                handleDirectWireInput(new WorldVector(w, x - 1, y - 1, z), event.getBlock(), 15, 0);
-                handleDirectWireInput(new WorldVector(w, x + 1, y - 1, z), event.getBlock(), 15, 0);
-                handleDirectWireInput(new WorldVector(w, x, y, z - 1), event.getBlock(), 15, 0);
-                handleDirectWireInput(new WorldVector(w, x, y, z + 1), event.getBlock(), 15, 0);
-                handleDirectWireInput(new WorldVector(w, x, y - 1, z - 1), event.getBlock(), 15, 0);
-                handleDirectWireInput(new WorldVector(w, x, y - 1, z + 1), event.getBlock(), 15, 0);
-
-                // Can be triggered from below
-                handleDirectWireInput(new WorldVector(w, x, y + 1, z), event.getBlock(), 15, 0);
-                return;
-            default:
-                return;
+                case BlockID.REDSTONE_TORCH_ON:
+                case BlockID.REDSTONE_REPEATER_ON:
+                case BlockID.REDSTONE_BLOCK:
+                case BlockID.COMPARATOR_ON:
+                    if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !CraftBookPlugin.inst().canBuild(event.getPlayer(), event.getBlock().getLocation()))
+                        break;
+                    handleRedstoneForBlock(event.getBlock(), 15, 0);
+                    break;
+                case BlockID.REDSTONE_WIRE:
+                    if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !CraftBookPlugin.inst().canBuild(event.getPlayer(), event.getBlock().getLocation()))
+                        break;
+                    if(event.getBlock().getData() > 0)
+                        handleRedstoneForBlock(event.getBlock(), event.getBlock().getData(), 0);
+                    break;
+                case BlockID.LEVER:
+                    if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !CraftBookPlugin.inst().canBuild(event.getPlayer(), event.getBlock().getLocation()))
+                        break;
+                    if(((org.bukkit.material.Lever) event.getBlock().getState().getData()).isPowered())
+                        handleRedstoneForBlock(event.getBlock(), 15, 0);
+                    break;
+                case BlockID.WOODEN_BUTTON:
+                case BlockID.STONE_BUTTON:
+                    if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !CraftBookPlugin.inst().canBuild(event.getPlayer(), event.getBlock().getLocation()))
+                        break;
+                    if(((org.bukkit.material.Button) event.getBlock().getState().getData()).isPowered())
+                        handleRedstoneForBlock(event.getBlock(), 15, 0);
+                    break;
+                case BlockID.STONE_PRESSURE_PLATE:
+                case BlockID.WOODEN_PRESSURE_PLATE:
+                case BlockID.PRESSURE_PLATE_HEAVY:
+                case BlockID.PRESSURE_PLATE_LIGHT:
+                case BlockID.DETECTOR_RAIL:
+                    if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !CraftBookPlugin.inst().canBuild(event.getPlayer(), event.getBlock().getLocation()))
+                        break;
+                    if(event.getBlock().getState().getData() instanceof PressureSensor && ((PressureSensor) event.getBlock().getState().getData()).isPressed())
+                        handleRedstoneForBlock(event.getBlock(), 15, 0);
+                    break;
+            }
         }
+
+        CraftBookPlugin.inst().getManager().dispatchBlockBreak(event);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -171,6 +177,12 @@ public class MechanicListenerAdapter implements Listener {
         int oldLevel = event.getOldCurrent();
         int newLevel = event.getNewCurrent();
         Block block = event.getBlock();
+
+        handleRedstoneForBlock(block, oldLevel, newLevel);
+    }
+
+    public void handleRedstoneForBlock(Block block, int oldLevel, int newLevel) {
+
         World world = block.getWorld();
         BlockWorldVector v = BukkitUtil.toWorldVector(block);
 
@@ -308,8 +320,7 @@ public class MechanicListenerAdapter implements Listener {
         Block block = ((BukkitWorld) pt.getWorld()).getWorld().getBlockAt(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
         if(block.getLocation().equals(sourceBlock.getLocation())) //The same block, don't run.
             return;
-        for (MechanicManager manager : managerList)
-            manager.dispatchBlockRedstoneChange(new SourcedBlockRedstoneEvent(sourceBlock, block, oldLevel, newLevel));
+        CraftBookPlugin.inst().getManager().dispatchBlockRedstoneChange(new SourcedBlockRedstoneEvent(sourceBlock, block, oldLevel, newLevel));
     }
 
     /**
@@ -327,8 +338,7 @@ public class MechanicListenerAdapter implements Listener {
             @Override
             public void run() {
 
-                for (MechanicManager manager : managerList)
-                    manager.enumerate(event.getChunk());
+                CraftBookPlugin.inst().getManager().enumerate(event.getChunk());
             }
         }, 2);
     }
@@ -346,7 +356,6 @@ public class MechanicListenerAdapter implements Listener {
         int chunkX = event.getChunk().getX();
         int chunkZ = event.getChunk().getZ();
 
-        for (MechanicManager manager : managerList)
-            manager.unload(new BlockWorldVector2D(BukkitUtil.getLocalWorld(event.getWorld()), chunkX, chunkZ), event);
+        CraftBookPlugin.inst().getManager().unload(new BlockWorldVector2D(BukkitUtil.getLocalWorld(event.getWorld()), chunkX, chunkZ), event);
     }
 }

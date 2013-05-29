@@ -50,7 +50,8 @@ public abstract class AbstractIC implements IC {
         return server;
     }
 
-    protected ChangedSign getSign() {
+    @Override
+    public ChangedSign getSign() {
 
         return sign;
     }
@@ -100,5 +101,14 @@ public abstract class AbstractIC implements IC {
     @Override
     public void load() {
 
+    }
+
+    @Override
+    public boolean equals(Object o) {
+
+        if(o instanceof AbstractIC)
+            return getSignTitle().equalsIgnoreCase(((AbstractIC)o).getSignTitle()) && getTitle().equalsIgnoreCase(((AbstractIC)o).getTitle()) && sign.equals(((AbstractIC) o).sign);
+
+        return false;
     }
 }

@@ -29,12 +29,7 @@ public class BlockUtil {
         return false;
     }
 
-    public static void setBlockTypeAndData(Block block, int type, byte data) {
-
-        block.setTypeIdAndData(type, data, true);
-    }
-
-    public static boolean isBlockSolid(int id) {
+    public static boolean isBlockReplacable(int id) {
 
         switch (id) {
 
@@ -43,14 +38,17 @@ public class BlockUtil {
             case BlockID.DEAD_BUSH:
             case BlockID.END_PORTAL:
             case BlockID.FIRE:
-            case BlockID.GRASS:
+            case BlockID.LONG_GRASS:
             case BlockID.LAVA:
             case BlockID.STATIONARY_LAVA:
             case BlockID.WATER:
             case BlockID.STATIONARY_WATER:
-                return false;
-            default:
+            case BlockID.VINE:
+            case BlockID.SNOW:
+            case BlockID.PISTON_MOVING_PIECE:
                 return true;
+            default:
+                return false;
         }
     }
 

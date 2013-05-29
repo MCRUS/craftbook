@@ -42,7 +42,7 @@ public class CombineHarvester extends AbstractSelfTriggeredIC {
 
         onBlock = getBackBlock();
         radius = ICUtil.parseRadius(getSign());
-        if (getLine(3).contains("=")) {
+        if (getLine(2).contains("=")) {
             target = ICUtil.parseBlockLocation(getSign());
         } else {
             target = getBackBlock();
@@ -193,8 +193,7 @@ public class CombineHarvester extends AbstractSelfTriggeredIC {
         @Override
         public String[] getLineHelp() {
 
-            String[] lines = new String[] {"+oradius=x:y:z offset", null};
-            return lines;
+            return new String[] {"+oradius=x:y:z offset", null};
         }
     }
 }

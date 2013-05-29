@@ -33,6 +33,7 @@ import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.SourcedBlockRedstoneEvent;
 import com.sk89q.craftbook.bukkit.BukkitPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.util.BlockUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.craftbook.util.exceptions.InvalidMechanismException;
 import com.sk89q.craftbook.util.exceptions.ProcessedMechanismException;
@@ -53,10 +54,6 @@ public class Door extends AbstractMechanic {
     private CraftBookPlugin plugin = CraftBookPlugin.inst();
 
     public static class Factory extends AbstractMechanicFactory<Door> {
-
-        public Factory() {
-
-        }
 
         /**
          * Detect the mechanic at a placed sign.
@@ -222,7 +219,6 @@ public class Door extends AbstractMechanic {
             throw new InvalidConstructionException("mech.door.material");
 
         // Select the togglable region
-
         toggle = new CuboidRegion(BukkitUtil.toVector(proximalBaseCenter), BukkitUtil.toVector(distalBaseCenter));
         int left, right;
         try {
@@ -356,7 +352,7 @@ public class Door extends AbstractMechanic {
         // there are no errors reported upon weird blocks like
         // obsidian in the middle of a wooden door, just weird
         // results.
-        if (canPassThrough(hinge.getTypeId())) {
+        if (BlockUtil.isBlockReplacable(hinge.getTypeId())) {
             return closeDoor(player);
         } else {
             return openDoor();
@@ -368,7 +364,7 @@ public class Door extends AbstractMechanic {
         for (BlockVector bv : toggle) {
             Block b = trigger.getWorld().getBlockAt(bv.getBlockX(), bv.getBlockY(), bv.getBlockZ());
             int oldType = b.getTypeId();
-            if (b.getTypeId() == getDoorMaterial() || canPassThrough(b.getTypeId())) {
+            if (b.getTypeId() == getDoorMaterial() || BlockUtil.isBlockReplacable(b.getTypeId())) {
                 b.setTypeId(BlockID.AIR);
                 if (plugin.getConfiguration().safeDestruction) {
                     Sign s = (Sign) trigger.getState();
@@ -386,7 +382,7 @@ public class Door extends AbstractMechanic {
 
         for (BlockVector bv : toggle) {
             Block b = trigger.getWorld().getBlockAt(bv.getBlockX(), bv.getBlockY(), bv.getBlockZ());
-            if (canPassThrough(b.getTypeId())) {
+            if (BlockUtil.isBlockReplacable(b.getTypeId())) {
                 if (plugin.getConfiguration().safeDestruction) {
                     Sign s = (Sign) trigger.getState();
                     if (hasEnoughBlocks(s)) {
@@ -396,7 +392,7 @@ public class Door extends AbstractMechanic {
                     } else {
                         if (player != null) {
                             player.printError("mech.not-enough-blocks");
-                        } 
+                        }
                         return false;
                     }
                 } else {
@@ -440,28 +436,6 @@ public class Door extends AbstractMechanic {
     // we never poke them; just check that they're sane when we're building
     // the door. if this were a PersistentMechanic, those six blocks
     // would be considered defining blocks, though.
-
-    /**
-     * @return whether the door can pass through this BlockType (and displace it if needed).
-     */
-    private static boolean canPassThrough(int t) {
-
-        int[] passableBlocks = new int[10];
-        passableBlocks[0] = BlockID.WATER;
-        passableBlocks[1] = BlockID.STATIONARY_WATER;
-        passableBlocks[2] = BlockID.LAVA;
-        passableBlocks[3] = BlockID.STATIONARY_LAVA;
-        passableBlocks[4] = BlockID.FENCE;
-        passableBlocks[5] = BlockID.SNOW;
-        passableBlocks[6] = BlockID.LONG_GRASS;
-        passableBlocks[7] = BlockID.VINE;
-        passableBlocks[8] = BlockID.DEAD_BUSH;
-        passableBlocks[9] = BlockID.AIR;
-
-        for (int aPassableBlock : passableBlocks) { if (aPassableBlock == t) return true; }
-
-        return false;
-    }
 
     /**
      * Thrown when the sign is an invalid direction.
@@ -540,13 +514,34 @@ public class Door extends AbstractMechanic {
         return curBlocks >= 0;
     }
 
+    public void setBlocks(Sign s, int amount) {
+
+        if (s.getLine(0).equalsIgnoreCase("infinite")) return;
+        int curBlocks = amount;
+        s.setLine(0, String.valueOf(curBlocks));
+        s.update();
+    }
+
     public int getBlocks(Sign s) {
 
-        if (s.getLine(0).equalsIgnoreCase("infinite")) return 100000;
-        int curBlocks;
+        Sign otherSign = (Sign)otherSide.getState();
+        return getBlocks(s, otherSign);
+    }
+
+    public int getBlocks(Sign s, Sign other) {
+
+        if (s.getLine(0).equalsIgnoreCase("infinite") || other != null && other.getLine(0).equalsIgnoreCase("infinite"))
+            return 0;
+        int curBlocks = 0;
         try {
             curBlocks = Integer.parseInt(s.getLine(0));
-        } catch (NumberFormatException e) {
+            try {
+                curBlocks += Integer.parseInt(other.getLine(0));
+                setBlocks(s, curBlocks);
+                setBlocks(other, 0);
+            } catch (Exception ignored) {
+            }
+        } catch (Exception e) {
             curBlocks = 0;
         }
         return curBlocks;

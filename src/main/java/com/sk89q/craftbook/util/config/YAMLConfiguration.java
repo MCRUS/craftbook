@@ -6,7 +6,6 @@ package com.sk89q.craftbook.util.config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.FileHandler;
 import java.util.logging.Logger;
 
 import com.sk89q.craftbook.LocalConfiguration;
@@ -25,7 +24,6 @@ public class YAMLConfiguration extends LocalConfiguration {
 
     public final YAMLProcessor config;
     protected final Logger logger;
-    private FileHandler logFileHandler;
 
     public YAMLConfiguration(YAMLProcessor config, Logger logger) {
 
@@ -44,8 +42,9 @@ public class YAMLConfiguration extends LocalConfiguration {
         ICMaxRange = config.getInt("circuits.ics.max-radius", 15);
         ICShortHandEnabled = config.getBoolean("circuits.ics.allow-short-hand", true);
         ICKeepLoaded = config.getBoolean("circuits.ics.keep-loaded", false);
-        disabledICs = config.getStringList("circuits.ics.disallowed-ics", new ArrayList<String>());
+        ICsDisabled = config.getStringList("circuits.ics.disallowed-ics", new ArrayList<String>());
         ICdefaultCoordinate = LocationCheckType.getTypeFromName(config.getString("circuits.ics.default-coordinate-system", "RELATIVE"));
+        ICSavePersistentData = config.getBoolean("circuits.ics.save-persistent-data", true);
 
         // Circuits Configuration Listener
         netherrackEnabled = config.getBoolean("circuits.wiring.netherrack-enabled", false);
@@ -64,8 +63,8 @@ public class YAMLConfiguration extends LocalConfiguration {
 
         // AI Configuration Listener
         aiEnabled = config.getBoolean("mechanics.ai.enable", true);
-        aiZombieEnabled = config.getBoolean("mechanics.ai.zombie-enable", true);
-        aiSkeletonEnabled = config.getBoolean("mechanics.ai.skeleton-enable", true);
+        aiVisionEnabled = config.getStringList("mechanics.ai.vision-enable", Arrays.asList("Zombie","PigZombie"));
+        aiCritBowEnabled = config.getStringList("mechanics.ai.crit-bow-enable", Arrays.asList("Skeleton"));
 
         // Ammeter Configuration Listener
         ammeterEnabled = config.getBoolean("mechanics.ammeter.enable", true);
@@ -82,8 +81,6 @@ public class YAMLConfiguration extends LocalConfiguration {
         // Better Physics Configuration Listener
         physicsEnabled = config.getBoolean("mechanics.better-physics.enable", false);
         physicsLadders = config.getBoolean("mechanics.better-physics.falling-ladders", false);
-        //physicsPots = config.getBoolean("mechanics.better-physics.smashing-pots", false);
-        physicsPots = false; //TODO enable when 1.5 comes out (It fixes the client crash caused by this)
 
         // Better Pistons Configuration Listener
         pistonsEnabled = config.getBoolean("mechanics.better-pistons.enable", true);
@@ -133,6 +130,7 @@ public class YAMLConfiguration extends LocalConfiguration {
         cookingPotOres = config.getBoolean("mechanics.cooking-pot.cook-ores", false);
         cookingPotSignOpen = config.getBoolean("mechanics.cooking-pot.sign-click-open", true);
         cookingPotDestroyBuckets = config.getBoolean("mechanics.cooking-pot.take-buckets", false);
+        cookingPotSuperFast = config.getBoolean("mechanics.cooking-pot.super-fast-cooking", false);
 
         // Custom Crafting Configuration Listener
         customCraftingEnabled = config.getBoolean("mechanics.custom-crafting.enable", true);
@@ -156,6 +154,12 @@ public class YAMLConfiguration extends LocalConfiguration {
         elevatorEnabled = config.getBoolean("mechanics.elevator.enable", true);
         elevatorButtonEnabled = config.getBoolean("mechanics.elevator.enable-buttons", true);
         elevatorLoop = config.getBoolean("mechanics.elevator.allow-looping", false);
+        elevatorSlowMove = config.getBoolean("mechanics.elevator.smooth-movement", false);
+        elevatorMoveSpeed = config.getDouble("mechanics.elevator.smooth-movement-speed", 0.5);
+
+        // Footprints Configuration Listener
+        footprintsEnabled = config.getBoolean("mechanics.footprints.enable", false);
+        footprintsBlocks = config.getIntList("mechanics.footprints.blocks", Arrays.asList(12, 78, 80, 3));
 
         // Gate Configuration Listener
         gateEnabled = config.getBoolean("mechanics.gate.enable", true);
@@ -164,6 +168,15 @@ public class YAMLConfiguration extends LocalConfiguration {
         gateColumnLimit = config.getInt("mechanics.gate.max-columns", 14);
         gateBlocks = config.getIntList("mechanics.gate.blocks", Arrays.asList(85, 101, 102, 113));
         gateEnforceType = config.getBoolean("mechanics.gate.enforce-type", true);
+
+        // Head Drops Configuration Listener
+        headDropsEnabled = config.getBoolean("mechanics.head-drops.enable", false);
+        headDropsMobs = config.getBoolean("mechanics.head-drops.drop-mob-heads", true);
+        headDropsPlayers = config.getBoolean("mechanics.head-drops.drop-player-heads", true);
+        headDropsPlayerKillOnly = config.getBoolean("mechanics.head-drops.require-player-killed", true);
+        headDropsMiningDrops = config.getBoolean("mechanics.head-drops.drop-head-when-mined", true);
+        headDropsDropRate = config.getDouble("mechanics.head-drops.drop-rate", 0.05);
+        headDropsLootingRateModifier = config.getDouble("mechanics.head-drops.looting-rate-modifier", 0.05);
 
         // Hidden Switch Configuration Listener
         hiddenSwitchEnabled = config.getBoolean("mechanics.hidden-switch.enable", true);
@@ -260,12 +273,5 @@ public class YAMLConfiguration extends LocalConfiguration {
 
         config.save(); //Save all the added values.
 
-    }
-
-    public void unload() {
-
-        if (logFileHandler != null) {
-            logFileHandler.close();
-        }
     }
 }

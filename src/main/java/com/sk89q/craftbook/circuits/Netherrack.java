@@ -38,18 +38,12 @@ public class Netherrack extends AbstractMechanic {
 
     public static class Factory extends AbstractMechanicFactory<Netherrack> {
 
-        public Factory() {
-
-        }
-
         @Override
         public Netherrack detect(BlockWorldVector pt) {
 
             int type = BukkitUtil.toWorld(pt).getBlockTypeIdAt(BukkitUtil.toLocation(pt));
 
-            if (type == BlockID.NETHERRACK) return new Netherrack(pt);
-
-            return null;
+            return type == BlockID.NETHERRACK ? new Netherrack(pt) : null;
         }
     }
 
@@ -88,18 +82,12 @@ public class Netherrack extends AbstractMechanic {
     @Override
     public void onLeftClick(PlayerInteractEvent event) {
 
-        if (event.getBlockFace() != BlockFace.UP) return;
-
-        Block block = event.getClickedBlock();
-
-        if (block.isBlockIndirectlyPowered()) {
-            event.setCancelled(true);
-            return;
-        }
-
-        block = block.getRelative(0, -1, 0);
-        if (block.isBlockIndirectlyPowered()) {
-            event.setCancelled(true);
+        if (event.getBlockFace() == BlockFace.UP) {
+            Block fire = event.getClickedBlock().getRelative(event.getBlockFace());
+            if (fire.getTypeId() == BlockID.FIRE
+                    && fire.getRelative(BlockFace.DOWN).isBlockPowered()) {
+                event.setCancelled(true);
+            }
         }
     }
 
