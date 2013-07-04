@@ -5,12 +5,12 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Sign;
+import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -18,19 +18,20 @@ import com.sk89q.craftbook.LocalConfiguration;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.MechanicalCore;
+import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.mech.area.Area;
 import com.sk89q.craftbook.mech.area.CopyManager;
 import com.sk89q.craftbook.mech.area.CuboidCopy;
 import com.sk89q.craftbook.mech.area.FlatCuboidCopy;
 import com.sk89q.craftbook.mech.area.MCEditCuboidCopy;
 import com.sk89q.craftbook.util.ArrayUtil;
+import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandContext;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.minecraft.util.commands.CommandPermissions;
 import com.sk89q.minecraft.util.commands.CommandPermissionsException;
 import com.sk89q.worldedit.Vector;
-import com.sk89q.worldedit.bukkit.BukkitUtil;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.bukkit.selections.Selection;
 import com.sk89q.worldedit.data.DataException;
@@ -83,6 +84,7 @@ public class AreaCommands {
             Selection sel = worldEdit.getSelection((Player) sender);
             if(sel == null) {
                 sender.sendMessage(ChatColor.RED + "You have not made a selection!");
+                return;
             }
             Vector min = BukkitUtil.toVector(sel.getMinimumPoint());
             Vector max = BukkitUtil.toVector(sel.getMaximumPoint());
@@ -122,7 +124,7 @@ public class AreaCommands {
 
             // Save
             try {
-                CopyManager.getInstance().save(world, namespace, id.toLowerCase(), copy);
+                CopyManager.getInstance().save(world, namespace, id.toLowerCase(Locale.ENGLISH), copy);
                 player.print("Area saved as '" + id + "' under the '" + namespace + "' namespace.");
             } catch (IOException e) {
                 player.printError("Could not save area: " + e.getMessage());
@@ -256,10 +258,10 @@ public class AreaCommands {
             throw new CommandException("Invalid location specified.");
         }
 
-        BlockState block = world.getBlockAt(xyz[0], xyz[1], xyz[2]).getState();
-        if (!(block instanceof Sign)) throw new CommandException("No sign found at the specified location.");
+        Block block = world.getBlockAt(xyz[0], xyz[1], xyz[2]);
+        if (!SignUtil.isSign(block)) throw new CommandException("No sign found at the specified location.");
 
-        if (!Area.toggleCold((Sign) block)) {
+        if (!Area.toggleCold(BukkitUtil.toChangedSign(block))) {
             throw new CommandException("Failed to toggle an area at the specified location.");
         }
         // TODO Make a sender wrap for this

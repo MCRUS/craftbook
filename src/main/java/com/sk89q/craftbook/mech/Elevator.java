@@ -17,6 +17,7 @@
 package com.sk89q.craftbook.mech;
 
 import java.util.HashSet;
+import java.util.Locale;
 
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -249,7 +250,7 @@ public class Elevator extends AbstractMechanic {
         teleportPlayer(player, floor);
     }
 
-    public static HashSet<String> flyingPlayers = new HashSet<String>();
+    public static final HashSet<String> flyingPlayers = new HashSet<String>();
 
     public void teleportPlayer(final LocalPlayer player, final Block floor) {
 
@@ -369,7 +370,7 @@ public class Elevator extends AbstractMechanic {
     public static boolean isValidLift(ChangedSign start, ChangedSign stop) {
 
         if (start == null || stop == null) return true;
-        if (start.getLine(2).toLowerCase().startsWith("to:")) {
+        if (start.getLine(2).toLowerCase(Locale.ENGLISH).startsWith("to:")) {
             try {
                 return stop.getLine(0).equalsIgnoreCase(RegexUtil.COLON_PATTERN.split(start.getLine(2))[0].trim());
             } catch (Exception e) {
@@ -388,8 +389,7 @@ public class Elevator extends AbstractMechanic {
                 Button b = (Button) block.getState().getData();
                 Block sign = block.getRelative(b.getAttachedFace()).getRelative(b.getAttachedFace());
                 if (sign.getState() instanceof Sign)
-                    return isLift(BukkitUtil.toChangedSign((Sign) sign.getState(),
-                            ((Sign) sign.getState()).getLines()));
+                    return isLift(BukkitUtil.toChangedSign((Sign) sign.getState(), ((Sign) sign.getState()).getLines()));
             }
             return Direction.NONE;
         }

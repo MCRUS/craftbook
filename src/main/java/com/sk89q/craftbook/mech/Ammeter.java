@@ -36,24 +36,15 @@ public class Ammeter extends AbstractMechanic {
 
     protected final CraftBookPlugin plugin = CraftBookPlugin.inst();
 
-    public Ammeter() {
-
-        super();
-    }
-
     @Override
     public void onRightClick(PlayerInteractEvent event) {
 
         LocalPlayer player = plugin.wrapPlayer(event.getPlayer());
 
         Block block = event.getClickedBlock();
-        if (event.getPlayer().getItemInHand().getTypeId() == plugin.getConfiguration().ammeterItem
-                && (BlockType.canTransferRedstone(block.getTypeId()) || BlockType.isRedstoneSource(block.getTypeId())
-                        )) {
-            int data = getSpecialData(block);
-            String line = getCurrentLine(data);
-            player.print("Ammeter: " + line + ChatColor.WHITE + " " + data + " A");
-        }
+        int data = getSpecialData(block);
+        String line = getCurrentLine(data);
+        player.print("Ammeter: " + line + ChatColor.WHITE + " " + data + " A");
     }
 
     private int getSpecialData(Block block) {
@@ -67,29 +58,28 @@ public class Ammeter extends AbstractMechanic {
                 break;
             case BlockID.LEVER:
             case BlockID.STONE_BUTTON:
-                if ((data & 0x8) == 0x8) {
-                    current = 15;
-                }
-                break;
-            case BlockID.STONE_PRESSURE_PLATE:
-                if ((data & 0x1) == 0x1) {
-                    current = 15;
-                }
-                break;
+            case BlockID.WOODEN_BUTTON:
             case BlockID.POWERED_RAIL:
             case BlockID.DETECTOR_RAIL:
-                if (data >= 0x8) {
+            case BlockID.TRIPWIRE_HOOK:
+            case BlockID.ACTIVATOR_RAIL:
+                if ((data & 0x8) == 0x8)
                     current = 15;
-                }
+                break;
+            case BlockID.STONE_PRESSURE_PLATE:
+            case BlockID.WOODEN_PRESSURE_PLATE:
+                if ((data & 0x1) == 0x1)
+                    current = 15;
                 break;
             case BlockID.REDSTONE_TORCH_ON:
             case BlockID.REDSTONE_REPEATER_ON:
+            case BlockID.COMPARATOR_ON:
+            case BlockID.REDSTONE_BLOCK:
                 current = 15;
                 break;
             default:
                 current = 0;
                 break;
-
         }
 
         return current;
@@ -99,20 +89,17 @@ public class Ammeter extends AbstractMechanic {
 
         StringBuilder line = new StringBuilder(25);
         line.append(ChatColor.YELLOW).append("[");
-        if (data > 10) {
+        if (data > 10)
             line.append(ChatColor.DARK_GREEN);
-        } else if (data > 5) {
+        else if (data > 5)
             line.append(ChatColor.GOLD);
-        } else if (data > 0) {
+        else if (data > 0)
             line.append(ChatColor.DARK_RED);
-        }
-        for (int i = 0; i < data; i++) {
+        for (int i = 0; i < data; i++)
             line.append("|");
-        }
         line.append(ChatColor.BLACK);
-        for (int i = data; i < 15; i++) {
+        for (int i = data; i < 15; i++)
             line.append("|");
-        }
         line.append(ChatColor.YELLOW).append("]");
         return line.toString();
     }
@@ -123,11 +110,7 @@ public class Ammeter extends AbstractMechanic {
         public Ammeter detect(BlockWorldVector pt, LocalPlayer player) {
 
             Block block = BukkitUtil.toWorld(pt).getBlockAt(BukkitUtil.toLocation(pt));
-            if (BlockType.canTransferRedstone(block.getTypeId()) || BlockType.isRedstoneSource(block.getTypeId())) {
-                return player.getHeldItemType() == CraftBookPlugin.inst().getConfiguration().ammeterItem && player.hasPermission("craftbook.mech.ammeter.use") ? new Ammeter() : null;
-            }
-
-            return null;
+            return (BlockType.canTransferRedstone(block.getTypeId()) || BlockType.isRedstoneSource(block.getTypeId())) && player.getHeldItemType() == CraftBookPlugin.inst().getConfiguration().ammeterItem && player.hasPermission("craftbook.mech.ammeter.use") ? new Ammeter() : null;
         }
     }
 }

@@ -1,8 +1,7 @@
 package com.sk89q.craftbook;
-import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 
-import com.sk89q.craftbook.mech.CustomDropManager;
 import com.sk89q.craftbook.util.ICUtil.LocationCheckType;
 import com.sk89q.craftbook.util.ItemInfo;
 
@@ -11,6 +10,11 @@ import com.sk89q.craftbook.util.ItemInfo;
  */
 public abstract class LocalConfiguration {
 
+
+    // Common
+    // Common - Variables
+    public boolean variablesEnabled;
+    public boolean variablesDefaultGlobal;
 
     // Circuits
     // Circuits - IC
@@ -22,13 +26,12 @@ public abstract class LocalConfiguration {
     public boolean ICKeepLoaded;
     public LocationCheckType ICdefaultCoordinate;
     public boolean ICSavePersistentData;
-
+    public boolean ICMidiUsePercussion;
     // Circuits - Wiring
     public boolean netherrackEnabled;
     public boolean pumpkinsEnabled;
     public boolean glowstoneEnabled;
     public int glowstoneOffBlock;
-
     // Circuits - Pipes
     public boolean pipesEnabled;
     public boolean pipesDiagonal;
@@ -41,6 +44,7 @@ public abstract class LocalConfiguration {
     public boolean aiEnabled;
     public List<String> aiVisionEnabled;
     public List<String> aiCritBowEnabled;
+    public List<String> aiAttackPassiveEnabled;
     // Mechanics - Ammeter
     public boolean ammeterEnabled;
     public int ammeterItem;
@@ -54,19 +58,20 @@ public abstract class LocalConfiguration {
     // Mechanics - BetterPhysics
     public boolean physicsEnabled;
     public boolean physicsLadders;
-    public boolean physicsPots;
     // Mechanics - BetterPistons
     public int pistonMaxDistance;
     public boolean pistonsEnabled;
     public boolean pistonsCrusher;
     public boolean pistonsCrusherInstaKill;
     public List<Integer> pistonsCrusherBlacklist;
+    public boolean pistonsSuperPush;
     public boolean pistonsSuperSticky;
+    public List<Integer> pistonsMovementBlacklist;
     public boolean pistonsBounce;
     public List<Integer> pistonsBounceBlacklist;
-    public boolean pistonsSuperPush;
     // Mechanics - Bookcase
     public boolean bookcaseEnabled;
+    public boolean bookcaseReadHoldingBlock;
     public boolean bookcaseReadWhenSneaking;
     public String bookcaseReadLine;
     // Mechanics - Bridge
@@ -83,10 +88,13 @@ public abstract class LocalConfiguration {
     public boolean chairSneak;
     public boolean chairHealth;
     public List<Integer> chairBlocks;
+    public boolean chairFacing;
     // Mechanics - Chunk Anchor
     public boolean chunkAnchorEnabled;
     public boolean chunkAnchorRedstone;
     public boolean chunkAnchorCheck;
+    // Mechanics - Command Items
+    public boolean commandItemsEnabled;
     // Mechanics - Command Signs
     public boolean commandSignEnabled;
     // Mechanics - Cooking Pot
@@ -103,7 +111,6 @@ public abstract class LocalConfiguration {
     // Mechanics - Custom Drops
     public boolean customDropEnabled;
     public boolean customDropPermissions;
-    public CustomDropManager customDrops;
     // Mechanics - Door
     public boolean doorEnabled;
     public boolean doorAllowRedstone;
@@ -134,6 +141,8 @@ public abstract class LocalConfiguration {
     public boolean headDropsMiningDrops;
     public double headDropsDropRate;
     public double headDropsLootingRateModifier;
+    public HashMap<String, Double> headDropsCustomDropRate;
+    public HashMap<String, String> headDropsCustomSkins;
     // Mechanics - Hidden Switch
     public boolean hiddenSwitchEnabled;
     public boolean hiddenSwitchAnyside;
@@ -169,63 +178,99 @@ public abstract class LocalConfiguration {
     public boolean teleporterEnabled;
     public boolean teleporterRequireSign;
     public int teleporterMaxRange;
+    // Mechanis - TreeLopper
+    public boolean treeLopperEnabled;
+    public List<Integer> treeLopperBlocks;
+    public List<Integer> treeLopperItems;
+    public int treeLopperMaxSize;
+    public boolean treeLopperAllowDiagonals;
+    public boolean treeLopperEnforceData;
     // Mechanics - XPStorer
     public boolean xpStorerEnabled;
     public int xpStorerBlock;
 
     // Vehicles
-    // Vehicles - Materials
-    public ItemInfo matBoostMax;
-    public ItemInfo matBoost25x ;
-    public ItemInfo matSlow50x;
-    public ItemInfo matSlow20x;
-    public ItemInfo matReverse;
-    public ItemInfo matStation;
-    public ItemInfo matSorter;
-    public ItemInfo matEjector;
-    public ItemInfo matDeposit;
-    public ItemInfo matTeleport;
-    public ItemInfo matLift;
-    public ItemInfo matDispenser;
-    public ItemInfo matMessager;
-    // Vehicles - Minecart Options
-    public boolean minecartSlowWhenEmpty;
-    public boolean minecartRemoveOnExit;
-    public boolean minecartRemoveEntities;
-    public boolean minecartRemoveEntitiesOtherCarts;
-    public double minecartMaxSpeedModifier;
-    public double minecartOffRailSpeedModifier;
-    public boolean minecartDecayWhenEmpty;
-    public boolean minecartEnterOnImpact;
-    public boolean minecartMessengerEnabled = true;
+    // Vehicles - Minecart Decay Options
+    public boolean minecartDecayEnabled;
     public int minecartDecayTime;
-    public double minecartConstantSpeed;
-    public boolean minecartPickupItemsOnCollision;
-    public boolean minecartPressurePlateIntersection;
-    public boolean minecartStoragePlaceRails;
-    // Vehicles - Minecart Fall Modifier
+    // Vehicles - Minecart Station Options
+    public boolean minecartStationEnabled;
+    public ItemInfo minecartStationBlock;
+    // Vehicles - Minecart Sorter Options
+    public boolean minecartSorterEnabled;
+    public ItemInfo minecartSorterBlock;
+    // Vehicles - Minecart Ejector Options
+    public boolean minecartEjectorEnabled;
+    public ItemInfo minecartEjectorBlock;
+    // Vehicles - Minecart Deposit Options
+    public boolean minecartDepositEnabled;
+    public ItemInfo minecartDepositBlock;
+    // Vehicles - Minecart Teleport Options
+    public boolean minecartTeleportEnabled;
+    public ItemInfo minecartTeleportBlock;
+    // Vehicles - Minecart Elevator Options
+    public boolean minecartElevatorEnabled;
+    public ItemInfo minecartElevatorBlock;
+    // Vehicles - Minecart Messager Options
+    public boolean minecartMessagerEnabled;
+    public ItemInfo minecartMessagerBlock;
+    // Vehicles - Minecart Reverse Options
+    public boolean minecartReverseEnabled;
+    public ItemInfo minecartReverseBlock;
+    // Vehicles - Minecart SpeedMod Options
+    public boolean minecartSpeedModEnabled;
+    public ItemInfo minecartSpeedModMaxBoostBlock;
+    public ItemInfo minecartSpeedMod25xBoostBlock;
+    public ItemInfo minecartSpeedMod50xSlowBlock;
+    public ItemInfo minecartSpeedMod20xSlowBlock;
+    // Vehicles - Minecart Dispenser Options
+    public boolean minecartDispenserEnabled;
+    public ItemInfo minecartDispenserBlock;
+    public boolean minecartDispenserLegacy;
+    public boolean minecartDispenserAntiSpam;
+    // Vehicles - Minecart Fall Modifier Options
     public boolean minecartFallModifierEnabled;
     public double minecartFallVerticalSpeed;
     public double minecartFallHorizontalSpeed;
+    // Vehicles - Minecart More Rails Options
+    public boolean minecartMoreRailsEnabled;
+    public boolean minecartMoreRailsLadder;
+    public boolean minecartMoreRailsPressurePlate;
+    // Vehicles - Minecart Remove Entities Options
+    public boolean minecartRemoveEntitiesEnabled;
+    public boolean minecartRemoveEntitiesOtherCarts;
+    // Vehicles - Minecart Vision Steering Options
+    public boolean minecartVisionSteeringEnabled;
+    public int minecartVisionSteeringMinimumSensitivity;
+    // Vehicles - Minecart Block Mob Entry Options
+    public boolean minecartBlockMobEntryEnabled;
+    // Vehicles - Minecart Remove On Exit Options
+    public boolean minecartRemoveOnExitEnabled;
+    // Vehicles - Minecart Collision Entry Options
+    public boolean minecartCollisionEntryEnabled;
+    // Vehicles - Minecart Item Pickup Options
+    public boolean minecartItemPickupEnabled;
+    // Vehicles - Minecart Constant Speed Options
+    public boolean minecartConstantSpeedEnable;
+    public double minecartConstantSpeedSpeed;
+    // Vehicles - Minecart Rail Placer Options
+    public boolean minecartRailPlacerEnable;
+    // Vehicles - Minecart Speed Modifier Options
+    public boolean minecartSpeedModifierEnable;
+    public double minecartSpeedModifierMaxSpeed;
+    public double minecartSpeedModifierOffRail;
+    // Vehicles - Minecart Empty Slowdown Options
+    public boolean minecartEmptySlowdownEnable;
     // Vehicles - Boat Options
     public boolean boatNoCrash;
-    public boolean boatRemoveEntities;
-    public boolean boatRemoveEntitiesOtherBoats;
     public boolean boatBreakReturn;
+    // Vehicles - Boat Remove Entities Options
+    public boolean boatRemoveEntitiesEnabled;
+    public boolean boatRemoveEntitiesOtherBoats;
 
 
     /**
      * Loads the configuration.
      */
     public abstract void load();
-
-    /**
-     * Get the working directory to work from.
-     *
-     * @return
-     */
-    public File getWorkingDirectory() {
-
-        return new File(".");
-    }
 }

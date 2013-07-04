@@ -35,8 +35,11 @@ import com.sk89q.craftbook.bukkit.BukkitPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.util.BlockUtil;
 import com.sk89q.craftbook.util.SignUtil;
+import com.sk89q.craftbook.util.exceptions.InvalidConstructionException;
+import com.sk89q.craftbook.util.exceptions.InvalidDirectionException;
 import com.sk89q.craftbook.util.exceptions.InvalidMechanismException;
 import com.sk89q.craftbook.util.exceptions.ProcessedMechanismException;
+import com.sk89q.craftbook.util.exceptions.UnacceptableMaterialException;
 import com.sk89q.worldedit.BlockVector;
 import com.sk89q.worldedit.BlockWorldVector;
 import com.sk89q.worldedit.Vector;
@@ -160,13 +163,9 @@ public class Door extends AbstractMechanic {
 
             block = proximalBaseCenter.getTypeId();
 
-            if (plugin.getConfiguration().doorBlocks.contains(block)) {
-                if (proximalBaseCenter.getRelative(SignUtil.getLeft(trigger)).getTypeId() == block
-                        && proximalBaseCenter.getRelative(SignUtil.getRight(trigger)).getTypeId() == block) {
-                    break findBase;
-                }
-                throw new InvalidConstructionException("mech.door.material");
-            } else throw new UnacceptableMaterialException("mech.door.unusable");
+            if (plugin.getConfiguration().doorBlocks.contains(block))
+                break findBase;
+            else throw new UnacceptableMaterialException("mech.door.unusable");
         }
         // Find the other side
         if (((Sign) trigger.getState()).getLine(1).equalsIgnoreCase("[Door Up]")) {
@@ -211,48 +210,34 @@ public class Door extends AbstractMechanic {
             distalBaseCenter = otherSide.getRelative(BlockFace.UP);
         }
 
-        if (distalBaseCenter.getTypeId() != block && distalBaseCenter.getData() != proximalBaseCenter.getData()
-                || distalBaseCenter.getRelative(SignUtil.getLeft(trigger)).getTypeId() != block
-                && distalBaseCenter.getRelative(SignUtil.getLeft(trigger)).getData() != proximalBaseCenter.getData()
-                || distalBaseCenter.getRelative(SignUtil.getRight(trigger)).getTypeId() != block
-                && distalBaseCenter.getRelative(SignUtil.getRight(trigger)).getData() != proximalBaseCenter.getData())
+        if (distalBaseCenter == null || distalBaseCenter.getTypeId() != block && distalBaseCenter.getData() != proximalBaseCenter.getData())
             throw new InvalidConstructionException("mech.door.material");
 
         // Select the togglable region
         toggle = new CuboidRegion(BukkitUtil.toVector(proximalBaseCenter), BukkitUtil.toVector(distalBaseCenter));
         int left, right;
         try {
-            left = Integer.parseInt(s.getLine(2));
-            if (left < 0) {
-                left = 0; // No negatives please
-            }
+            left = Math.max(0, Math.min(plugin.getConfiguration().doorMaxWidth, Integer.parseInt(s.getLine(2))));
         } catch (Exception e) {
             left = 1;
         }
         try {
-            right = Integer.parseInt(s.getLine(3));
-            if (right < 0) {
-                right = 0; // No negatives please
-            }
+            right = Math.max(0, Math.min(plugin.getConfiguration().doorMaxWidth, Integer.parseInt(s.getLine(3))));
         } catch (Exception e) {
             right = 1;
         }
 
-        // Check width
-        if (left > plugin.getConfiguration().doorMaxWidth) {
-            left = plugin.getConfiguration().doorMaxWidth;
-        }
-        if (right > plugin.getConfiguration().doorMaxWidth) {
-            right = plugin.getConfiguration().doorMaxWidth;
-        }
-
         // Expand Left
         for (int i = 0; i < left; i++) {
+            if(distalBaseCenter.getRelative(SignUtil.getLeft(trigger), i).getTypeId() != proximalBaseCenter.getRelative(SignUtil.getLeft(trigger), i).getTypeId() && distalBaseCenter.getRelative(SignUtil.getLeft(trigger), i).getData() != proximalBaseCenter.getRelative(SignUtil.getLeft(trigger), i).getData())
+                throw new InvalidConstructionException("mech.door.material");
             toggle.expand(BukkitUtil.toVector(SignUtil.getLeft(trigger)), new Vector(0, 0, 0));
         }
 
         // Expand Right
         for (int i = 0; i < right; i++) {
+            if(distalBaseCenter.getRelative(SignUtil.getRight(trigger), i).getTypeId() != proximalBaseCenter.getRelative(SignUtil.getRight(trigger), i).getTypeId() && distalBaseCenter.getRelative(SignUtil.getRight(trigger), i).getData() != proximalBaseCenter.getRelative(SignUtil.getRight(trigger), i).getData())
+                throw new InvalidConstructionException("mech.door.material");
             toggle.expand(BukkitUtil.toVector(SignUtil.getRight(trigger)), new Vector(0, 0, 0));
         }
 
@@ -437,45 +422,6 @@ public class Door extends AbstractMechanic {
     // the door. if this were a PersistentMechanic, those six blocks
     // would be considered defining blocks, though.
 
-    /**
-     * Thrown when the sign is an invalid direction.
-     */
-    private static class InvalidDirectionException extends InvalidMechanismException {
-
-        private static final long serialVersionUID = -3183606604247616362L;
-    }
-
-    /**
-     * Thrown when the door type is unacceptable.
-     */
-    private static class UnacceptableMaterialException extends InvalidMechanismException {
-
-        public UnacceptableMaterialException(String msg) {
-
-            super(msg);
-        }
-
-        private static final long serialVersionUID = 8340723004466483212L;
-    }
-
-    /**
-     * Thrown when the door type is not constructed correctly.
-     */
-    private static class InvalidConstructionException extends InvalidMechanismException {
-
-        private static final long serialVersionUID = 4943494589521864491L;
-
-        /**
-         * Construct the object.
-         *
-         * @param msg
-         */
-        public InvalidConstructionException(String msg) {
-
-            super(msg);
-        }
-    }
-
     @Override
     public void onBlockBreak(BlockBreakEvent event) {
 
@@ -517,8 +463,7 @@ public class Door extends AbstractMechanic {
     public void setBlocks(Sign s, int amount) {
 
         if (s.getLine(0).equalsIgnoreCase("infinite")) return;
-        int curBlocks = amount;
-        s.setLine(0, String.valueOf(curBlocks));
+        s.setLine(0, String.valueOf(amount));
         s.update();
     }
 
@@ -535,11 +480,13 @@ public class Door extends AbstractMechanic {
         int curBlocks = 0;
         try {
             curBlocks = Integer.parseInt(s.getLine(0));
-            try {
-                curBlocks += Integer.parseInt(other.getLine(0));
-                setBlocks(s, curBlocks);
-                setBlocks(other, 0);
-            } catch (Exception ignored) {
+            if(other != null) {
+                try {
+                    curBlocks += Integer.parseInt(other.getLine(0));
+                    setBlocks(s, curBlocks);
+                    setBlocks(other, 0);
+                } catch (Exception ignored) {
+                }
             }
         } catch (Exception e) {
             curBlocks = 0;

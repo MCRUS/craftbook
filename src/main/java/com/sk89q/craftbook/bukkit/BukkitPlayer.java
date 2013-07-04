@@ -46,31 +46,23 @@ public class BukkitPlayer implements LocalPlayer {
     @Override
     public void print(String message) {
 
-        try {
-            if (message == null || player == null || plugin == null || message.isEmpty()) return;
-            if (plugin.getLanguageManager() == null || plugin.getLanguageManager().getPlayersLanguage(player) == null
-                    || plugin.getLanguageManager().getString(message, plugin.getLanguageManager().getPlayersLanguage
-                            (player)) == null)
-                player.sendMessage(ChatColor.GOLD + message);
-            player.sendMessage(ChatColor.GOLD
-                    + plugin.getLanguageManager().getString(message, plugin.getLanguageManager().getPlayersLanguage
-                            (player)));
-        } catch (Exception e) {
-        }
+        if (message == null || player == null || plugin == null || message.isEmpty()) return;
+        if (plugin.getLanguageManager() == null || plugin.getLanguageManager().getPlayersLanguage(player) == null || plugin.getLanguageManager().getString(message, plugin.getLanguageManager().getPlayersLanguage(player)) == null)
+            player.sendMessage(ChatColor.GOLD + message);
+        else
+            player.sendMessage(ChatColor.GOLD + plugin.getLanguageManager().getString(message, plugin.getLanguageManager().getPlayersLanguage(player)));
     }
 
     @Override
     public void printError(String message) {
 
-        player.sendMessage(ChatColor.RED + plugin.getLanguageManager().getString(message,
-                plugin.getLanguageManager().getPlayersLanguage(player)));
+        player.sendMessage(ChatColor.RED + plugin.getLanguageManager().getString(message, plugin.getLanguageManager().getPlayersLanguage(player)));
     }
 
     @Override
     public void printRaw(String message) {
 
-        player.sendMessage(plugin.getLanguageManager().getString(message,
-                plugin.getLanguageManager().getPlayersLanguage(player)));
+        player.sendMessage(plugin.getLanguageManager().getString(message, plugin.getLanguageManager().getPlayersLanguage(player)));
     }
 
     @Override
@@ -131,6 +123,7 @@ public class BukkitPlayer implements LocalPlayer {
     @Override
     public boolean isHoldingBlock() {
 
+        if(getHeldItemType() == 0) return false;
         return BlockType.fromID(getHeldItemType()) != null;
     }
 

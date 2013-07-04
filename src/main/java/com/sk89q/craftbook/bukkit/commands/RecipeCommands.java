@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -37,7 +38,13 @@ public class RecipeCommands {
     @CommandPermissions(value = "craftbook.mech.recipes.remove")
     public void deleteRecipe(CommandContext context, CommandSender sender) throws CommandException {
 
+        if(RecipeManager.INSTANCE == null) {
+            sender.sendMessage(ChatColor.RED + "CustomCrafting is not enabled!");
+            return;
+        }
+
         if(RecipeManager.INSTANCE.removeRecipe(context.getString(0))) {
+            sender.sendMessage(ChatColor.RED + "Recipe removed successfully! This will be in effect after a restart!");
             RecipeManager.INSTANCE.save();
         } else
             sender.sendMessage(ChatColor.RED + "Recipe doesn't exist!");
@@ -45,6 +52,11 @@ public class RecipeCommands {
 
     @Command(aliases = {"save", "add"}, desc = "Saves the current recipe", usage = "RecipeName RecipeType -p permission node", flags = "p:", min = 2)
     public void saveRecipe(CommandContext context, CommandSender sender) throws CommandException {
+
+        if(RecipeManager.INSTANCE == null) {
+            sender.sendMessage(ChatColor.RED + "CustomCrafting is not enabled!");
+            return;
+        }
 
         if (!(sender instanceof Player)) return;
         LocalPlayer player = plugin.wrapPlayer((Player) sender);
@@ -112,9 +124,9 @@ public class RecipeCommands {
                     if(ItemUtil.isStackValid(stack.getItemStack())) {
 
                         boolean found = false;
-                        for(CraftingItemStack st : items.keySet()) {
-                            if(st.isSameType(stack)) {
-                                c = items.get(st).toString();
+                        for(Entry<CraftingItemStack, Character> st : items.entrySet()) {
+                            if(st.getKey().isSameType(stack)) {
+                                c = st.getValue().toString();
                                 found = true;
                                 break;
                             }
@@ -144,6 +156,13 @@ public class RecipeCommands {
             try {
                 RecipeManager.Recipe recipe = new RecipeManager.Recipe(name, type, items, Arrays.<String>asList(shape), results.get(0), advancedData);
                 RecipeManager.INSTANCE.addRecipe(recipe);
+                if(MechanicalCore.inst() == null) {
+                    player.printError("You do not have mechanics enabled, or Java has bugged and unloaded it (Did you use /reload?)!");
+                    return;
+                } else if (MechanicalCore.inst().getCustomCrafting() == null) {
+                    player.printError("You do not have CustomCrafting enabled, or Java has bugged and unloaded it (Did you use /reload?)!");
+                    return;
+                }
                 MechanicalCore.inst().getCustomCrafting().addRecipe(recipe);
                 RecipeManager.INSTANCE.save();
                 player.print("Successfully added a new " + type.name() + " recipe!");
@@ -161,7 +180,7 @@ public class RecipeCommands {
                 if(!ItemUtil.isStackValid(slot))
                     continue;
 
-                CraftingItemStack stack = new CraftingItemStack(slot);
+                CraftingItemStack stack = new CraftingItemStack(slot.clone());
 
                 boolean used = false;
                 for(CraftingItemStack compare : ingredients) {

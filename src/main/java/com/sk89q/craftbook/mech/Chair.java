@@ -5,13 +5,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.material.Directional;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
@@ -118,8 +121,7 @@ public class Chair implements Listener {
 
         if (!plugin.getConfiguration().chairEnabled) return;
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        if (event.getClickedBlock() == null || !plugin.getConfiguration().chairBlocks.contains(event
-                .getClickedBlock().getTypeId()))
+        if (event.getClickedBlock() == null || !plugin.getConfiguration().chairBlocks.contains(event.getClickedBlock().getTypeId()))
             return;
 
         BukkitPlayer player = new BukkitPlayer(plugin, event.getPlayer());
@@ -145,7 +147,39 @@ public class Chair implements Listener {
                     player.printError("This chair has nothing below it!");
                     return;
                 }
-                player.getPlayer().teleport(event.getClickedBlock().getLocation().add(0.5,0,0.5)); // Teleport to the seat
+
+                Location chairLoc = event.getClickedBlock().getLocation().add(0.5,0,0.5);
+
+                if(plugin.getConfiguration().chairFacing && event.getClickedBlock().getState().getData() instanceof Directional) {
+
+                    BlockFace direction = ((Directional) event.getClickedBlock().getState().getData()).getFacing();
+
+                    double dx = direction.getModX();
+                    double dy = direction.getModY();
+                    double dz = direction.getModZ();
+
+                    if (dx != 0) {
+                        if (dx < 0) {
+                            chairLoc.setYaw((float) (1.5 * Math.PI));
+                        } else {
+                            chairLoc.setYaw((float) (0.5 * Math.PI));
+                        }
+                        chairLoc.setYaw(chairLoc.getYaw() - (float) Math.atan(dz / dx));
+                    } else if (dz < 0) {
+                        chairLoc.setYaw((float) Math.PI);
+                    }
+
+                    double dxz = Math.sqrt(Math.pow(dx, 2) + Math.pow(dz, 2));
+
+                    chairLoc.setPitch((float) -Math.atan(dy / dxz));
+
+                    chairLoc.setYaw(-chairLoc.getYaw() * 180f / (float) Math.PI);
+                    chairLoc.setPitch(chairLoc.getPitch() * 180f / (float) Math.PI);
+                } else {
+                    chairLoc.setPitch(player.getPlayer().getLocation().getPitch());
+                    chairLoc.setYaw(player.getPlayer().getLocation().getYaw());
+                }
+                player.getPlayer().teleport(chairLoc);
                 addChair(player.getPlayer(), event.getClickedBlock());
             }
         }
@@ -157,8 +191,8 @@ public class Chair implements Listener {
         public void run() {
 
             for (String pl : chairs.keySet()) {
-                Player p = Bukkit.getPlayer(pl);
-                if (p == null) {
+                Player p = Bukkit.getPlayerExact(pl);
+                if (p == null  || p.isDead()) {
                     chairs.remove(pl);
                     continue;
                 }
@@ -168,7 +202,7 @@ public class Chair implements Listener {
                 else {
                     addChair(p, getChair(p)); // For any new players.
 
-                    if (plugin.getConfiguration().chairHealth && p.getHealth() < 20)
+                    if (plugin.getConfiguration().chairHealth && p.getHealth() < p.getMaxHealth())
                         p.setHealth(p.getHealth() + 1);
                     if (p.getExhaustion() > -20f) p.setExhaustion(p.getExhaustion() - 0.1f);
                 }

@@ -1,14 +1,11 @@
 package com.sk89q.craftbook.mech.crafting;
 
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.util.ItemSyntax;
 import com.sk89q.craftbook.util.ItemUtil;
 
 /**
@@ -39,8 +36,7 @@ public class CraftingItemStack implements Comparable<CraftingItemStack> {
     }
 
     public void addAdvancedData(String key, Object data) {
-        if(CraftBookPlugin.isDebugFlagEnabled("advanced-data"))
-            CraftBookPlugin.logger().info("Adding advanced data of type: " + key + " to an ItemStack!");
+        CraftBookPlugin.logDebugMessage("Adding advanced data of type: " + key + " to an ItemStack!", "advanced-data.init");
         advancedData.put(key, data);
     }
 
@@ -104,34 +100,21 @@ public class CraftingItemStack implements Comparable<CraftingItemStack> {
                 return false;
             if(stack.hasAdvancedData() != hasAdvancedData())
                 return false;
-            if(stack.hasAdvancedData("name") != hasAdvancedData("name"))
-                return false;
+            for(String key : advancedData.keySet())
+                if(!stack.hasAdvancedData(key))
+                    return false;
             return isSameType(stack) && stack.getItemStack().getAmount() == getItemStack().getAmount();
         }
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public String toString() {
 
-        String me = getItemStack().getType().name();
-        if(getItemStack().getDurability() > 0)
-            me = me + ":" + getItemStack().getDurability();
+        String it = ItemSyntax.getStringFromItem(getItemStack());
 
-        if(hasAdvancedData("enchants"))
-            for(Entry<Enchantment,Integer> enchants : ((Map<Enchantment,Integer>)getAdvancedData("enchants")).entrySet())
-                me = me + ";" + enchants.getKey().getName() + ":" + enchants.getValue();
-
-        if(hasAdvancedData("name"))
-            me = me + "|" + getAdvancedData("name");
-
-        if(hasAdvancedData("lore")) {
-            List<String> list = (List<String>)getAdvancedData("lore");
-            for(String s : list)
-                me = me + "|" + s;
-        }
-
-        return me;
+        if(hasAdvancedData("chance"))
+            it = it + "%" + getAdvancedData("chance");
+        return it;
     }
 }

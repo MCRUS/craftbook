@@ -15,7 +15,9 @@ import org.bukkit.inventory.ItemStack;
 import com.sk89q.craftbook.LocalConfiguration;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.util.ItemSyntax;
 import com.sk89q.craftbook.util.ItemUtil;
+import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.util.yaml.YAMLProcessor;
 
 public class RecipeManager extends LocalConfiguration {
@@ -129,7 +131,7 @@ public class RecipeManager extends LocalConfiguration {
         @Override
         public boolean equals(Object o) {
 
-            if(o instanceof Recipe && o != null) {
+            if(o instanceof Recipe) {
                 if(shape != null)
                     if(shape.size() != ((Recipe)o).shape.size())
                         return false;
@@ -181,7 +183,7 @@ public class RecipeManager extends LocalConfiguration {
                 if(advancedData != null)
                     if(advancedData.size() != ((Recipe)o).advancedData.size())
                         return false;
-                return ((Recipe) o).getId() == id && type == ((Recipe)o).type && result.equals(((Recipe)o).result);
+                return ((Recipe) o).getId().equals(id) && type == ((Recipe)o).type && result.equals(((Recipe)o).result);
             }
             else
                 return false;
@@ -212,10 +214,8 @@ public class RecipeManager extends LocalConfiguration {
                     if(stack.hasAdvancedData())
                         return true;
             }
-            if(result.hasAdvancedData())
-                return true;
+            return result.hasAdvancedData() || !advancedData.isEmpty();
 
-            return !advancedData.isEmpty();
         }
 
         private Recipe(String id, YAMLProcessor config) throws InvalidCraftingException {
@@ -270,6 +270,18 @@ public class RecipeManager extends LocalConfiguration {
             String permNode = config.getString("crafting-recipes." + id + ".permission-node", null);
             if (permNode != null)
                 addAdvancedData("permission-node", permNode);
+
+            List<String> actions = config.getKeys("crafting-recipes." + id + ".craft-actions");
+
+            if(actions != null && !actions.isEmpty()) {
+
+                for(String s : actions) {
+                    if(s.equalsIgnoreCase("commands-console"))
+                        addAdvancedData("commands-console", config.getStringList("crafting-recipes." + id + ".craft-actions." + s, new ArrayList<String>()));
+                    else if(s.equalsIgnoreCase("commands-player"))
+                        addAdvancedData("commands-player", config.getStringList("crafting-recipes." + id + ".craft-actions." + s, new ArrayList<String>()));
+                }
+            }
         }
 
         @SuppressWarnings("unchecked")
@@ -302,6 +314,13 @@ public class RecipeManager extends LocalConfiguration {
             config.setProperty("crafting-recipes." + id + ".results", resz);
             if(hasAdvancedData("permission-node"))
                 config.setProperty("crafting-recipes." + id + ".permission-node", getAdvancedData("permission-node"));
+            if(hasAdvancedData("commands-player") || hasAdvancedData("commands-console")) {
+                config.addNode("crafting-recipes." + id + ".craft-actions");
+                if(hasAdvancedData("commands-player"))
+                    config.setProperty("crafting-recipes." + id + ".craft-actions.commands-player", getAdvancedData("commands-player"));
+                if(hasAdvancedData("commands-console"))
+                    config.setProperty("crafting-recipes." + id + ".craft-actions.commands-console", getAdvancedData("commands-console"));
+            }
         }
 
         private LinkedHashMap<CraftingItemStack, Character> getShapeIngredients(String path) {
@@ -312,12 +331,14 @@ public class RecipeManager extends LocalConfiguration {
                     String okey = String.valueOf(oitem);
                     String item = okey.trim();
 
-                    ItemStack stack = ItemUtil.makeItemValid(ItemUtil.getItem(item));
+                    ItemStack stack = ItemUtil.makeItemValid(ItemSyntax.getItem(RegexUtil.PERCENT_PATTERN.split(item)[0]));
 
                     if (stack != null) {
 
                         stack.setAmount(1);
                         CraftingItemStack itemStack = new CraftingItemStack(stack);
+                        if(RegexUtil.PERCENT_PATTERN.split(item).length > 1)
+                            itemStack.addAdvancedData("chance", Double.parseDouble(RegexUtil.PERCENT_PATTERN.split(item)[1]));
                         items.put(itemStack, config.getString(path + "." + okey, "a").charAt(0));
                     }
                 }
@@ -336,12 +357,14 @@ public class RecipeManager extends LocalConfiguration {
                     String okey = String.valueOf(oitem);
                     String item = okey.trim();
 
-                    ItemStack stack = ItemUtil.makeItemValid(ItemUtil.getItem(item));
+                    ItemStack stack = ItemUtil.makeItemValid(ItemSyntax.getItem(RegexUtil.PERCENT_PATTERN.split(item)[0]));
 
                     if (stack != null) {
 
                         stack.setAmount(config.getInt(path + "." + okey, 1));
                         CraftingItemStack itemStack = new CraftingItemStack(stack);
+                        if(RegexUtil.PERCENT_PATTERN.split(item).length > 1)
+                            itemStack.addAdvancedData("chance", Double.parseDouble(RegexUtil.PERCENT_PATTERN.split(item)[1]));
                         items.add(itemStack);
                     }
                 }
@@ -394,9 +417,12 @@ public class RecipeManager extends LocalConfiguration {
         }
 
         public void addAdvancedData(String key, Object data) {
-            if(CraftBookPlugin.isDebugFlagEnabled("advanced-data"))
-                CraftBookPlugin.logger().info("Adding advanced data of type: " + key + " to an ItemStack!");
+            CraftBookPlugin.logDebugMessage("Adding advanced data of type: " + key + " to an ItemStack!", "advanced-data.init");
             advancedData.put(key, data);
+        }
+
+        public HashMap<String,Object> getAdvancedDataMap () {
+            return advancedData;
         }
     }
 

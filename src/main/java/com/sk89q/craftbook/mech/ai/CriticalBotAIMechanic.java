@@ -19,14 +19,19 @@ public class CriticalBotAIMechanic extends BaseAIMechanic implements BowShotAIMe
         switch(event.getEntity().getWorld().getDifficulty()) {
             case EASY:
                 amount = 100;
+                break;
             case HARD:
                 amount = 20;
+                break;
             case NORMAL:
                 amount = 50;
+                break;
             case PEACEFUL:
                 return;
         }
-        if (CraftBookPlugin.inst().getRandom().nextInt(amount) > 15)
+        if (CraftBookPlugin.inst().getRandom().nextInt(amount) == 0) {
+            CraftBookPlugin.logDebugMessage("Performing critical hit.", "ai-mechanics.shoot-bow.critical");
             event.getProjectile().setFireTicks(5000);
+        }
     }
 }

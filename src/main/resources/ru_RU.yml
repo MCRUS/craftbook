@@ -1,0 +1,138 @@
+area.permissions:У Вас недостаточно прав на использование механизмов на этой территории!
+
+mech.use-permission:У Вас недостаточно прав для использования этого механизма.
+mech.not-enough-blocks:Недостаточно блоков чтобы перключить состяние механизма!
+mech.pistons.crush.created:Piston Crush создан!
+mech.lift.target-sign-created:Конечная точка листа создана.
+mech.lift.down-sign-created:Лифт вниз создан.
+mech.lift.up-sign-created:Лифт вверх создан.
+mech.lift.obstruct:Точка назначения застроена!
+mech.lift.no-floor:Точка назначания не имеет пола!
+mech.lift.floor:Этаж
+mech.lift.up:Вы поднялись на лифте вверх!
+mech.lift.down:Вы спустились на лифте вниз!
+mech.gate.create:Ворота созданы!
+mech.dgate.create:Малые ворота созданы!
+mech.gate.toggle:Состояние ворот переключено!
+mech.gate.not-found:Ворота не найдены!
+mech.door.create:Дверь создана!
+mech.door.toggle:Состояние двери переключено!
+mech.door.other-sign:Табличка двери требуетя и с другой стороны (или она слишком далеко).
+mech.door.unusable:Данный материал нельзя использовать для двери!
+mech.door.material:Дверь должна быть полностью сделана одного материала!
+mech.bridge.create:Мост создан!
+mech.bridge.toggle:Состояние моста переключено!
+mech.bridge.end-create:Конечная точка моста создана!
+mech.bridge.unusable:Из этого материала нельзя делать мост!
+mech.bridge.material:Мост должен быть сделан из одного материала!
+mech.bridge.other-sign:Табличка моста должна быть и на другом конце (или она слишком далеко).
+mech.pay.create:Сборщик денег создан!
+mech.teleport.create:Телепорт создан!
+mech.teleport.alert:Вы телепортированы!
+mech.teleport.range:Вне зоны досягаемости!
+mech.teleport.sign:В точне назначения нет таблички!
+mech.teleport.arriveonly:Вы можете только прибыть на данную точку телепорта!
+mech.cauldron.too-small:Котел создан!
+mech.cauldron.leaky:Котел подтекает!
+mech.cauldron.no-lava:У котла протекает лава!
+mech.cauldron.stir:Вы пытались приготовить что то в котле, но ничего не вышло.
+mech.command.create:Командная табличка создана!
+mech.cook.create:Кастрюля создана!
+mech.cook.ouch:Ауч! Это было гарячо!
+mech.hiddenswitch.key:Ключ не подходит!
+mech.group:Вы не состоите в запрашиваниемой группе!
+mech.restock:Механизм пополнен!
+mech.anchor.create:Якорь чанка создан!
+mech.lightswitch.create:Переключатель света создан!
+mech.painting.editing:Вы в режиме смены картины!
+mech.painting.stop:Вы вышли из режима редактирования картины!
+mech.painting.used:Данная картинка уже была отредактирована
+
+vehicles.create-permission:У Вас недостаточно прав для создания этого механизма!
+
+area:
+    permissions: You don't have permissions to use that in this area!
+mech:
+    teleport:
+        alert: You Teleported!
+        range: Out of Range!
+        create: Teleporter Created!
+        arriveonly: You can only arrive at this teleporter!
+        sign: There is no Sign at your Destination!
+    use-permission: You don't have permission to use this mechanic.
+    gate:
+        not-found: Failed to find a gate!
+        toggle: Gate Toggled!
+        create: Gate Created!
+    lift:
+        target-sign-created: Elevator target sign created.
+        down-sign-created: Elevator down sign created.
+        floor: Floor
+        up-sign-created: Elevator up sign created.
+        obstruct: Your destination is obstructed!
+        down: You went down a floor!
+        up: You went up a floor!
+        no-floor: There is no floor at your destination!
+    door:
+        material: Door must be made entirely out of the same material!
+        other-sign: Door sign required on other side (or it was too far away).
+        toggle: Door Toggled!
+        create: Door Created!
+        unusable: Material not usable for a door!
+    anchor:
+        create: Chunk Anchor Created!
+    bridge:
+        toggle: Bridge Toggled!
+        end-create: Bridge End Created!
+        other-sign: Bridge sign required on other side (or it was too far away).
+        create: Bridge Created!
+        unusable: Material not usable for a bridge!
+        material: Bridge must be made entirely out of the same material!
+    pay:
+        create: Pay Created!
+    painting:
+        editing: You are now editing this painting!
+        used: This painting is already being edited by
+        range: You are too far away from the painting!
+        stop: You are no longer editing this painting!
+    dgate:
+        create: Small Gate Created!
+    pistons:
+        superpush:
+            created: Piston Super-Push Mechanic Created!
+        crush:
+            created: Piston Crush Mechanic Created!
+        supersticky:
+            created: Piston Super-Sticky Mechanic Created!
+        bounce:
+            created: Piston Bounce Mechanic Created!
+    signcopy:
+        paste: You have pasted the sign!
+        copy: You have copied the sign!
+    not-enough-blocks: Not enough blocks to trigger mechanic!
+    cauldron:
+        leaky: Cauldron has a leak!
+        no-lava: Cauldron lacks lava!
+        too-small: Cauldron is too small!
+        stir: You stir the cauldron but nothing happens.
+    group: You are not in the required group!
+    restock: Mechanism Restocked!
+    command:
+        create: Command Sign Created!
+    cook:
+        ouch: Ouch! That was hot!
+        create: Cooking Pot Created!
+    lightswitch:
+        create: Light Switch Created!
+    hiddenswitch:
+        key: The key did not fit!
+vehicles:
+    create-permission: You don't have permissions to create this vehicle mechanic!
+worldedit:
+    ic:
+        noselection: No selection was found!
+        notfound: WorldEdit not found!
+        unsupported: WorldEdit selection type currently unsupported for IC's!
+circuits:
+    pipes:
+        create: Pipe created!

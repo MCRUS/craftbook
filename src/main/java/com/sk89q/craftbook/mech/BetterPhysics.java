@@ -14,27 +14,21 @@ import com.sk89q.worldedit.blocks.BlockID;
 
 public class BetterPhysics implements Listener {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onBlockPlace(BlockPlaceEvent event) {
 
-        if(!CraftBookPlugin.inst().getConfiguration().physicsEnabled)
-            return;
-
         if(event.getBlock().getTypeId() == BlockID.LADDER && CraftBookPlugin.inst().getConfiguration().physicsLadders)
             Bukkit.getScheduler().runTaskLater(CraftBookPlugin.inst(), new FallingLadders(event.getBlock()), 1L);
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onBlockPhysics(BlockPhysicsEvent event) {
 
-        if(!CraftBookPlugin.inst().getConfiguration().physicsEnabled)
-            return;
-
         if(event.getBlock().getTypeId() == BlockID.LADDER && CraftBookPlugin.inst().getConfiguration().physicsLadders)
             Bukkit.getScheduler().runTaskLater(CraftBookPlugin.inst(), new FallingLadders(event.getBlock()), 1L);
     }
 
-    public class FallingLadders implements Runnable {
+    public static class FallingLadders implements Runnable {
 
         Block ladder;
 
