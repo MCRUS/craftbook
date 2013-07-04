@@ -293,7 +293,7 @@ public class CraftBookPlugin extends JavaPlugin {
 
         // Initialize the language manager.
         createDefaultConfiguration(new File(getDataFolder(), "en_US.txt"), "en_US.txt", true);
-        createDefaultConfiguration(new File(getDataFolder(), "ru_RU.txt"), "ru_RU.txt", true);
+        createDefaultConfiguration(new File(getDataFolder(), "ru_RU.yml"), "ru_RU.yml", true);
         languageManager = new LanguageManager();
         languageManager.init();
     }

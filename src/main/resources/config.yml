@@ -46,11 +46,11 @@ pedantic-block-checks: false
 use-experimental-clicks: false
 
 # The default language for CraftBook. Note: This language needs to be in the 'languages' field for this to work.
-language: en_US
+language: ru_RU
 
 # A list of languages supported by craftbook, if a user requests a language not listed... They will see default.
 languages:
-- en_US
+- ru_RU
 
 # Enable a mode that will print extra debug information to the console.
 debug-mode: false
