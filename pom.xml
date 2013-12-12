@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.sk89q.craftbook</groupId>
     <artifactId>craftbook</artifactId>
@@ -78,24 +79,24 @@
             <version>2.7.0</version>
         </dependency>
         <dependency>
-	        <groupId>org.powermock</groupId>
-	        <artifactId>powermock-module-junit4</artifactId>
-	        <version>1.4.9</version>
-	        <type>jar</type>
-	        <scope>test</scope>
-	    </dependency>
-	    <dependency>
-	        <groupId>org.powermock</groupId>
-	        <artifactId>powermock-api-mockito</artifactId>
-	        <version>1.4.9</version>
-	        <type>jar</type>
-	        <scope>test</scope>
-	    </dependency>
-	    <dependency>
-	       <groupId>fr.neatmonster</groupId>
-	       <artifactId>ncpcore</artifactId>
-	       <version>static</version>
-	    </dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>1.4.9</version>
+            <type>jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito</artifactId>
+            <version>1.4.9</version>
+            <type>jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>fr.neatmonster</groupId>
+            <artifactId>ncpcore</artifactId>
+            <version>static</version>
+        </dependency>
     </dependencies>
     <distributionManagement>
         <site>
@@ -129,7 +130,7 @@
                 <filtering>true</filtering>
                 <directory>${basedir}/src/main/resources/</directory>
                 <includes>
-                    <include>en_US.yml</include>
+                    <include>ru_RU.yml</include>
                     <include>config.yml</include>
                     <include>books.txt</include>
                     <include>cauldron-recipes.txt</include>
@@ -174,7 +175,9 @@
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                         </manifest>
                         <manifestEntries>
-                            <Class-Path>CraftBook/WorldEdit.jar lib/WorldEdit.jar ../lib/WorldEdit.jar ../WorldEdit.jar</Class-Path>
+                            <Class-Path>CraftBook/WorldEdit.jar lib/WorldEdit.jar ../lib/WorldEdit.jar
+                                ../WorldEdit.jar
+                            </Class-Path>
                         </manifestEntries>
                     </archive>
                 </configuration>
@@ -246,15 +249,15 @@
                     </reportPlugins>
                 </configuration>
             </plugin>
-            
+
             <plugin>
-			    <groupId>org.apache.maven.plugins</groupId>
-			    <artifactId>maven-eclipse-plugin</artifactId>
-			    <configuration>
-				    <downloadSources>true</downloadSources>
-				    <downloadJavadocs>true</downloadJavadocs>
-			    </configuration>
-		    </plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-eclipse-plugin</artifactId>
+                <configuration>
+                    <downloadSources>true</downloadSources>
+                    <downloadJavadocs>true</downloadJavadocs>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

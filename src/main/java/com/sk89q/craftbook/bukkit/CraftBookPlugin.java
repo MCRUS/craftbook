@@ -256,7 +256,7 @@ public class CraftBookPlugin extends JavaPlugin {
 
         // Initialize the language manager.
         logDebugMessage("Initializing Languages!", "startup");
-        createDefaultConfiguration(new File(getDataFolder(), "en_US.yml"), "en_US.yml");
+        createDefaultConfiguration(new File(getDataFolder(), "ru_RU.yml"), "ru_RU.yml");
         languageManager = new LanguageManager();
         languageManager.init();
 

@@ -104,10 +104,10 @@ public class BukkitConfiguration extends YAMLConfiguration {
         pedanticBlockChecks = config.getBoolean("pedantic-block-checks", false);
 
         config.setComment("language", "The default language for CraftBook. Note: This language needs to be in the 'languages' field for this to work.");
-        language = config.getString("language", "en_US");
+        language = config.getString("language", "ru_RU");
 
         config.setComment("languages", "A list of languages supported by craftbook, if a user requests a language not listed... They will see default.");
-        languages = config.getStringList("languages", Arrays.asList("en_US"));
+        languages = config.getStringList("languages", Arrays.asList("ru_RU"));
 
         config.setComment("scan-text-for-localization", "If enabled, CraftBook will scan messages sent to players for localizable text, instead of just checking if the entire message is localizable.");
         languageScanText = config.getBoolean("scan-text-for-localization", false);

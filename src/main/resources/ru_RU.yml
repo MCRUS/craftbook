@@ -1,34 +1,29 @@
 area:
     permissions: У Вас недостаточно прав на этой территории!
+    use-permissions: У Вас недостаточно прав для использования данной вещи на этой территории!
+    break-permissions: У Вас недостаточно прав для разрушения блоков на этой территории!
+variable:
+    missing: Переменная не найдена!
+    use-permissions: У Вас недостаточноп рав для использования данной переменной!
 mech:
-    teleport:
-        alert: Вы телепортированы!
-        range: За пределами!
-        create: Телепортатор создан!
-        arriveonly: На эту точку телепрта Вы можете только прибывать!
-        sign: В пункте назначения нет таблички!
-    use-permission: У Вас недостаточно прав для создания этого механизма.
-    gate:
-        not-found: Ворота не найдены!
-        toggle: Состояние ворот переключено!
-        create: Ворота созданы!
-    lift:
-        target-sign-created: Пункт назначения для лифта создан.
-        down-sign-created: Пункт отправления вниз создан.
-        floor: Этаж
-        up-sign-created: Пункт отправления вверх создан.
-        obstruct: Ваш пункт назначения заблокирован!
-        down: Вы спустились вниз!
-        up: Вы поднялись!
-        no-floor: В пункте назначения нет пола!
-    door:
-        material: Дверь должна быть из одного материала!
-        other-sign: Табличка двери нужна и с другой стороны (или она слишком далеко).
-        toggle: Состояние двери переключено!
-        create: Дверь создана!
-        unusable: Дверь ен может быть из этого мериала!
+    create-permission: У Вас недостаточно прав для создания этого механизма.
+    use-permission: У Вас недостаточно прав для использования этого механизма.
+    restock-permission: У Вас недостаточно прав для восстановления этого механизма.
+    not-enough-blocks: Не достаточно блоков чтобы переключить состояние!
+    group: Вы не состоите в нужной группе!
+    restock: Механизм пополнен!
+    ammeter:
+        ammeter: Амметр
     anchor:
-        create: Якорь для чанка создан!
+        create: Якорь чанка создан!
+        already-anchored: В этом чанке уже создан якорь!
+    area:
+        create: Зона переключения создана!
+        missing: Зона или namespace не существует.
+    bookcase:
+        fail-line: Ошибка чтения линии из книги.
+        fail-file: Ошибка чтения файла книги.
+        read-line: Вы открыли книгу...
     bridge:
         toggle: Состояние моста переключено!
         end-create: Конец моста создан!
@@ -36,44 +31,100 @@ mech:
         create: Мост создан!
         unusable: Данный мериал нельзя использовать для моста!
         material: Мост должен быть из одного материала!
-    pay:
-        create: Платежка создана!
+    cauldron:
+        too-small: Котел слишком мал!
+        leaky: Колет дал течь!
+        no-lava: Котлу не хватает лавы!
+        legacy-not-a-recipe: Хмм, это ничего не делает...
+        legacy-not-in-group: Что-то похоже у Вас нет прав...
+        legacy-create: В мгновение ока, Вы создали
+        stir: Вы заварили кашу в котле но ничего не произошло.
+        permissions: У Вас недостаточноп рав для варки данного рецепта.
+        cook: "Вы приготовили рецепт: "
+    chairs:
+        sit: Вы присели!
+        stand: Вы встали!
+        in-use: Кто то уже сидит на данном стуле!
+        floating: Данный стул волшебный - под ним ничего нет!
+    command:
+        create: Командная табличка создана!
+    command-items:
+        out-of-sync: Инвентарь не синхронизирован!
+        wait: Подождите 
+        wait-seconds: секунду(ы) для повторного использования!
+        need: Вам надо использовать
+        need-use: для данной команды!
+    cook:
+        create: Кастлюля создана!
+        ouch: Оуч! Это было жарко!
+        add-fuel: Вы добавили топлива для кострюли. Огонь разгорается!
+    custom-crafting:
+        recipe-permission: У Вас недостаточно прав для готовки по данному рецепту.
+    door:
+        create: Дверь создана!
+        toggle: Состояние двери переключено!
+        other-sign: Табличка двери нужна и с другой стороны (или она слишком далеко).
+        unusable: Дверь не может быть из этого мериала!
+        material: Дверь должна быть из одного материала!
+    gate:
+        create: Ворота созданы!   
+        toggle: Состояние ворот переключено!
+        not-found: Ворота не найдены!
+        valid-item: Первая линия должна быть номером блока.
+    dgate:
+        create: Малые врата созданы!
+    hiddenswitch:
+        key: Ключ не продходит!
+        toogle: Вот он - волшебный щелчек в стене! Состояние переключено!
+    headdrops:
+        click-message: Эта голова была снята с плечей...
+        break-permission: У Вас недостаточно прав для разбивания головы.
+    lift:
+        target-sign-created: Пункт назначения для лифта создан.
+        down-sign-created: Пункт отправления вниз создан.
+        up-sign-created: Пункт отправления вверх создан.
+        obstruct: Ваш пункт назначения заблокирован!
+        no-floor: В пункте назначения нет пола!
+        floor: Этаж
+        up: Вы поднялись!
+        down: Вы спустились вниз!
+        leave: Вы покинули лифт!
+        no-destination: Нет пункта назначения!
+        no-depart: Вы не можете отправлятся с этой остановки.
+        busy: Лифт занят!
+    lightstone:
+        lightstone: "СветоКамень: "
+    lightswitch:
+        create: Переключатель света создан!
+    map:
+        created: Сменитель карты создан!
+        invalid: Неверный код карты!
     painting:
         editing: Вы в режиме рисования!
         used: Данный рисунок уже был изменен
         range: Вы слишком далеко от рисунка!
         stop: Вы больше не в режиме рисования!
-    dgate:
-        create: Малые врата созданы!
+    pay:
+        create: Платежка создана! 
+        success: "Платеж успешен! Вы заплатили: "
     pistons:
-        superpush:
-            created: Piston Super-Push Mechanic Created!
         crush:
-            created: Piston Crush Mechanic Created!
+            created: Piston Crush Mechanic Created!     
         supersticky:
-            created: Piston Super-Sticky Mechanic Created!
+            created: Piston Super-Sticky Mechanic Created!    
         bounce:
-            created: Piston Bounce Mechanic Created!
+            created: Piston Bounce Mechanic Created! 
+        superpush:
+            created: Piston Super-Push Mechanic Created!   
     signcopy:
-        paste: Вы вставили табличку!
         copy: Вы скопировали табличку!
-    not-enough-blocks: Не достаточно блоков чтобы переключить состояние!
-    cauldron:
-        leaky: Колет дал течь!
-        no-lava: Котлу не хватает лавы!
-        too-small: Котел слишком мал!
-        stir: Вы заварили кашу в котле но ничего не произошло.
-    group: Вы не состоите в нужной группе!
-    restock: Механизм пополнен!
-    command:
-        create: Командная табличка создана!
-    cook:
-        ouch: Оуч! Это было жарко!
-        create: Cooking Pot Created!
-    lightswitch:
-        create: Переключатель света создан!
-    hiddenswitch:
-        key: Пключ не продходит!
+        paste: Вы вставили табличку!
+    teleport:
+        create: Телепортатор создан!
+        alert: Вы телепортированы!
+        range: За пределами!
+        sign: В пункте назначения нет таблички!
+        arriveonly: На эту точку телепрта Вы можете только прибывать!
 vehicles:
     create-permission: У Вас недостаточно прав для использования этого механизма!
 worldedit:
