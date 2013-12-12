@@ -1,51 +1,37 @@
 package com.sk89q.craftbook.mech;
 
+import org.bukkit.Material;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
-import com.sk89q.craftbook.AbstractMechanic;
-import com.sk89q.craftbook.AbstractMechanicFactory;
+import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
-import com.sk89q.worldedit.BlockWorldVector;
-import com.sk89q.worldedit.blocks.ItemID;
-import com.sk89q.worldedit.bukkit.BukkitUtil;
 
-public class XPStorer extends AbstractMechanic {
+public class XPStorer extends AbstractCraftBookMechanic {
 
-    public static class Factory extends AbstractMechanicFactory<XPStorer> {
-
-        @Override
-        public XPStorer detect(BlockWorldVector pt, LocalPlayer player) {
-
-            int type = BukkitUtil.toWorld(pt).getBlockTypeIdAt(BukkitUtil.toLocation(pt));
-
-            if (type == CraftBookPlugin.inst().getConfiguration().xpStorerBlock && player.hasPermission("craftbook.mech.xpstore.use")) return new XPStorer(pt);
-
-            return null;
-        }
-    }
-
-    /**
-     * Construct the mechanic for a location.
-     *
-     * @param pt
-     */
-    private XPStorer(BlockWorldVector pt) {
-
-        super();
-    }
-
-    @Override
+    @EventHandler(ignoreCancelled = true)
     public void onRightClick(PlayerInteractEvent event) {
 
-        if (event.getPlayer().isSneaking() || event.getPlayer().getLevel() < 1) {
+        if(!CraftBookPlugin.inst().getConfiguration().xpStorerBlock.isSame(event.getClickedBlock())) return;
+
+        LocalPlayer player = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
+
+        if (player.isSneaking() || event.getPlayer().getLevel() < 1)
+            return;
+
+        if(!player.hasPermission("craftbook.mech.xpstore.use")) {
+            if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                player.printError("mech.use-permission");
             return;
         }
 
         int xp = 0;
 
+        float pcnt = event.getPlayer().getExp();
         event.getPlayer().setExp(0);
+        xp += (int)(event.getPlayer().getExpToLevel()*pcnt);
 
         while (event.getPlayer().getLevel() > 0) {
             event.getPlayer().setLevel(event.getPlayer().getLevel() - 1);
@@ -57,9 +43,7 @@ public class XPStorer extends AbstractMechanic {
             return;
         }
 
-        event.getClickedBlock().getWorld()
-        .dropItemNaturally(event.getClickedBlock().getLocation(), new ItemStack(ItemID.BOTTLE_O_ENCHANTING,
-                xp / 16));
+        event.getClickedBlock().getWorld().dropItemNaturally(event.getClickedBlock().getLocation(), new ItemStack(Material.EXP_BOTTLE, xp / 16));
 
         event.getPlayer().setLevel(0);
         event.getPlayer().setExp(0);

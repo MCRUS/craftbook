@@ -25,17 +25,21 @@ public class BukkitConfiguration extends YAMLConfiguration {
     public int stThinkRate;
     public boolean obeyWorldguard;
     public boolean advancedBlockChecks;
-    public boolean experimentalClicks;
     public boolean pedanticBlockChecks;
+    public boolean showPermissionMessages;
 
     public boolean updateNotifier;
     public boolean easterEggs;
+    public boolean realisticRandoms;
 
     public String language;
     public List<String> languages;
+    public boolean languageScanText;
 
     public boolean debugMode;
     public List<String> debugFlags;
+
+    public String persistentStorageType;
 
     public BukkitConfiguration(YAMLProcessor config, Logger logger) {
 
@@ -99,14 +103,14 @@ public class BukkitConfiguration extends YAMLConfiguration {
         config.setComment("pedantic-block-checks", "In conjunction with advanced-block-checks, this option adds a few extra checks if you are experiencing compatibility issues with certain plugins that stop breaks/places/interacts.");
         pedanticBlockChecks = config.getBoolean("pedantic-block-checks", false);
 
-        config.setComment("use-experimental-clicks", "Use experimental methods for right clicking a block to always work even if the client doesn't tell the server the block was right clicked. This may assume the wrong block, so be warned.");
-        experimentalClicks = config.getBoolean("use-experimental-clicks", false);
-
         config.setComment("language", "The default language for CraftBook. Note: This language needs to be in the 'languages' field for this to work.");
         language = config.getString("language", "en_US");
 
         config.setComment("languages", "A list of languages supported by craftbook, if a user requests a language not listed... They will see default.");
         languages = config.getStringList("languages", Arrays.asList("en_US"));
+
+        config.setComment("scan-text-for-localization", "If enabled, CraftBook will scan messages sent to players for localizable text, instead of just checking if the entire message is localizable.");
+        languageScanText = config.getBoolean("scan-text-for-localization", false);
 
         config.setComment("debug-mode", "Enable a mode that will print extra debug information to the console.");
         debugMode = config.getBoolean("debug-mode", false);
@@ -116,6 +120,15 @@ public class BukkitConfiguration extends YAMLConfiguration {
 
         config.setComment("easter-eggs", "Enables random easter eggs. Can be from console messages on startup for a special occasion, to funny little effects with IC's and other mechanics (Always harmless, won't mess anything up)");
         easterEggs = config.getBoolean("easter-eggs", true);
+
+        config.setComment("realistic-randoms", "Random numbers are much more random, with a small cost to CPU usage.");
+        realisticRandoms = config.getBoolean("realistic-randoms", true);
+
+        config.setComment("show-permission-messages", "Show messages when a player does not have permission to do something.");
+        showPermissionMessages = config.getBoolean("show-permission-messages", true);
+
+        config.setComment("persistent-storage-type", "PersistentStorage stores data that can be accessed across server restart. Method of PersistentStorage storage (Note: DUMMY is practically off, and may cause issues). Can currently be any of the following: YAML, DUMMY");
+        persistentStorageType = config.getString("persistent-storage-type", "YAML");
 
         super.load();
     }

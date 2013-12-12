@@ -7,7 +7,7 @@ import org.bukkit.event.EventHandler;
 import com.sk89q.craftbook.util.ItemInfo;
 import com.sk89q.craftbook.util.RedstoneUtil.Power;
 import com.sk89q.craftbook.util.SignUtil;
-import com.sk89q.craftbook.vehicles.CartBlockImpactEvent;
+import com.sk89q.craftbook.vehicles.cart.events.CartBlockImpactEvent;
 import com.sk89q.worldedit.bukkit.BukkitUtil;
 
 public class CartEjector extends CartBlockMechanism {
@@ -21,7 +21,7 @@ public class CartEjector extends CartBlockMechanism {
 
         // care?
         if (!event.getBlocks().matches(getMaterial())) return;
-        if (event.getMinecart().getPassenger() == null) return;
+        if (event.getMinecart().isEmpty()) return;
 
         // enabled?
         if (Power.OFF == isActive(event.getBlocks())) return;

@@ -1,5 +1,6 @@
 package com.sk89q.craftbook.mech.dispenser;
 
+import org.bukkit.Material;
 import org.bukkit.block.Dispenser;
 import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.inventory.ItemStack;
@@ -7,12 +8,12 @@ import org.bukkit.util.Vector;
 
 public class ItemShooter extends Recipe {
 
-    private final int itemId;
+    private final Material itemId;
 
-    public ItemShooter(int id, int[] recipe) {
+    public ItemShooter(Material id, Material[] materials) {
 
-        super(recipe);
-        this.itemId = id;
+        super(materials);
+        itemId = id;
     }
 
     @Override
