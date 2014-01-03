@@ -5,7 +5,6 @@ import org.bukkit.Server;
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.BukkitPlayer;
-import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.commands.VariableCommands;
 import com.sk89q.craftbook.circuits.ic.AbstractIC;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
@@ -13,6 +12,7 @@ import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.ic.ICVerificationException;
+import com.sk89q.craftbook.common.VariableManager;
 import com.sk89q.craftbook.util.ParsingUtil;
 import com.sk89q.craftbook.util.RegexUtil;
 
@@ -78,11 +78,15 @@ public class NumericModifier extends AbstractIC {
                     break;
             }
 
-            String var = String.valueOf(currentValue);
-            if (var.endsWith(".0"))
-                var = var.replace(".0", "");
+            String val = String.valueOf(currentValue);
+            if (val.endsWith(".0"))
+                val = val.replace(".0", "");
 
-            CraftBookPlugin.inst().setVariable(variable, "global", var);
+            String var,key;
+            var = VariableManager.instance.getVariableName(variable);
+            key = VariableManager.instance.getNamespace(variable);
+
+            VariableManager.instance.setVariable(var, key, val);
             chip.setOutput(0, true);
             return;
         } catch(Exception ignored){}
@@ -136,10 +140,10 @@ public class NumericModifier extends AbstractIC {
             try {
                 String[] parts = RegexUtil.PIPE_PATTERN.split(sign.getLine(2));
                 if(parts.length == 1) {
-                    if(!CraftBookPlugin.inst().hasVariable(sign.getLine(2), "global"))
+                    if(!VariableManager.instance.hasVariable(sign.getLine(2), "global"))
                         throw new ICVerificationException("Unknown Variable!");
                 } else
-                    if(!CraftBookPlugin.inst().hasVariable(parts[1], parts[0]))
+                    if(!VariableManager.instance.hasVariable(parts[1], parts[0]))
                         throw new ICVerificationException("Unknown Variable!");
                 Function.valueOf(sign.getLine(3).split(":")[0]);
                 Double.parseDouble(sign.getLine(3).split(":")[1]);

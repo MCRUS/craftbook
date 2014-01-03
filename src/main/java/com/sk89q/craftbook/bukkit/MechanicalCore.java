@@ -3,18 +3,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.OfflinePlayer;
-
 import com.sk89q.craftbook.CraftBookMechanic;
 import com.sk89q.craftbook.LocalComponent;
 import com.sk89q.craftbook.bukkit.commands.MechanismCommands;
+import com.sk89q.craftbook.mech.AIMechanic;
 import com.sk89q.craftbook.mech.Ammeter;
 import com.sk89q.craftbook.mech.BetterLeads;
 import com.sk89q.craftbook.mech.BetterPhysics;
 import com.sk89q.craftbook.mech.BetterPistons;
-import com.sk89q.craftbook.mech.BetterPistons.Types;
 import com.sk89q.craftbook.mech.Bookcase;
 import com.sk89q.craftbook.mech.Cauldron;
 import com.sk89q.craftbook.mech.Chair;
@@ -39,7 +35,6 @@ import com.sk89q.craftbook.mech.Snow;
 import com.sk89q.craftbook.mech.Teleporter;
 import com.sk89q.craftbook.mech.TreeLopper;
 import com.sk89q.craftbook.mech.XPStorer;
-import com.sk89q.craftbook.mech.ai.AIMechanic;
 import com.sk89q.craftbook.mech.area.Area;
 import com.sk89q.craftbook.mech.area.CopyManager;
 import com.sk89q.craftbook.mech.area.simple.Bridge;
@@ -94,17 +89,6 @@ public class MechanicalCore implements LocalComponent {
             mech.disable();
         mechanics = null;
         customCrafting = null;
-        Iterator<String> it = Elevator.flyingPlayers.iterator();
-        while(it.hasNext()) {
-            OfflinePlayer op = Bukkit.getOfflinePlayer(it.next());
-            if(!op.isOnline()) {
-                it.remove();
-                continue;
-            }
-            op.getPlayer().setFlying(false);
-            op.getPlayer().setAllowFlight(op.getPlayer().getGameMode() == GameMode.CREATIVE);
-            it.remove();
-        }
         instance = null;
     }
 
@@ -122,29 +106,16 @@ public class MechanicalCore implements LocalComponent {
 
         BukkitConfiguration config = plugin.getConfiguration();
 
-        // Let's register mechanics!
-        if (config.gateEnabled) plugin.registerMechanic(new Gate.Factory());
-        if (config.elevatorEnabled) plugin.registerMechanic(new Elevator.Factory());
-        if (config.teleporterEnabled) plugin.registerMechanic(new Teleporter.Factory());
-        if (config.areaEnabled) plugin.registerMechanic(new Area.Factory());
-        if (config.hiddenSwitchEnabled) plugin.registerMechanic(new HiddenSwitch.Factory());
-        if (config.cookingPotEnabled) plugin.registerMechanic(new CookingPot.Factory());
-        if (config.legacyCauldronEnabled) plugin.registerMechanic(new Cauldron.Factory());
-        if (config.cauldronEnabled) plugin.registerMechanic(new ImprovedCauldron.Factory());
-
-        for(Types type : BetterPistons.Types.values())
-            if (config.pistonsEnabled && Types.isEnabled(type)) plugin.registerMechanic(new BetterPistons.Factory(type));
-
         // New System Mechanics
+        if (config.commandItemsEnabled) mechanics.add(new CommandItems());
         if (config.customCraftingEnabled) mechanics.add(customCrafting = new CustomCrafting());
         if (config.customDispensingEnabled) mechanics.add(new DispenserRecipes());
-        if (config.snowPiling || config.snowPlace) mechanics.add(new Snow());
+        if (config.snowEnable) mechanics.add(new Snow());
         if (config.customDropEnabled) mechanics.add(new CustomDrops());
         if (config.aiEnabled) mechanics.add(new AIMechanic());
         if (config.paintingsEnabled) mechanics.add(new PaintingSwitch());
         if (config.physicsEnabled) mechanics.add(new BetterPhysics());
         if (config.headDropsEnabled) mechanics.add(new HeadDrops());
-        if (config.commandItemsEnabled) mechanics.add(new CommandItems());
         if (config.leadsEnabled) mechanics.add(new BetterLeads());
         if (config.marqueeEnabled) mechanics.add(new Marquee());
         if (config.treeLopperEnabled) mechanics.add(new TreeLopper());
@@ -159,6 +130,15 @@ public class MechanicalCore implements LocalComponent {
         if (config.signCopyEnabled) mechanics.add(new SignCopier());
         if (config.bridgeEnabled) mechanics.add(new Bridge());
         if (config.doorEnabled) mechanics.add(new Door());
+        if (config.hiddenSwitchEnabled) mechanics.add(new HiddenSwitch());
+        if (config.elevatorEnabled) mechanics.add(new Elevator());
+        if (config.teleporterEnabled) mechanics.add(new Teleporter());
+        if (config.areaEnabled) mechanics.add(new Area());
+        if (config.cauldronEnabled) mechanics.add(new ImprovedCauldron());
+        if (config.legacyCauldronEnabled) mechanics.add(new Cauldron());
+        if (config.gateEnabled) mechanics.add(new Gate());
+        if (config.pistonsEnabled) mechanics.add(new BetterPistons());
+        if (config.cookingPotEnabled) mechanics.add(new CookingPot());
 
         if (config.chairEnabled) try {mechanics.add(new Chair()); } catch(Throwable e){plugin.getLogger().warning("Failed to initialize mechanic: Chairs. Make sure you have ProtocolLib!");}
         if (config.footprintsEnabled) try {mechanics.add(new Footprints()); } catch(Throwable e){plugin.getLogger().warning("Failed to initialize mechanic: Footprints. Make sure you have ProtocolLib!");}

@@ -60,6 +60,8 @@ import com.sk89q.craftbook.circuits.gates.logic.RsNorFlipFlop;
 import com.sk89q.craftbook.circuits.gates.logic.ToggleFlipFlop;
 import com.sk89q.craftbook.circuits.gates.logic.XnorGate;
 import com.sk89q.craftbook.circuits.gates.logic.XorGate;
+import com.sk89q.craftbook.circuits.gates.variables.IsAtLeast;
+import com.sk89q.craftbook.circuits.gates.variables.ItemCounter;
 import com.sk89q.craftbook.circuits.gates.variables.NumericModifier;
 import com.sk89q.craftbook.circuits.gates.world.blocks.BlockBreaker;
 import com.sk89q.craftbook.circuits.gates.world.blocks.BlockLauncher;
@@ -87,6 +89,7 @@ import com.sk89q.craftbook.circuits.gates.world.entity.AnimalHarvester;
 import com.sk89q.craftbook.circuits.gates.world.entity.CreatureSpawner;
 import com.sk89q.craftbook.circuits.gates.world.entity.EntityCannon;
 import com.sk89q.craftbook.circuits.gates.world.entity.EntityTrap;
+import com.sk89q.craftbook.circuits.gates.world.entity.PlayerTrap;
 import com.sk89q.craftbook.circuits.gates.world.entity.TeleportReciever;
 import com.sk89q.craftbook.circuits.gates.world.entity.TeleportTransmitter;
 import com.sk89q.craftbook.circuits.gates.world.items.AutomaticCrafter;
@@ -146,7 +149,7 @@ import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.ic.ICFamily;
 import com.sk89q.craftbook.circuits.ic.ICManager;
-import com.sk89q.craftbook.circuits.ic.ICMechanicFactory;
+import com.sk89q.craftbook.circuits.ic.ICMechanic;
 import com.sk89q.craftbook.circuits.ic.RegisteredICFactory;
 import com.sk89q.craftbook.circuits.ic.RestrictedIC;
 import com.sk89q.craftbook.circuits.ic.SelfTriggeredIC;
@@ -175,8 +178,6 @@ public class CircuitCore implements LocalComponent {
     private ICManager icManager;
 
     private YAMLICConfiguration icConfiguration;
-
-    private ICMechanicFactory ICFactory;
 
     private File romFolder;
     private File midiFolder;
@@ -229,7 +230,6 @@ public class CircuitCore implements LocalComponent {
             }
         }
         icConfiguration = null;
-        ICFactory = null;
         ICManager.emptyCache();
         instance = null;
     }
@@ -252,11 +252,6 @@ public class CircuitCore implements LocalComponent {
         return midiFolder;
     }
 
-    public ICMechanicFactory getICFactory() {
-
-        return ICFactory;
-    }
-
     private void registerMechanics() {
 
         BukkitConfiguration config = CraftBookPlugin.inst().getConfiguration();
@@ -274,7 +269,7 @@ public class CircuitCore implements LocalComponent {
             getFireworkFolder();
 
             registerICs();
-            plugin.registerMechanic(ICFactory = new ICMechanicFactory(getIcManager()));
+            mechanics.add(new ICMechanic(getIcManager()));
 
             try {
                 icConfiguration.load();
@@ -400,6 +395,7 @@ public class CircuitCore implements LocalComponent {
         registerIC("MC1276", "radio station", new RadioStation.Factory(server), familySISO, familyAISO);
         registerIC("MC1277", "radio player", new RadioPlayer.Factory(server), familySISO, familyAISO);
         registerIC("MC1278", "sentry gun", new SentryGun.Factory(server), familySISO, familyAISO); //Restricted
+        registerIC("MC1279", "player trap",new PlayerTrap.Factory(server), familySISO, familyAISO);
         registerIC("MC1280", "animal breed", new AnimalBreeder.Factory(server), familySISO, familyAISO);
         registerIC("MC1420", "divide clock", new ClockDivider.Factory(server), familySISO, familyAISO);
         registerIC("MC1421", "clock", new Clock.Factory(server), familySISO, familyAISO);
@@ -461,7 +457,9 @@ public class CircuitCore implements LocalComponent {
         registerIC("MCT233", "weather set ad", new WeatherControlAdvanced.Factory(server), family3ISO);
 
         //Variable ICs
-        registerIC("VAR100", "num mod", new NumericModifier.Factory(server), familySISO);
+        registerIC("VAR100", "num mod", new NumericModifier.Factory(server), familySISO, familyAISO);
+        registerIC("VAR170", "at least", new IsAtLeast.Factory(server), familySISO, familyAISO);
+        registerIC("VAR200", "item count", new ItemCounter.Factory(server), familySISO, familyAISO);
     }
 
     /**
@@ -562,7 +560,7 @@ public class CircuitCore implements LocalComponent {
                 col = !col;
                 ChatColor colour = col ? ChatColor.YELLOW : ChatColor.GOLD;
 
-                if (!ICMechanicFactory.checkPermissionsBoolean(CraftBookPlugin.inst().wrapPlayer(p), ric.getFactory(), ic.toLowerCase(Locale.ENGLISH))) {
+                if (!ICMechanic.checkPermissionsBoolean(CraftBookPlugin.inst().wrapPlayer(p), ric.getFactory(), ic.toLowerCase(Locale.ENGLISH))) {
                     colour = col ? ChatColor.RED : ChatColor.DARK_RED;
                 }
                 strings.add(colour + tic.getTitle() + " (" + ric.getId() + ")"

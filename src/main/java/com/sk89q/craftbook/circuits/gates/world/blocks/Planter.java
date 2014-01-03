@@ -46,7 +46,10 @@ public class Planter extends AbstractSelfTriggeredIC {
     @Override
     public void load() {
 
-        item = ItemSyntax.getItem(getLine(2));
+        if(getLine(2).isEmpty())
+            item = null;
+        else
+            item = ItemSyntax.getItem(getLine(2));
 
         onBlock = getBackBlock();
 
@@ -185,8 +188,8 @@ public class Planter extends AbstractSelfTriggeredIC {
             case SEEDS:
             case MELON_SEEDS:
             case PUMPKIN_SEEDS:
-            case POTATO:
-            case CARROT:
+            case POTATO_ITEM:
+            case CARROT_ITEM:
                 return blockId == Material.SOIL;
             case NETHER_WARTS:
                 return blockId == Material.SOUL_SAND;

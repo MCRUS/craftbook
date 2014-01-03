@@ -12,7 +12,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -30,31 +30,31 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.sk89q.bukkit.util.CommandsManagerRegistration;
-import com.sk89q.craftbook.LanguageManager;
+import com.sk89q.craftbook.CraftBookMechanic;
 import com.sk89q.craftbook.LocalComponent;
 import com.sk89q.craftbook.LocalPlayer;
-import com.sk89q.craftbook.Mechanic;
 import com.sk89q.craftbook.MechanicClock;
-import com.sk89q.craftbook.MechanicFactory;
-import com.sk89q.craftbook.MechanicManager;
+import com.sk89q.craftbook.SelfTriggeringManager;
 import com.sk89q.craftbook.bukkit.Metrics.Graph;
 import com.sk89q.craftbook.bukkit.Metrics.Plotter;
 import com.sk89q.craftbook.bukkit.commands.TopLevelCommands;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.common.LanguageManager;
+import com.sk89q.craftbook.common.VariableManager;
 import com.sk89q.craftbook.mech.CommandItems;
 import com.sk89q.craftbook.mech.CommandItems.CommandItemDefinition;
 import com.sk89q.craftbook.util.CompatabilityUtil;
 import com.sk89q.craftbook.util.ItemSyntax;
 import com.sk89q.craftbook.util.RegexUtil;
-import com.sk89q.craftbook.util.Tuple2;
 import com.sk89q.craftbook.util.compat.companion.CompanionPlugins;
-import com.sk89q.craftbook.util.config.VariableConfiguration;
 import com.sk89q.craftbook.util.persistent.PersistentStorage;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.minecraft.util.commands.CommandPermissionsException;
@@ -85,11 +85,6 @@ public class CraftBookPlugin extends JavaPlugin {
     private LanguageManager languageManager;
 
     /**
-     * The mechanic manager
-     */
-    private MechanicManager manager;
-
-    /**
      * The random
      */
     private Random random;
@@ -105,7 +100,6 @@ public class CraftBookPlugin extends JavaPlugin {
      * Handles all configuration.
      */
     private BukkitConfiguration config;
-    private VariableConfiguration variableConfiguration;
 
     /**
      * The currently enabled LocalComponents
@@ -123,14 +117,19 @@ public class CraftBookPlugin extends JavaPlugin {
     private MechanicClock mechanicClock;
 
     /**
-     * Stores the variables used in VariableStore.
-     */
-    protected HashMap<Tuple2<String, String>, String> variableStore = new HashMap<Tuple2<String, String>, String>();
-
-    /**
      * The persistent storage database of CraftBook.
      */
     protected PersistentStorage persistentStorage;
+
+    /**
+     * List of common mechanics.
+     */
+    private List<CraftBookMechanic> mechanics;
+
+    /**
+     * The manager for SelfTriggering components.
+     */
+    private SelfTriggeringManager selfTriggerManager;
 
     /**
      * Construct objects. Actual loading occurs when the plugin is enabled, so
@@ -144,7 +143,7 @@ public class CraftBookPlugin extends JavaPlugin {
 
     public static String getVersion() {
 
-        return "3.8b1";
+        return "3.8b3";
     }
 
     /**
@@ -154,7 +153,7 @@ public class CraftBookPlugin extends JavaPlugin {
      */
     public static String getStableBuild() {
 
-        return "3388";
+        return "3460";
     }
 
     public static int getUpdaterID() {
@@ -162,11 +161,23 @@ public class CraftBookPlugin extends JavaPlugin {
         return 31055;
     }
 
+    public List<LocalComponent> getComponents() {
+
+        return Collections.unmodifiableList(components);
+    }
+
+    public List<CraftBookMechanic> getMechanics() {
+
+        return mechanics;
+    }
+
     /**
      * Called on plugin enable.
      */
     @Override
     public void onEnable() {
+
+        System.gc();
 
         ItemSyntax.plugin = this;
 
@@ -196,9 +207,9 @@ public class CraftBookPlugin extends JavaPlugin {
             persistentStorage.open();
 
         logDebugMessage("Initializing Managers!", "startup");
-        manager = new MechanicManager();
         managerAdapter = new MechanicListenerAdapter();
         mechanicClock = new MechanicClock();
+        selfTriggerManager = new SelfTriggeringManager();
 
         logDebugMessage("Initializing Permission!", "startup");
         PermissionsResolverManager.initialize(this);
@@ -233,6 +244,26 @@ public class CraftBookPlugin extends JavaPlugin {
         setupCraftBook();
         registerGlobalEvents();
         startComponents();
+
+        System.gc();
+
+        getServer().getPluginManager().registerEvents(new Listener() {
+
+            @EventHandler(priority = EventPriority.LOWEST)
+            public void signChange(SignChangeEvent event) {
+                for(int i = 0; i < event.getLines().length; i++) {
+                    StringBuilder builder = new StringBuilder();
+                    for (char c : event.getLine(i).toCharArray()) {
+                        if (c < 0xF700 || c > 0xF747) {
+                            builder.append(c);
+                        }
+                    }
+                    String fixed = builder.toString();
+                    if(!fixed.equals(event.getLine(i)))
+                        event.setLine(i, fixed);
+                }
+            }
+        }, this);
     }
 
     public boolean updateAvailable = false;
@@ -267,49 +298,23 @@ public class CraftBookPlugin extends JavaPlugin {
                 CompatabilityUtil.init();
             }
         });
-    }
 
-    /**
-     * Get the mechanic manager.
-     * 
-     * @return The mechanic manager.
-     */
-    public MechanicManager getManager() {
+        mechanics = new ArrayList<CraftBookMechanic>();
 
-        return manager;
-    }
+        // VariableStore
+        if(config.variablesEnabled) mechanics.add(new VariableManager());
 
-    public boolean hasVariable(String variable, String namespace) {
-
-        if(!config.variablesEnabled)
-            return false;
-        return variableStore.containsKey(new Tuple2<String, String>(variable, namespace));
-    }
-
-    public String getVariable(String variable, String namespace) {
-
-        if(!config.variablesEnabled)
-            return "Variables Are Disabled!";
-        return variableStore.get(new Tuple2<String, String>(variable, namespace));
-    }
-
-    public String setVariable(String variable, String namespace, String value) {
-
-        if(!config.variablesEnabled)
-            return "Variables Are Disabled!";
-        return variableStore.put(new Tuple2<String, String>(variable, namespace), value);
-    }
-
-    public String removeVariable(String variable, String namespace) {
-
-        if(!config.variablesEnabled)
-            return "Variables Are Disabled!";
-        return variableStore.remove(new Tuple2<String, String>(variable, namespace));
-    }
-
-    public HashMap<Tuple2<String, String>, String> getVariableStore() {
-
-        return variableStore;
+        Iterator<CraftBookMechanic> iter = mechanics.iterator();
+        while(iter.hasNext()) {
+            CraftBookMechanic mech = iter.next();
+            if(!mech.enable()) {
+                getLogger().warning("Failed to initialize mechanic: " + mech.getClass().getSimpleName());
+                mech.disable();
+                iter.remove();
+                continue;
+            }
+            getServer().getPluginManager().registerEvents(mech, this);
+        }
     }
 
     /**
@@ -448,18 +453,6 @@ public class CraftBookPlugin extends JavaPlugin {
 
     public void startComponents() {
 
-        // VariableStore
-        if(config.variablesEnabled) {
-            logDebugMessage("Initializing Variables!", "startup.variables");
-            try {
-                File varFile = new File(getDataFolder(), "variables.yml");
-                if(!varFile.exists())
-                    varFile.createNewFile();
-                variableConfiguration = new VariableConfiguration(new YAMLProcessor(varFile, true, YAMLFormat.EXTENDED), logger());
-                variableConfiguration.load();
-            } catch(Exception ignored){}
-        }
-
         // Mechanics
         if (config.enableMechanisms) {
             logDebugMessage("Initializing Mechanisms!", "startup.mechanisms");
@@ -492,11 +485,11 @@ public class CraftBookPlugin extends JavaPlugin {
     public void onDisable() {
 
         languageManager.close();
-        for (LocalComponent component : components) {
+        for (LocalComponent component : components)
             component.disable();
-        }
-        if(config.variablesEnabled)
-            variableConfiguration.save();
+        for(CraftBookMechanic mech : mechanics)
+            mech.disable();
+        mechanics = null;
         components.clear();
 
         if(hasPersistentStorage())
@@ -572,52 +565,6 @@ public class CraftBookPlugin extends JavaPlugin {
     }
 
     /**
-     * Register a mechanic if possible
-     *
-     * @param factory
-     */
-    public void registerMechanic(MechanicFactory<? extends Mechanic> factory) {
-
-        manager.register(factory);
-    }
-
-    /**
-     * Register a array of mechanics if possible
-     *
-     * @param factories
-     */
-    protected void registerMechanic(MechanicFactory<? extends Mechanic>[] factories) {
-
-        for (MechanicFactory<? extends Mechanic> aFactory : factories) {
-            registerMechanic(aFactory);
-        }
-    }
-
-    /**
-     * Unregister a mechanic if possible TODO Ensure no remnants are left behind
-     *
-     * @param factory
-     *
-     * @return true if the mechanic was successfully unregistered.
-     */
-    protected boolean unregisterMechanic(MechanicFactory<? extends Mechanic> factory) {
-
-        return manager.unregister(factory);
-    }
-
-    protected boolean unregisterAllMechanics() {
-
-        Iterator<MechanicFactory<? extends Mechanic>> iterator = manager.factories.iterator();
-
-        while (iterator.hasNext()) {
-            iterator.next();
-            manager.unregister(iterator);
-        }
-
-        return true;
-    }
-
-    /**
      * Setup the required components of self-triggered Mechanics.
      */
     private void setupSelfTriggered() {
@@ -630,7 +577,7 @@ public class CraftBookPlugin extends JavaPlugin {
 
         for (World world : getServer().getWorlds()) {
             for (Chunk chunk : world.getLoadedChunks()) {
-                manager.enumerate(chunk);
+                getSelfTriggerManager().registerSelfTrigger(chunk);
                 numChunks++;
             }
 
@@ -639,8 +586,7 @@ public class CraftBookPlugin extends JavaPlugin {
 
         long time = System.currentTimeMillis() - start;
 
-        getLogger().info(numChunks + " chunk(s) for " + numWorlds + " world(s) processed " + "(" + time + "ms " +
-                "elapsed)");
+        getLogger().info(numChunks + " chunk(s) for " + numWorlds + " world(s) processed " + "(" + time + "ms elapsed)");
 
         // Set up the clock for self-triggered ICs.
         getServer().getScheduler().runTaskTimer(this, mechanicClock, 0, getConfiguration().stThinkRate);
@@ -844,21 +790,28 @@ public class CraftBookPlugin extends JavaPlugin {
     }
 
     /**
+     * Grabs the manager for self triggered components.
+     */
+    public SelfTriggeringManager getSelfTriggerManager() {
+
+        return selfTriggerManager;
+    }
+
+    /**
      * Reload configuration
      */
     public void reloadConfiguration() throws Throwable {
 
-        unregisterAllMechanics();
         for (LocalComponent component : components) {
             component.disable();
         }
-        if(config.variablesEnabled)
-            variableConfiguration.save();
+        for(CraftBookMechanic mech : mechanics)
+            mech.disable();
+        mechanics = null;
         components.clear();
         getServer().getScheduler().cancelTasks(inst());
         HandlerList.unregisterAll(inst());
         config.load();
-        manager = new MechanicManager();
         managerAdapter = new MechanicListenerAdapter();
         mechanicClock = new MechanicClock();
         setupCraftBook();

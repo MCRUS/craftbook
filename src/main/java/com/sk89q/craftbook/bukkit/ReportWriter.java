@@ -11,12 +11,14 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Map.Entry;
 
+import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 
+import com.sk89q.craftbook.LocalComponent;
 import com.sk89q.craftbook.LocalConfiguration;
-import com.sk89q.craftbook.SelfTriggeringMechanic;
-import com.sk89q.craftbook.circuits.ic.ICMechanic;
+import com.sk89q.craftbook.circuits.ic.IC;
+import com.sk89q.craftbook.circuits.ic.ICManager;
 import com.sk89q.craftbook.mech.crafting.CraftingItemStack;
 import com.sk89q.craftbook.mech.crafting.RecipeManager;
 import com.sk89q.craftbook.mech.crafting.RecipeManager.Recipe;
@@ -172,25 +174,27 @@ public class ReportWriter {
 
         LogListBlock log = new LogListBlock();
 
-        log.put("Factories Loaded", "%d", plugin.getManager().factories.size());
-        log.put("ST Mechanics Loaded", "%d", plugin.getManager().thinkingMechanics.size());
-
-        if(flags.contains("i")) {
-
-            appendHeader("Loaded SelfTriggered IC's");
-
-            for(SelfTriggeringMechanic mech : plugin.getManager().thinkingMechanics) {
-                if(mech instanceof ICMechanic) {
-                    log.put(((ICMechanic) mech).getIC().getSign().getLocalWorld() + ": " +
-                            ((ICMechanic) mech).getIC().getSign().getBlockVector().toString(), "%s", ((ICMechanic) mech).getIC().getSign().getLine(0) + "|" +
-                                    ((ICMechanic) mech).getIC().getSign().getLine(1) + "|" + ((ICMechanic) mech).getIC().getSign().getLine(2) + "|" +
-                                    ((ICMechanic) mech).getIC().getSign().getLine(3));
-                }
-            }
-        }
+        int i = 0;
+        i += CraftBookPlugin.inst().getMechanics().size();
+        for(LocalComponent comp : CraftBookPlugin.inst().getComponents())
+            i += comp.getMechanics().size();
+        log.put("Mechanics Loaded", "%d", i);
+        log.put("ST Mechanics Loaded", "%d", plugin.getSelfTriggerManager().thinkingMechanics.size());
 
         append(log);
         appendln();
+
+        if(flags.contains("i")) {
+
+            appendHeader("Loaded Self Triggering ICs");
+
+            log = new LogListBlock();
+            for(Entry<Location, IC> mech : ICManager.getCachedICs().entrySet()) {
+                log.put(mech.getKey().toString(), "%s", mech.getValue().getSign().toString());
+            }
+            append(log);
+            appendln();
+        }
     }
 
     private void appendCustomCraftingInformation(CraftBookPlugin plugin) {

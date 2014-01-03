@@ -1,33 +1,28 @@
 package com.sk89q.craftbook.circuits.gates.world.miscellaneous;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 
 import com.sk89q.craftbook.ChangedSign;
-import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.circuits.ic.AbstractIC;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.jinglenote.Playlist;
-import com.sk89q.craftbook.util.LocationUtil;
-import com.sk89q.craftbook.util.Tuple2;
+import com.sk89q.craftbook.util.SearchArea;
 import com.sk89q.worldedit.BlockWorldVector;
-import com.sk89q.worldedit.WorldVector;
 
 public class Jukebox extends AbstractIC {
 
     public static Map<BlockWorldVector, Playlist> playlists = new HashMap<BlockWorldVector, Playlist>();
 
-    int radius;
+    SearchArea area;
 
     public Jukebox (Server server, ChangedSign sign, ICFactory factory) {
         super(server, sign, factory);
@@ -45,12 +40,7 @@ public class Jukebox extends AbstractIC {
     public void load() {
 
         String plist = getLine(2);
-        try {
-            radius = Integer.parseInt(getLine(3));
-        }
-        catch(Exception e) {
-            radius = -1;
-        }
+        if (!getLine(3).isEmpty()) area = SearchArea.createArea(getBackBlock(), getLine(3));
 
         if(!playlists.containsKey(getSign().getBlockVector()))
             playlists.put(getSign().getBlockVector(), new Playlist(plist));
@@ -73,33 +63,17 @@ public class Jukebox extends AbstractIC {
 
         if(playlist == null) return; //Heh?
 
-        if(radius < 0) {
-            HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>> players = new HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>();
-            for(Player p : Bukkit.getServer().getOnlinePlayers()) {
-
-                players.add(new Tuple2<Player, Tuple2<WorldVector, Integer>>(p, new Tuple2<WorldVector, Integer>(getSign().getBlockVector(), radius)));
-            }
-
-            playlist.setPlayers(players);
-            if(chip.getInput(0))
-                playlist.startPlaylist();
-            else
-                playlist.stopPlaylist();
-        } else {
-            HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>> players = new HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>();
-            Location signLoc = BukkitUtil.toSign(getSign()).getLocation();
-            for(Player player : BukkitUtil.toSign(getSign()).getWorld().getPlayers()) {
-
-                if(LocationUtil.isWithinSphericalRadius(signLoc, player.getLocation(), radius))
-                    players.add(new Tuple2<Player, Tuple2<WorldVector, Integer>>(player, new Tuple2<WorldVector, Integer>(getSign().getBlockVector(), radius)));
-            }
-
-            playlist.setPlayers(players);
-            if(chip.getInput(0))
-                playlist.startPlaylist();
-            else
-                playlist.stopPlaylist();
+        Map<String, SearchArea> players = new HashMap<String, SearchArea>();
+        for(Player p : Bukkit.getServer().getOnlinePlayers()) {
+            if(area != null && !area.isWithinArea(p.getLocation())) continue;
+            players.put(p.getName(), area);
         }
+
+        playlist.setPlayers(players);
+        if(chip.getInput(0))
+            playlist.startPlaylist();
+        else
+            playlist.stopPlaylist();
     }
 
     public static class Factory extends AbstractICFactory {

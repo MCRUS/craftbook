@@ -1,30 +1,27 @@
 package com.sk89q.craftbook.circuits.gates.world.miscellaneous;
 
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.circuits.ic.AbstractIC;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
+import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.jinglenote.Playlist;
-import com.sk89q.craftbook.util.LocationUtil;
-import com.sk89q.craftbook.util.Tuple2;
-import com.sk89q.worldedit.WorldVector;
+import com.sk89q.craftbook.util.SearchArea;
 
-public class RadioPlayer extends AbstractIC {
+public class RadioPlayer extends AbstractSelfTriggeredIC {
 
     String band;
-    int radius;
+    SearchArea area;
 
-    HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>> listening;
+    Map<String, SearchArea> listening;
 
     public RadioPlayer (Server server, ChangedSign sign, ICFactory factory) {
         super(server, sign, factory);
@@ -34,14 +31,9 @@ public class RadioPlayer extends AbstractIC {
     public void load() {
 
         band = getLine(2);
-        try {
-            radius = Integer.parseInt(getLine(3));
-        }
-        catch(Exception e) {
-            radius = -1;
-        }
+        if (!getLine(3).isEmpty()) area = SearchArea.createArea(getBackBlock(), getLine(3));
 
-        listening = new HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>();
+        listening = new HashMap<String, SearchArea>();
     }
 
     @Override
@@ -63,25 +55,13 @@ public class RadioPlayer extends AbstractIC {
             return;
 
         if(chip.getInput(0)) {
-            if(radius < 0) {
-                HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>> players = new HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>();
-                for(Player p : Bukkit.getServer().getOnlinePlayers()) {
+            for(Player player : BukkitUtil.toSign(getSign()).getWorld().getPlayers()) {
 
-                    players.add(new Tuple2<Player, Tuple2<WorldVector, Integer>>(p, new Tuple2<WorldVector, Integer>(getSign().getBlockVector(), radius)));
-                }
-
-                listening.addAll(players);
-                playlist.addPlayers(listening);
-            } else {
-                Location signLoc = BukkitUtil.toSign(getSign()).getLocation();
-                for(Player player : BukkitUtil.toSign(getSign()).getWorld().getPlayers()) {
-
-                    if(LocationUtil.isWithinSphericalRadius(signLoc, player.getLocation(), radius))
-                        listening.add(new Tuple2<Player, Tuple2<WorldVector, Integer>>(player, new Tuple2<WorldVector, Integer>(getSign().getBlockVector(), radius)));
-                }
-
-                playlist.addPlayers(listening);
+                if(area != null && !area.isWithinArea(player.getLocation())) continue;
+                listening.put(player.getName(), area);
             }
+
+            playlist.addPlayers(listening);
         } else {
 
             playlist.removePlayers(listening);

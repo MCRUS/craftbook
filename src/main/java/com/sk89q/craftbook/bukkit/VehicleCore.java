@@ -21,13 +21,13 @@ import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.commands.VehicleCommands;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.util.exceptions.InsufficientPermissionsException;
-import com.sk89q.craftbook.vehicles.boat.BoatDrops;
-import com.sk89q.craftbook.vehicles.boat.BoatExitRemover;
-import com.sk89q.craftbook.vehicles.boat.BoatRemoveEntities;
-import com.sk89q.craftbook.vehicles.boat.BoatSpeedModifiers;
-import com.sk89q.craftbook.vehicles.boat.BoatUncrashable;
-import com.sk89q.craftbook.vehicles.boat.BoatWaterPlaceOnly;
+import com.sk89q.craftbook.vehicles.boat.Drops;
+import com.sk89q.craftbook.vehicles.boat.ExitRemover;
 import com.sk89q.craftbook.vehicles.boat.LandBoats;
+import com.sk89q.craftbook.vehicles.boat.RemoveEntities;
+import com.sk89q.craftbook.vehicles.boat.SpeedModifiers;
+import com.sk89q.craftbook.vehicles.boat.Uncrashable;
+import com.sk89q.craftbook.vehicles.boat.WaterPlaceOnly;
 import com.sk89q.craftbook.vehicles.cart.CartBlockMechanism;
 import com.sk89q.craftbook.vehicles.cart.CartBooster;
 import com.sk89q.craftbook.vehicles.cart.CartDeposit;
@@ -52,6 +52,7 @@ import com.sk89q.craftbook.vehicles.cart.ItemPickup;
 import com.sk89q.craftbook.vehicles.cart.MobBlocker;
 import com.sk89q.craftbook.vehicles.cart.MoreRails;
 import com.sk89q.craftbook.vehicles.cart.NoCollide;
+import com.sk89q.craftbook.vehicles.cart.PlaceAnywhere;
 import com.sk89q.craftbook.vehicles.cart.RailPlacer;
 import com.sk89q.craftbook.vehicles.cart.VisionSteering;
 
@@ -156,14 +157,15 @@ public class VehicleCore implements LocalComponent, Listener {
         if(plugin.getConfiguration().minecartSpeedModifierEnable) mechanics.add(new CartSpeedModifiers());
         if(plugin.getConfiguration().minecartEmptySlowdownStopperEnable) mechanics.add(new EmptySlowdown());
         if(plugin.getConfiguration().minecartNoCollideEnable) mechanics.add(new NoCollide());
+        if(plugin.getConfiguration().minecartPlaceAnywhereEnable) mechanics.add(new PlaceAnywhere());
 
-        if(plugin.getConfiguration().boatRemoveEntitiesEnabled) mechanics.add(new BoatRemoveEntities());
-        if(plugin.getConfiguration().boatNoCrash) mechanics.add(new BoatUncrashable());
-        if(plugin.getConfiguration().boatBreakReturn) mechanics.add(new BoatDrops());
-        if(plugin.getConfiguration().boatSpeedModifierEnable) mechanics.add(new BoatSpeedModifiers());
+        if(plugin.getConfiguration().boatRemoveEntitiesEnabled) mechanics.add(new RemoveEntities());
+        if(plugin.getConfiguration().boatNoCrashEnabled) mechanics.add(new Uncrashable());
+        if(plugin.getConfiguration().boatDropsEnabled) mechanics.add(new Drops());
+        if(plugin.getConfiguration().boatSpeedModifierEnable) mechanics.add(new SpeedModifiers());
         if(plugin.getConfiguration().boatLandBoatsEnable) mechanics.add(new LandBoats());
-        if(plugin.getConfiguration().boatRemoveOnExitEnabled) mechanics.add(new BoatExitRemover());
-        if(plugin.getConfiguration().boatWaterPlaceOnly) mechanics.add(new BoatWaterPlaceOnly());
+        if(plugin.getConfiguration().boatRemoveOnExitEnabled) mechanics.add(new ExitRemover());
+        if(plugin.getConfiguration().boatWaterPlaceOnly) mechanics.add(new WaterPlaceOnly());
 
         Iterator<CraftBookMechanic> iter = mechanics.iterator();
         while(iter.hasNext()) {

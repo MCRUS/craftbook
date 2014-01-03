@@ -21,7 +21,6 @@ import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.material.MaterialData;
 
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
-import com.sk89q.worldedit.blocks.ItemID;
 
 public class ItemUtil {
 
@@ -113,7 +112,7 @@ public class ItemUtil {
 
     public static boolean areItemsSimilar(ItemStack item, Material type) {
 
-        return areItemsSimilar(item, new MaterialData(type, (byte) 0));
+        return areItemsSimilar(item, new MaterialData(type));
     }
 
     public static boolean areItemsSimilar(ItemStack item, MaterialData data) {
@@ -310,7 +309,7 @@ public class ItemUtil {
 
     public static boolean isStackValid(ItemStack item) {
 
-        return item != null && item.getAmount() > 0 && item.getTypeId() > 0 && (getMaxDurability(item.getTypeId()) == 0 || item.getDurability() < getMaxDurability(item.getTypeId()));
+        return item != null && item.getAmount() > 0 && item.getTypeId() > 0 && (getMaxDurability(item.getType()) == 0 || item.getDurability() < getMaxDurability(item.getType()));
     }
 
     /**
@@ -356,7 +355,7 @@ public class ItemUtil {
             case RAW_CHICKEN:
                 return new ItemStack(Material.COOKED_CHICKEN);
             case RAW_FISH:
-                return new ItemStack(Material.COOKED_FISH, item.getAmount(), item.getDurability());
+                return new ItemStack(Material.COOKED_FISH, 1, item.getDurability());
             case PORK:
                 return new ItemStack(Material.GRILLED_PORK);
             case POTATO_ITEM:
@@ -476,11 +475,18 @@ public class ItemUtil {
 
     public static boolean containsRawFood(Inventory inv) {
 
+        return getRawFood(inv).size() > 0;
+    }
+
+    public static List<ItemStack> getRawFood(Inventory inv) {
+
+        List<ItemStack> ret = new ArrayList<ItemStack>();
+
         for (ItemStack it : inv.getContents()) {
             if (isStackValid(it) && isCookable(it))
-                return true;
+                ret.add(it);
         }
-        return false;
+        return ret;
     }
 
     public static boolean containsRawMinerals(Inventory inv) {
@@ -492,6 +498,17 @@ public class ItemUtil {
         return false;
     }
 
+    public static List<ItemStack> getRawMinerals(Inventory inv) {
+
+        List<ItemStack> ret = new ArrayList<ItemStack>();
+
+        for (ItemStack it : inv.getContents()) {
+            if (isStackValid(it) && isSmeltable(it))
+                ret.add(it);
+        }
+        return ret;
+    }
+
     public static boolean containsRawMaterials(Inventory inv) {
 
         for (ItemStack it : inv.getContents()) {
@@ -499,6 +516,17 @@ public class ItemUtil {
                 return true;
         }
         return false;
+    }
+
+    public static List<ItemStack> getRawMaterials(Inventory inv) {
+
+        List<ItemStack> ret = new ArrayList<ItemStack>();
+
+        for (ItemStack it : inv.getContents()) {
+            if (isStackValid(it) && isFurnacable(it))
+                ret.add(it);
+        }
+        return ret;
     }
 
     public static boolean isFurnacable(ItemStack item) {
@@ -558,8 +586,8 @@ public class ItemUtil {
             valid.setDurability((short) 0);
         if(valid.getData().getData() < 0)
             valid.getData().setData((byte) 0);
-        if(valid.getTypeId() < 1)
-            valid.setTypeId(1);
+        if(valid.getType() == null || valid.getType() == Material.PISTON_MOVING_PIECE)
+            valid.setType(Material.STONE);
         if(valid.getAmount() < 1)
             valid.setAmount(1);
 
@@ -599,39 +627,39 @@ public class ItemUtil {
      * @param typeId
      * @return
      */
-    public static short getMaxDurability(int typeId) {
+    public static short getMaxDurability(Material type) {
 
-        switch(typeId) {
+        switch(type) {
 
-            case ItemID.DIAMOND_AXE:
-            case ItemID.DIAMOND_HOE:
-            case ItemID.DIAMOND_PICKAXE:
-            case ItemID.DIAMOND_SHOVEL:
-            case ItemID.DIAMOND_SWORD:
+            case DIAMOND_AXE:
+            case DIAMOND_HOE:
+            case DIAMOND_PICKAXE:
+            case DIAMOND_SPADE:
+            case DIAMOND_SWORD:
                 return 1562;
-            case ItemID.IRON_AXE:
-            case ItemID.IRON_HOE:
-            case ItemID.IRON_PICK:
-            case ItemID.IRON_SHOVEL:
-            case ItemID.IRON_SWORD:
+            case IRON_AXE:
+            case IRON_HOE:
+            case IRON_PICKAXE:
+            case IRON_SPADE:
+            case IRON_SWORD:
                 return 251;
-            case ItemID.STONE_AXE:
-            case ItemID.STONE_HOE:
-            case ItemID.STONE_PICKAXE:
-            case ItemID.STONE_SHOVEL:
-            case ItemID.STONE_SWORD:
+            case STONE_AXE:
+            case STONE_HOE:
+            case STONE_PICKAXE:
+            case STONE_SPADE:
+            case STONE_SWORD:
                 return 132;
-            case ItemID.WOOD_AXE:
-            case ItemID.WOOD_HOE:
-            case ItemID.WOOD_PICKAXE:
-            case ItemID.WOOD_SHOVEL:
-            case ItemID.WOOD_SWORD:
+            case WOOD_AXE:
+            case WOOD_HOE:
+            case WOOD_PICKAXE:
+            case WOOD_SPADE:
+            case WOOD_SWORD:
                 return 60;
-            case ItemID.GOLD_AXE:
-            case ItemID.GOLD_HOE:
-            case ItemID.GOLD_PICKAXE:
-            case ItemID.GOLD_SHOVEL:
-            case ItemID.GOLD_SWORD:
+            case GOLD_AXE:
+            case GOLD_HOE:
+            case GOLD_PICKAXE:
+            case GOLD_SPADE:
+            case GOLD_SWORD:
                 return 33;
             default:
                 return 0;

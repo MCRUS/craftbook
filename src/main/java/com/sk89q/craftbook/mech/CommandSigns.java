@@ -9,8 +9,11 @@ import org.bukkit.event.block.SignChangeEvent;
 import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.LocalPlayer;
+import com.sk89q.craftbook.bukkit.BukkitPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.util.BlockUtil;
+import com.sk89q.craftbook.util.ParsingUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.craftbook.util.events.SignClickEvent;
 import com.sk89q.craftbook.util.events.SourcedBlockRedstoneEvent;
@@ -24,7 +27,7 @@ public class CommandSigns extends AbstractCraftBookMechanic {
         LocalPlayer lplayer = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
         if(!lplayer.hasPermission("craftbook.mech.command")) {
             if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
-                lplayer.printError("You don't have permission for this.");
+                lplayer.printError("mech.create-permission");
             SignUtil.cancelSign(event);
             return;
         }
@@ -40,6 +43,8 @@ public class CommandSigns extends AbstractCraftBookMechanic {
 
         if(!s.getLine(1).equals("[Command]")) return;
 
+        if(s.getLine(0).equals("EXPANSION")) return;
+
         LocalPlayer localPlayer = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
 
         if (!localPlayer.hasPermission("craftbook.mech.command.use")) {
@@ -48,10 +53,7 @@ public class CommandSigns extends AbstractCraftBookMechanic {
             return;
         }
 
-        String command = s.getLine(2).replace("/", "") + s.getLine(3);
-        command = command.replace("@p", event.getPlayer().getName());
-
-        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+        runCommandSign(s, localPlayer);
 
         event.setCancelled(true);
     }
@@ -66,8 +68,28 @@ public class CommandSigns extends AbstractCraftBookMechanic {
 
         if(!s.getLine(1).equals("[Command]")) return;
 
-        String command = s.getLine(2).replace("/", "") + s.getLine(3);
-        if (command.contains("@p")) return; // We don't work with player commands.
+        if(s.getLine(0).equals("EXPANSION")) return;
+
+        runCommandSign(s, null);
+    }
+
+    public void runCommandSign(ChangedSign sign, LocalPlayer player) {
+
+        String command = sign.getLine(2).replace("/", "") + sign.getLine(3);
+
+        while(BlockUtil.areBlocksIdentical(BukkitUtil.toBlock(sign), BukkitUtil.toBlock(sign).getRelative(0, -1, 0))) {
+
+            sign = BukkitUtil.toChangedSign(BukkitUtil.toBlock(sign).getRelative(0, -1, 0));
+            if(!sign.getLine(1).equals("[Command]")) break;
+            if(!sign.getLine(0).equals("EXPANSION")) break;
+
+            command = command + sign.getLine(2) + sign.getLine(3);
+        }
+
+        if (player == null)
+            if (command.contains("@p")) return; // We don't work with player commands.
+
+        command = ParsingUtil.parseLine(command, player == null ? null : ((BukkitPlayer) player).getPlayer());
 
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
     }

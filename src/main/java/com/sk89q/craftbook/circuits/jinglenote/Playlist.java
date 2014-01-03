@@ -6,9 +6,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiUnavailableException;
@@ -20,15 +22,14 @@ import org.bukkit.scheduler.BukkitTask;
 import com.sk89q.craftbook.bukkit.CircuitCore;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
-import com.sk89q.craftbook.util.Tuple2;
-import com.sk89q.worldedit.WorldVector;
+import com.sk89q.craftbook.util.SearchArea;
 
 public class Playlist {
 
     String playlist;
 
-    protected volatile HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>> players; // Super safe code here.. this is going to be accessed across threads.
-    private volatile HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>> lastPlayers;
+    protected volatile Map<String, SearchArea> players; // Super safe code here.. this is going to be accessed across threads.
+    private volatile Map<String, SearchArea> lastPlayers;
 
     int position;
 
@@ -44,8 +45,8 @@ public class Playlist {
 
     public Playlist(String name) {
 
-        players = new HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>();
-        lastPlayers = new HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>();
+        players = new HashMap<String, SearchArea>();
+        lastPlayers = new HashMap<String, SearchArea>();
         playlist = name;
         try {
             readPlaylist();
@@ -95,31 +96,28 @@ public class Playlist {
         stopping = true;
     }
 
-    @SuppressWarnings("unchecked")
-    public void setPlayers(HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>> players) {
+    public void setPlayers(Map<String, SearchArea> players) {
 
-        lastPlayers = (HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>) this.players.clone();
+        lastPlayers = new HashMap<String, SearchArea>(this.players);
         this.players.clear();
-        this.players.addAll(players);
+        this.players.putAll(players);
     }
 
-    @SuppressWarnings("unchecked")
-    public void addPlayers(HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>> players) {
+    public void addPlayers(Map<String, SearchArea> players) {
 
-        lastPlayers = (HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>) this.players.clone();
-        this.players.addAll(players);
+        lastPlayers = new HashMap<String, SearchArea>(this.players);
+        this.players.putAll(players);
     }
 
-    @SuppressWarnings("unchecked")
-    public void removePlayers(HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>> players) {
+    public void removePlayers(Map<String, SearchArea> players) {
 
-        lastPlayers = (HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>) this.players.clone();
-        this.players.removeAll(players);
+        lastPlayers = new HashMap<String, SearchArea>(this.players);
+        for(String player : players.keySet())
+            this.players.remove(player);
     }
 
     private class PlaylistInterpreter implements Runnable {
 
-        @SuppressWarnings("unchecked")
         @Override
         public void run () {
 
@@ -131,23 +129,23 @@ public class Playlist {
 
                         if(!areIdentical(players, lastPlayers)) {
 
-                            for(Tuple2<Player, Tuple2<WorldVector, Integer>> p : players) {
+                            for(Entry<String, SearchArea> p : lastPlayers.entrySet()) {
 
-                                if(lastPlayers.contains(p))
+                                if(players.containsKey(p.getKey()))
                                     continue;
 
-                                jNote.play(p.a.getName(), midiSequencer, p.b.a, p.b.b);
+                                jNote.stop(p.getKey());
                             }
 
-                            for(Tuple2<Player, Tuple2<WorldVector, Integer>> p : lastPlayers) {
+                            for(Entry<String, SearchArea> p : players.entrySet()) {
 
-                                if(players.contains(p))
+                                if(lastPlayers.containsKey(p.getKey()))
                                     continue;
 
-                                jNote.stop(p.a.getName());
+                                jNote.play(p.getKey(), midiSequencer, p.getValue());
                             }
 
-                            lastPlayers = (HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>) players.clone();
+                            lastPlayers = new HashMap<String, SearchArea>(players);
                         }
 
                         try {
@@ -164,23 +162,23 @@ public class Playlist {
 
                         if(!lastPlayers.equals(players)) {
 
-                            for(Tuple2<Player, Tuple2<WorldVector, Integer>> p : players) {
+                            for(Entry<String, SearchArea> p : lastPlayers.entrySet()) {
 
-                                if(lastPlayers.contains(p))
+                                if(players.containsKey(p.getKey()))
                                     continue;
 
-                                jNote.play(p.a.getName(), stringSequencer, p.b.a, p.b.b);
+                                jNote.stop(p.getKey());
                             }
 
-                            for(Tuple2<Player, Tuple2<WorldVector, Integer>> p : lastPlayers) {
+                            for(Entry<String, SearchArea> p : players.entrySet()) {
 
-                                if(players.contains(p))
+                                if(lastPlayers.containsKey(p.getKey()))
                                     continue;
 
-                                jNote.stop(p.a.getName());
+                                jNote.play(p.getKey(), stringSequencer, p.getValue());
                             }
 
-                            lastPlayers = (HashSet<Tuple2<Player, Tuple2<WorldVector, Integer>>>) players.clone();
+                            lastPlayers = new HashMap<String, SearchArea>(players);
                         }
 
                         try {
@@ -248,8 +246,8 @@ public class Playlist {
                             midiSequencer.getSequencer().open();
                         }
 
-                        for(Tuple2<Player, Tuple2<WorldVector, Integer>> player : players)
-                            jNote.play(player.a.getName(), midiSequencer, player.b.a, player.b.b);
+                        for(Entry<String, SearchArea> player : players.entrySet())
+                            jNote.play(player.getKey(), midiSequencer, player.getValue());
 
                         try {
                             Thread.sleep(1000L);
@@ -277,8 +275,8 @@ public class Playlist {
 
                     stringSequencer = new StringJingleSequencer(tune, 0);
 
-                    for(Tuple2<Player, Tuple2<WorldVector, Integer>> player : players)
-                        jNote.play(player.a.getName(), stringSequencer, player.b.a, player.b.b);
+                    for(Entry<String, SearchArea> player : players.entrySet())
+                        jNote.play(player.getKey(), stringSequencer, player.getValue());
 
                     try {
                         Thread.sleep(1000L);
@@ -297,8 +295,11 @@ public class Playlist {
                     }
                     String message = line.replace("send ", "");
 
-                    for(Tuple2<Player, Tuple2<WorldVector, Integer>> player : players)
-                        player.a.sendMessage(message);
+                    for(String player : players.keySet()) {
+                        Player pp = Bukkit.getPlayerExact(player);
+                        if(pp != null)
+                            pp.sendMessage(message);
+                    }
                 } else if (line.startsWith("goto ")) {
 
                     position = Integer.parseInt(line.replace("goto ", ""));
@@ -307,15 +308,15 @@ public class Playlist {
         }
     }
 
-    public boolean areIdentical(HashSet<?> h1, HashSet<?> h2) {
+    public boolean areIdentical(Map<?,?> h1, Map<?,?> h2) {
         if ( h1.size() != h2.size() ) {
             return false;
         }
-        HashSet<?> clone = (HashSet<?>) h2.clone();
-        Iterator<?> it = h1.iterator();
+        Map<?,?> clone = new HashMap(h2);
+        Iterator<?> it = h1.entrySet().iterator();
         while (it.hasNext() ){
             Object o = it.next();
-            if (clone.contains(o)){
+            if (clone.containsKey(o)){
                 clone.remove(o);
             } else {
                 return false;

@@ -82,16 +82,16 @@ public class CustomCrafting extends AbstractCraftBookMechanic {
             if (r.getType() == RecipeManager.RecipeType.SHAPELESS) {
                 sh = new ShapelessRecipe(r.getResult().getItemStack());
                 for (CraftingItemStack is : r.getIngredients())
-                    ((ShapelessRecipe) sh).addIngredient(is.getItemStack().getAmount(), is.getItemStack().getType(), is.getItemStack().getData().getData());
+                    ((ShapelessRecipe) sh).addIngredient(is.getItemStack().getAmount(), is.getItemStack().getData());
             } else if (r.getType() == RecipeManager.RecipeType.SHAPED) {
                 sh = new ShapedRecipe(r.getResult().getItemStack());
                 ((ShapedRecipe) sh).shape(r.getShape());
                 for (Entry<CraftingItemStack, Character> is : r.getShapedIngredients().entrySet())
-                    ((ShapedRecipe) sh).setIngredient(is.getValue().charValue(), is.getKey().getItemStack().getType(), is.getKey().getItemStack().getData().getData());
+                    ((ShapedRecipe) sh).setIngredient(is.getValue().charValue(), is.getKey().getItemStack().getData());
             } else if (r.getType() == RecipeManager.RecipeType.FURNACE) {
                 sh = new FurnaceRecipe(r.getResult().getItemStack(), r.getIngredients().toArray(new CraftingItemStack[r.getIngredients().size()])[0].getItemStack().getType());
                 for (CraftingItemStack is : r.getIngredients())
-                    ((FurnaceRecipe) sh).setInput(is.getItemStack().getType(), is.getItemStack().getData().getData());
+                    ((FurnaceRecipe) sh).setInput(is.getItemStack().getData());
             } else
                 return false;
 
@@ -181,7 +181,10 @@ public class CustomCrafting extends AbstractCraftBookMechanic {
                     if(p != null && recipe.hasAdvancedData("permission-node")) {
                         CraftBookPlugin.logDebugMessage("A recipe with permission nodes detected!", "advanced-data");
                         if(!p.hasPermission((String) recipe.getAdvancedData("permission-node"))) {
-                            lp.printError("mech.custom-crafting.recipe-permission");
+                            if(recipe.hasAdvancedData("permission-error"))
+                                lp.printError((String) recipe.getAdvancedData("permission-error"));
+                            else
+                                lp.printError("mech.custom-crafting.recipe-permission");
                             ((CraftingInventory)event.getView().getTopInventory()).setResult(null);
                             return;
                         }

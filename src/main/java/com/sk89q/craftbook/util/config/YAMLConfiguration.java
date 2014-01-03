@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import com.sk89q.craftbook.LocalConfiguration;
 import com.sk89q.craftbook.util.ICUtil.LocationCheckType;
 import com.sk89q.craftbook.util.ItemInfo;
+import com.sk89q.craftbook.util.TernaryState;
 import com.sk89q.util.yaml.YAMLProcessor;
 
 /**
@@ -277,6 +278,9 @@ public class YAMLConfiguration extends LocalConfiguration {
         config.setComment("mechanics.chair.require-sign", "Require a sign to be attached to the chair in order to work!");
         chairRequireSign = config.getBoolean("mechanics.chair.require-sign", false);
 
+        config.setComment("mechanics.chair.max-distance", "The maximum distance between the click point and the sign. (When require sign is on)");
+        chairMaxDistance = config.getInt("mechanics.chair.max-distance", 3);
+
 
         // Chunk Anchor Configuration Listener
         config.setComment("mechanics.chunk-anchor.enable", "Enable chunk anchors.");
@@ -510,6 +514,7 @@ public class YAMLConfiguration extends LocalConfiguration {
 
 
         // Snow Configuration Listener
+        snowEnable = config.getBoolean("mechanics.snow.enable", false);
         snowPiling = config.getBoolean("mechanics.snow.piling", false);
         snowTrample = config.getBoolean("mechanics.snow.trample", false);
         snowPartialTrample = config.getBoolean("mechanics.snow.partial-trample-only", false);
@@ -550,6 +555,9 @@ public class YAMLConfiguration extends LocalConfiguration {
 
         config.setComment("mechanics.xp-storer.block", "The block that is an XP Spawner.");
         xpStorerBlock = new ItemInfo(config.getString("mechanics.xp-storer.block", "MOB_SPAWNER"));
+
+        config.setComment("mechanics.xp-storer.require-sneaking-state", "Sets how the player must be sneaking in order to use the XP Storer.");
+        xpStorerSneaking = TernaryState.getFromString(config.getString("mechanics.xp-storer.require-sneaking-state", "no"));
 
 
         /* Vehicle Configuration */
@@ -672,7 +680,7 @@ public class YAMLConfiguration extends LocalConfiguration {
 
         // Vehicles Minecart Speed Modifier Listener
         minecartSpeedModifierEnable = config.getBoolean("vehicles.minecart.speed-modifiers.enable", false);
-        minecartSpeedModifierMaxSpeed = config.getDouble("vehicles.minecart.speed-modifiers.max-speed", 1);
+        minecartSpeedModifierMaxSpeed = config.getDouble("vehicles.minecart.speed-modifiers.max-speed", 0.4);
         minecartSpeedModifierOffRail = config.getDouble("vehicles.minecart.speed-modifiers.off-rail-speed", 0);
 
 
@@ -686,9 +694,21 @@ public class YAMLConfiguration extends LocalConfiguration {
         minecartNoCollideFull = config.getBoolean("vehicles.minecart.no-collide.full-carts", false);
 
 
-        // Vehicles - Boat Options
-        boatNoCrash = config.getBoolean("vehicles.boat.disable-crashing", false);
-        boatBreakReturn = config.getBoolean("vehicles.boat.break-return-boat", false);
+        // Vehicles Minecart Place Anywhere Listener
+        minecartPlaceAnywhereEnable = config.getBoolean("vehicles.minecart.place-anywhere.enable", false);
+
+
+        // Vehicles - Boat Drops Listener
+        boatDropsEnabled = config.getBoolean("vehicles.boat.drops.enable", false);
+
+
+        // Vehicles Boat Remove On Exit Listener
+        boatRemoveOnExitEnabled = config.getBoolean("vehicles.boat.remove-on-exit.enable", false);
+        boatRemoveOnExitGiveItem = config.getBoolean("vehicles.boat.remove-on-exit.give-item", false);
+
+
+        // Vehicles Boat Land Boats Listener
+        boatLandBoatsEnable = config.getBoolean("vehicles.boat.land-boats.enable", false);
 
 
         // Vehicles - Boat Remove Entities Listener
@@ -698,18 +718,13 @@ public class YAMLConfiguration extends LocalConfiguration {
 
         // Vehicles Boat Speed Modifier Listener
         boatSpeedModifierEnable = config.getBoolean("vehicles.boat.speed-modifiers.enable", false);
-        boatSpeedModifierMaxSpeed = config.getDouble("vehicles.boat.speed-modifiers.max-speed", 1);
-        boatSpeedModifierUnnoccupiedDeceleration = config.getDouble("vehicles.boat.speed-modifiers.unnoccupied-deceleration", 1);
-        boatSpeedModifierOccupiedDeceleration = config.getDouble("vehicles.boat.speed-modifiers.occupied-deceleration", 1);
+        boatSpeedModifierMaxSpeed = config.getDouble("vehicles.boat.speed-modifiers.max-speed", 0.4D);
+        boatSpeedModifierUnnoccupiedDeceleration = config.getDouble("vehicles.boat.speed-modifiers.unnoccupied-deceleration", -1);
+        boatSpeedModifierOccupiedDeceleration = config.getDouble("vehicles.boat.speed-modifiers.occupied-deceleration", 0.2);
 
 
-        // Vehicles Boat Land Boats Listener
-        boatLandBoatsEnable = config.getBoolean("vehicles.boat.land-boats.enable", false);
-
-
-        // Vehicles Boat Remove On Exit Listener
-        boatRemoveOnExitEnabled = config.getBoolean("vehicles.boat.remove-on-exit.enable", false);
-        boatRemoveOnExitGiveItem = config.getBoolean("vehicles.boat.remove-on-exit.give-item", false);
+        // Vehicles - Boat Uncrashable Listener
+        boatNoCrashEnabled = config.getBoolean("vehicles.boat.uncrashable.enable", false);
 
 
         // Vehicles Boat Water Place Only Listener

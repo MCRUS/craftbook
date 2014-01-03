@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.sk89q.craftbook.util.ICUtil.LocationCheckType;
 import com.sk89q.craftbook.util.ItemInfo;
+import com.sk89q.craftbook.util.TernaryState;
 
 /**
  * A implementation of Configuration based off of {@link com.sk89q.worldedit.LocalConfiguration} for CraftBook.
@@ -102,6 +103,7 @@ public abstract class LocalConfiguration {
     public List<ItemInfo> chairBlocks;
     public boolean chairFacing;
     public boolean chairRequireSign;
+    public int chairMaxDistance;
     // Mechanics - Chunk Anchor
     public boolean chunkAnchorEnabled;
     public boolean chunkAnchorRedstone;
@@ -191,6 +193,7 @@ public abstract class LocalConfiguration {
     public boolean signCopyEnabled;
     public ItemInfo signCopyItem;
     // Mechanics - Snow
+    public boolean snowEnable;
     public boolean snowPiling;
     public boolean snowTrample;
     public boolean snowPartialTrample;
@@ -217,6 +220,7 @@ public abstract class LocalConfiguration {
     // Mechanics - XPStorer
     public boolean xpStorerEnabled;
     public ItemInfo xpStorerBlock;
+    public TernaryState xpStorerSneaking;
 
     // Vehicles
     // Vehicles - Minecart Decay Options
@@ -300,9 +304,11 @@ public abstract class LocalConfiguration {
     public boolean minecartNoCollideEnable;
     public boolean minecartNoCollideEmpty;
     public boolean minecartNoCollideFull;
+    // Vehicles - Minecart Place Anywhere Options
+    public boolean minecartPlaceAnywhereEnable;
     // Vehicles - Boat Options
-    public boolean boatNoCrash;
-    public boolean boatBreakReturn;
+    public boolean boatNoCrashEnabled;
+    public boolean boatDropsEnabled;
     // Vehicles - Boat Remove Entities Options
     public boolean boatRemoveEntitiesEnabled;
     public boolean boatRemoveEntitiesOtherBoats;
