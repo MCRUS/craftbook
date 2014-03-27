@@ -46,6 +46,7 @@ mech:
         stand: Вы встали!
         in-use: Кто то уже сидит на данном стуле!
         floating: Данный стул волшебный - под ним ничего нет!
+        too-far: Этот стул слишком далеко!
     command:
         create: Командная табличка создана!
     command-items:
@@ -107,6 +108,8 @@ mech:
     pay:
         create: Платежка создана! 
         success: "Платеж успешен! Вы заплатили: "
+        not-enough-money: Ошибка платежа! У Вас недостаточно средств.
+        failed-to-pay: Ошибка платежа! Ошибка конвертации валют.
     pistons:
         crush:
             created: Piston Crush Mechanic Created!     
