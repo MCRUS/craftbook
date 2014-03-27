@@ -74,8 +74,8 @@ public class MessageSender extends AbstractIC {
 
             bit = bit.replace("g:", "").replace("p:", "").replace("n:", "").replace("t:", "").replace("a:", "").trim();
 
-            if(SearchArea.isValidArea(getBackBlock(), bit))
-                area = SearchArea.createArea(getBackBlock(), bit);
+            if(SearchArea.isValidArea(getLocation().getBlock(), bit))
+                area = SearchArea.createArea(getLocation().getBlock(), bit);
             else
                 name = bit;
         }
@@ -155,7 +155,7 @@ public class MessageSender extends AbstractIC {
         @Override
         public String[] getLineHelp() {
 
-            return new String[] {"name of player, x:y:z=radius, or BROADCAST for whole server", "Message to send."};
+            return new String[] {"p:name of player, x:y:z=radius, or BROADCAST for whole server", "Message to send."};
         }
     }
 }

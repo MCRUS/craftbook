@@ -27,6 +27,7 @@ public class BukkitConfiguration extends YAMLConfiguration {
     public boolean advancedBlockChecks;
     public boolean pedanticBlockChecks;
     public boolean showPermissionMessages;
+    public long signClickTimeout;
 
     public boolean updateNotifier;
     public boolean easterEggs;
@@ -63,7 +64,7 @@ public class BukkitConfiguration extends YAMLConfiguration {
                 "# This configuration will automatically add new configuration options for you,",
                 "# So there is no need to regenerate this configuration unless you need to.",
                 "# More information about these features are available at...",
-                "# http://wiki.sk89q.com/wiki/CraftBook/Usage",
+                "# " + CraftBookPlugin.getWikiDomain() + "/Usage",
                 "",
                 "");
 
@@ -103,6 +104,9 @@ public class BukkitConfiguration extends YAMLConfiguration {
         config.setComment("pedantic-block-checks", "In conjunction with advanced-block-checks, this option adds a few extra checks if you are experiencing compatibility issues with certain plugins that stop breaks/places/interacts.");
         pedanticBlockChecks = config.getBoolean("pedantic-block-checks", false);
 
+        config.setComment("sign-click-timeout", "Make sure a player can only press signs so often.");
+        signClickTimeout = config.getInt("sign-click-timeout", 10);
+
         config.setComment("language", "The default language for CraftBook. Note: This language needs to be in the 'languages' field for this to work.");
         language = config.getString("language", "ru_RU");
 
@@ -122,7 +126,7 @@ public class BukkitConfiguration extends YAMLConfiguration {
         easterEggs = config.getBoolean("easter-eggs", true);
 
         config.setComment("realistic-randoms", "Random numbers are much more random, with a small cost to CPU usage.");
-        realisticRandoms = config.getBoolean("realistic-randoms", true);
+        realisticRandoms = config.getBoolean("realistic-randoms", false);
 
         config.setComment("show-permission-messages", "Show messages when a player does not have permission to do something.");
         showPermissionMessages = config.getBoolean("show-permission-messages", true);

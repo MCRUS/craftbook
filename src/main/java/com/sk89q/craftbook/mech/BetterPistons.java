@@ -27,6 +27,7 @@ import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.util.EntityUtil;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.ItemInfo;
 import com.sk89q.craftbook.util.LocationUtil;
 import com.sk89q.craftbook.util.RegexUtil;
@@ -62,8 +63,11 @@ public class BetterPistons extends AbstractCraftBookMechanic {
         return type;
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onSignChange(SignChangeEvent event) {
+
+        if (!EventUtil.passesFilter(event))
+            return;
 
         LocalPlayer player = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
         Block block = SignUtil.getBackBlock(event.getBlock());
@@ -100,8 +104,11 @@ public class BetterPistons extends AbstractCraftBookMechanic {
 
     private final double movemod = 1.0;
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockRedstoneChange(SourcedBlockRedstoneEvent event) {
+
+        if (!EventUtil.passesFilter(event))
+            return;
 
         if (event.getBlock().getType() != Material.PISTON_BASE && event.getBlock().getType() != Material.PISTON_STICKY_BASE) return;
 

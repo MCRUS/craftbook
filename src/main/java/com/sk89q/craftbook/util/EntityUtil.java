@@ -3,6 +3,7 @@ package com.sk89q.craftbook.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Location;
@@ -83,6 +84,8 @@ public class EntityUtil {
 
         if(ent instanceof Damageable)
             ((Damageable) ent).damage(((Damageable) ent).getHealth());
+        else if(ent instanceof Minecart)
+            ((Minecart) ent).setDamage(41);
         else
             ent.remove();
     }
@@ -252,16 +255,16 @@ public class EntityUtil {
                 }
                 break;
             case OCELOT:
-                if (data[0].replace("_CAT", "").replace("_OCELOT", "").equalsIgnoreCase("WILD")) {
+                if (StringUtils.replace(StringUtils.replace(data[0], "_CAT", ""), "_OCELOT", "").equalsIgnoreCase("WILD")) {
                     ((Ocelot) ent).setCatType(Ocelot.Type.WILD_OCELOT);
                 }
-                if (data[0].replace("_CAT", "").replace("_OCELOT", "").equalsIgnoreCase("BLACK")) {
+                if (StringUtils.replace(StringUtils.replace(data[0], "_CAT", ""), "_OCELOT", "").equalsIgnoreCase("BLACK")) {
                     ((Ocelot) ent).setCatType(Ocelot.Type.BLACK_CAT);
                 }
-                if (data[0].replace("_CAT", "").replace("_OCELOT", "").equalsIgnoreCase("RED")) {
+                if (StringUtils.replace(StringUtils.replace(data[0], "_CAT", ""), "_OCELOT", "").equalsIgnoreCase("RED")) {
                     ((Ocelot) ent).setCatType(Ocelot.Type.RED_CAT);
                 }
-                if (data[0].replace("_CAT", "").replace("_OCELOT", "").equalsIgnoreCase("SIAMESE")) {
+                if (StringUtils.replace(StringUtils.replace(data[0], "_CAT", ""), "_OCELOT", "").equalsIgnoreCase("SIAMESE")) {
                     ((Ocelot) ent).setCatType(Ocelot.Type.SIAMESE_CAT);
                 }
                 break;
@@ -326,49 +329,49 @@ public class EntityUtil {
             case HORSE:
                 if(data[0].equalsIgnoreCase("horse"))
                     ((Horse)ent).setVariant(Variant.HORSE);
-                else if (data[1].equalsIgnoreCase("donkey"))
+                else if (data[0].equalsIgnoreCase("donkey"))
                     ((Horse)ent).setVariant(Variant.DONKEY);
-                else if (data[1].equalsIgnoreCase("mule"))
+                else if (data[0].equalsIgnoreCase("mule"))
                     ((Horse)ent).setVariant(Variant.MULE);
-                else if (data[1].equalsIgnoreCase("skeleton"))
+                else if (data[0].equalsIgnoreCase("skeleton"))
                     ((Horse)ent).setVariant(Variant.SKELETON_HORSE);
-                else if (data[1].equalsIgnoreCase("zombie"))
+                else if (data[0].equalsIgnoreCase("zombie"))
                     ((Horse)ent).setVariant(Variant.UNDEAD_HORSE);
-                else if (data[1].equalsIgnoreCase("chest"))
+                else if (data[0].equalsIgnoreCase("chest"))
                     ((Horse)ent).setCarryingChest(true);
-                else if (data[1].equalsIgnoreCase("domestic"))
+                else if (data[0].equalsIgnoreCase("domestic"))
                     try {
-                        ((Horse)ent).setDomestication(Integer.parseInt(data[2]));
+                        ((Horse)ent).setDomestication(Integer.parseInt(data[1]));
                     } catch(Exception e){}
-                else if (data[1].equalsIgnoreCase("c")) {
-                    if(data[2].equalsIgnoreCase("white"))
+                else if (data[0].equalsIgnoreCase("c")) {
+                    if(data[1].equalsIgnoreCase("white"))
                         ((Horse)ent).setColor(Color.WHITE);
-                    else if(data[2].equalsIgnoreCase("cream"))
+                    else if(data[1].equalsIgnoreCase("cream"))
                         ((Horse)ent).setColor(Color.CREAMY);
-                    else if(data[2].equalsIgnoreCase("chestnut"))
+                    else if(data[1].equalsIgnoreCase("chestnut"))
                         ((Horse)ent).setColor(Color.CHESTNUT);
-                    else if(data[2].equalsIgnoreCase("brown"))
+                    else if(data[1].equalsIgnoreCase("brown"))
                         ((Horse)ent).setColor(Color.BROWN);
-                    else if(data[2].equalsIgnoreCase("dbrown"))
+                    else if(data[1].equalsIgnoreCase("dbrown"))
                         ((Horse)ent).setColor(Color.DARK_BROWN);
-                    else if(data[2].equalsIgnoreCase("gray"))
+                    else if(data[1].equalsIgnoreCase("gray"))
                         ((Horse)ent).setColor(Color.GRAY);
-                    else if(data[2].equalsIgnoreCase("black"))
+                    else if(data[1].equalsIgnoreCase("black"))
                         ((Horse)ent).setColor(Color.BLACK);
-                } else if (data[1].equalsIgnoreCase("m")) {
-                    if(data[2].equalsIgnoreCase("none"))
+                } else if (data[0].equalsIgnoreCase("m")) {
+                    if(data[1].equalsIgnoreCase("none"))
                         ((Horse)ent).setStyle(Style.NONE);
-                    else if(data[2].equalsIgnoreCase("white"))
+                    else if(data[1].equalsIgnoreCase("white"))
                         ((Horse)ent).setStyle(Style.NONE);
-                    else if(data[2].equalsIgnoreCase("milky"))
+                    else if(data[1].equalsIgnoreCase("milky"))
                         ((Horse)ent).setStyle(Style.WHITEFIELD);
-                    else if(data[2].equalsIgnoreCase("wdots"))
+                    else if(data[1].equalsIgnoreCase("wdots"))
                         ((Horse)ent).setStyle(Style.WHITE_DOTS);
-                    else if(data[2].equalsIgnoreCase("bdots"))
+                    else if(data[1].equalsIgnoreCase("bdots"))
                         ((Horse)ent).setStyle(Style.BLACK_DOTS);
-                } else if (data[1].equalsIgnoreCase("strength"))
+                } else if (data[0].equalsIgnoreCase("strength"))
                     try {
-                        ((Horse)ent).setJumpStrength(Double.parseDouble(data[2]));
+                        ((Horse)ent).setJumpStrength(Double.parseDouble(data[1]));
                     } catch(Exception e){}
             default:
                 break;

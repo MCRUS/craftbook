@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
@@ -17,6 +18,8 @@ import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.util.EventUtil;
+import com.sk89q.craftbook.util.ProtectionUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.craftbook.util.events.SignClickEvent;
 import com.sk89q.craftbook.util.events.SourcedBlockRedstoneEvent;
@@ -29,8 +32,10 @@ import com.sk89q.worldedit.data.DataException;
  */
 public class Area extends AbstractCraftBookMechanic {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onSignChange(SignChangeEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if (!event.getLine(1).equalsIgnoreCase("[Area]") && !event.getLine(1).equalsIgnoreCase("[SaveArea]")) return;
 
@@ -67,8 +72,10 @@ public class Area extends AbstractCraftBookMechanic {
         player.print("mech.area.create");
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onRightClick(SignClickEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         LocalPlayer player = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
@@ -81,6 +88,12 @@ public class Area extends AbstractCraftBookMechanic {
         if (!player.hasPermission("craftbook.mech.area.use")) {
             if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
                 player.print("mech.use-permission");
+            return;
+        }
+
+        if(!ProtectionUtil.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace(), event.getAction())) {
+            if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                player.printError("area.use-permissions");
             return;
         }
 
@@ -111,8 +124,10 @@ public class Area extends AbstractCraftBookMechanic {
         return isValidArea(sign.getLine(0).trim(), sign.getLine(2).trim().toLowerCase(Locale.ENGLISH), sign.getLine(3).trim().toLowerCase(Locale.ENGLISH));
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockRedstoneChange(SourcedBlockRedstoneEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if (!CraftBookPlugin.inst().getConfiguration().areaAllowRedstone) return;
         if (!SignUtil.isSign(event.getBlock())) return;
@@ -139,8 +154,8 @@ public class Area extends AbstractCraftBookMechanic {
         try {
             World world = BukkitUtil.toSign(sign).getWorld();
             String namespace = sign.getLine(0);
-            String id = sign.getLine(2).replace("-", "").toLowerCase(Locale.ENGLISH);
-            String inactiveID = sign.getLine(3).replace("-", "").toLowerCase(Locale.ENGLISH);
+            String id = StringUtils.replace(sign.getLine(2), "-", "").toLowerCase(Locale.ENGLISH);
+            String inactiveID = StringUtils.replace(sign.getLine(3), "-", "").toLowerCase(Locale.ENGLISH);
 
             CuboidCopy copy;
 
@@ -196,8 +211,8 @@ public class Area extends AbstractCraftBookMechanic {
         try {
             World world = BukkitUtil.toSign(sign).getWorld();
             String namespace = sign.getLine(0);
-            String id = sign.getLine(2).replace("-", "").toLowerCase(Locale.ENGLISH);
-            String inactiveID = sign.getLine(3).replace("-", "").toLowerCase(Locale.ENGLISH);
+            String id = StringUtils.replace(sign.getLine(2), "-", "").toLowerCase(Locale.ENGLISH);
+            String inactiveID = StringUtils.replace(sign.getLine(3), "-", "").toLowerCase(Locale.ENGLISH);
 
             CuboidCopy copy;
 
@@ -272,7 +287,7 @@ public class Area extends AbstractCraftBookMechanic {
 
         int toToggleOn = state ? 2 : 3;
         int toToggleOff = state ? 3 : 2;
-        sign.setLine(toToggleOff, sign.getLine(toToggleOff).replace("-", ""));
+        sign.setLine(toToggleOff, StringUtils.replace(sign.getLine(toToggleOff), "-", ""));
         sign.setLine(toToggleOn, "-" + sign.getLine(toToggleOn) + "-");
         sign.update(false);
     }

@@ -16,13 +16,16 @@ import org.bukkit.event.entity.EntityTargetEvent.TargetReason;
 
 import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.util.EventUtil;
 
 public class AIMechanic extends AbstractCraftBookMechanic {
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onEntityTarget(EntityTargetEvent event) {
 
         if (event.getEntity() == null || event.getEntity().getType() == null || event.getEntity().getType().getName() == null) return;
+
+        if (!EventUtil.passesFilter(event)) return;
 
         if(isEntityEnabled(event.getEntity(), CraftBookPlugin.inst().getConfiguration().aiAttackPassiveEnabled)) {
             if(event.getTarget() != null) return;
@@ -66,10 +69,12 @@ public class AIMechanic extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onEntityShootBow(EntityShootBowEvent event) {
 
         if (event.getEntity() == null || event.getEntity().getType() == null || event.getEntity().getType().getName() == null) return;
+
+        if (!EventUtil.passesFilter(event)) return;
 
         if(isEntityEnabled(event.getEntity(), CraftBookPlugin.inst().getConfiguration().aiCritBowEnabled)) {
             int amount = 0;

@@ -15,9 +15,9 @@ import org.bukkit.inventory.ItemStack;
 
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
-import com.sk89q.craftbook.bukkit.MechanicalCore;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.mech.crafting.CraftingItemStack;
+import com.sk89q.craftbook.mech.crafting.CustomCrafting;
 import com.sk89q.craftbook.mech.crafting.RecipeManager;
 import com.sk89q.craftbook.mech.crafting.RecipeManager.RecipeType;
 import com.sk89q.craftbook.util.ItemUtil;
@@ -25,7 +25,6 @@ import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandContext;
 import com.sk89q.minecraft.util.commands.CommandException;
 import com.sk89q.minecraft.util.commands.CommandPermissions;
-import com.sk89q.minecraft.util.commands.CommandPermissionsException;
 
 public class RecipeCommands {
 
@@ -51,6 +50,7 @@ public class RecipeCommands {
     }
 
     @Command(aliases = {"save", "add"}, desc = "Saves the current recipe", usage = "RecipeName RecipeType -p permission node", flags = "p:", min = 2)
+    @CommandPermissions(value = "craftbook.mech.recipes.add")
     public void saveRecipe(CommandContext context, CommandSender sender) throws CommandException {
 
         if(RecipeManager.INSTANCE == null) {
@@ -64,9 +64,6 @@ public class RecipeCommands {
         String name = context.getString(0);
         RecipeType type = RecipeType.getTypeFromName(context.getString(1));
         HashMap<String, Object> advancedData = new HashMap<String, Object>();
-
-        if(!player.hasPermission("craftbook.mech.recipes.add"))
-            throw new CommandPermissionsException();
 
         if (context.hasFlag('p')) {
             advancedData.put("permission-node", context.getFlag('p'));
@@ -156,14 +153,11 @@ public class RecipeCommands {
             try {
                 RecipeManager.Recipe recipe = RecipeManager.INSTANCE.new Recipe(name, type, items, Arrays.<String>asList(shape), results.get(0), advancedData);
                 RecipeManager.INSTANCE.addRecipe(recipe);
-                if(MechanicalCore.inst() == null) {
-                    player.printError("You do not have mechanics enabled, or Java has bugged and unloaded it (Did you use /reload?)!");
-                    return;
-                } else if (MechanicalCore.inst().getCustomCrafting() == null) {
+                if (CustomCrafting.INSTANCE == null) {
                     player.printError("You do not have CustomCrafting enabled, or Java has bugged and unloaded it (Did you use /reload?)!");
                     return;
                 }
-                MechanicalCore.inst().getCustomCrafting().addRecipe(recipe);
+                CustomCrafting.INSTANCE.addRecipe(recipe);
                 player.print("Successfully added a new " + type.name() + " recipe!");
             } catch (Exception e) {
                 player.printError("Error adding recipe! See console for more details!");
@@ -206,7 +200,7 @@ public class RecipeCommands {
             try {
                 RecipeManager.Recipe recipe = RecipeManager.INSTANCE.new Recipe(name, type, ingredients, results.get(0), advancedData);
                 RecipeManager.INSTANCE.addRecipe(recipe);
-                MechanicalCore.inst().getCustomCrafting().addRecipe(recipe);
+                CustomCrafting.INSTANCE.addRecipe(recipe);
                 player.print("Successfully added a new " + type.name() + " recipe!");
             } catch (Exception e) {
                 player.printError("Error adding recipe! See console for more details!");

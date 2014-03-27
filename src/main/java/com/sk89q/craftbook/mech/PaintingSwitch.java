@@ -18,6 +18,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.LocationUtil;
 import com.sk89q.craftbook.util.ProtectionUtil;
 
@@ -39,35 +40,46 @@ public class PaintingSwitch extends AbstractCraftBookMechanic {
         return false;
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if (event.getRightClicked() instanceof Painting) {
             LocalPlayer player = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
             if (!CraftBookPlugin.inst().getConfiguration().paintingsEnabled) return;
             Painting paint = (Painting) event.getRightClicked();
-            if (!ProtectionUtil.canUse(event.getPlayer(), paint.getLocation(), null, Action.RIGHT_CLICK_BLOCK)) return;
-            if (player.hasPermission("craftbook.mech.paintingswitch.use")) {
-                if (!isBeingEdited(paint)) {
-                    paintings.put(paint, player.getName());
-                    players.put(player.getName(), new WeakReference<Painting>(paint));
-                    player.print("mech.painting.editing");
-                } else if (paintings.get(paint).equalsIgnoreCase(player.getName())) {
-                    paintings.remove(paint);
-                    players.remove(player.getName());
-                    player.print("mech.painting.stop");
-                } else if (isBeingEdited(paint)) {
-                    player.print(player.translate("mech.painting.used") + " " + paintings.get(paint));
-                } else {
-                    return;
-                }
-                event.setCancelled(true);
+            if(!player.hasPermission("craftbook.mech.paintingswitch.use")) {
+                if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                    player.printError("mech.use-permissions");
+                return;
             }
+            if(!ProtectionUtil.canUse(event.getPlayer(), paint.getLocation(), null, Action.RIGHT_CLICK_BLOCK)) {
+                if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                    player.printError("area.use-permissions");
+                return;
+            }
+            if (!isBeingEdited(paint)) {
+                paintings.put(paint, player.getName());
+                players.put(player.getName(), new WeakReference<Painting>(paint));
+                player.print("mech.painting.editing");
+            } else if (paintings.get(paint).equalsIgnoreCase(player.getName())) {
+                paintings.remove(paint);
+                players.remove(player.getName());
+                player.print("mech.painting.stop");
+            } else if (isBeingEdited(paint)) {
+                player.print(player.translate("mech.painting.used") + " " + paintings.get(paint));
+            } else {
+                return;
+            }
+            event.setCancelled(true);
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onHeldItemChange(PlayerItemHeldEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         LocalPlayer player = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
         if (!player.hasPermission("craftbook.mech.paintingswitch.use")) return;

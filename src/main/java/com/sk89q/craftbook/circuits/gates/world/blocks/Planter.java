@@ -9,19 +9,17 @@ import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
 
 import com.sk89q.craftbook.ChangedSign;
+import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
 import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
-import com.sk89q.craftbook.util.ICUtil;
+import com.sk89q.craftbook.circuits.ic.ICVerificationException;
 import com.sk89q.craftbook.util.ItemSyntax;
 import com.sk89q.craftbook.util.ItemUtil;
-import com.sk89q.craftbook.util.LocationUtil;
-import com.sk89q.worldedit.Vector;
-import com.sk89q.worldedit.blocks.BlockID;
+import com.sk89q.craftbook.util.SearchArea;
 import com.sk89q.worldedit.blocks.BlockType;
-import com.sk89q.worldedit.blocks.ItemID;
 
 /**
  * Sapling planter Hybrid variant of MCX206 and MCX203 chest collector When there is a sapling or seed item drop in
@@ -39,9 +37,7 @@ public class Planter extends AbstractSelfTriggeredIC {
 
     ItemStack item;
 
-    Block target;
-    Block onBlock;
-    Vector radius;
+    SearchArea area;
 
     @Override
     public void load() {
@@ -51,14 +47,7 @@ public class Planter extends AbstractSelfTriggeredIC {
         else
             item = ItemSyntax.getItem(getLine(2));
 
-        onBlock = getBackBlock();
-
-        radius = ICUtil.parseRadius(getSign(), 3);
-        if (getLine(3).contains("=")) {
-            target = ICUtil.parseBlockLocation(getSign(), 3);
-        } else {
-            target = getBackBlock();
-        }
+        area = SearchArea.createArea(getLocation().getBlock(), getLine(3));
     }
 
     @Override
@@ -82,16 +71,19 @@ public class Planter extends AbstractSelfTriggeredIC {
     @Override
     public void think(ChipState state) {
 
-        plant();
+        if(state.getInput(0)) return;
+
+        for(int i = 0; i < 10; i++)
+            plant();
     }
 
     public boolean plant() {
 
         if (item != null && !plantableItem(item.getType())) return false;
 
-        if (onBlock.getRelative(0, 1, 0).getType() == Material.CHEST || onBlock.getRelative(0, 1, 0).getType() == Material.TRAPPED_CHEST) {
+        if (getBackBlock().getRelative(0, 1, 0).getType() == Material.CHEST || getBackBlock().getRelative(0, 1, 0).getType() == Material.TRAPPED_CHEST) {
 
-            Chest c = (Chest) onBlock.getRelative(0, 1, 0).getState();
+            Chest c = (Chest) getBackBlock().getRelative(0, 1, 0).getState();
             for (ItemStack it : c.getInventory().getContents()) {
 
                 if (!ItemUtil.isStackValid(it)) continue;
@@ -103,14 +95,14 @@ public class Planter extends AbstractSelfTriggeredIC {
 
                 if ((b = searchBlocks(it)) != null) {
                     if (c.getInventory().removeItem(new ItemStack(it.getType(), 1, it.getDurability())).isEmpty()) {
-                        b.setTypeIdAndData(getBlockByItem(it.getTypeId()), (byte) it.getDurability(), true);
+                        b.setTypeIdAndData(getBlockByItem(it.getType()).getId(), (byte) it.getDurability(), true);
                         return true;
                     } else
                         continue;
                 }
             }
         } else {
-            for (Entity ent : LocationUtil.getNearbyEntities(target.getLocation(), radius)) {
+            for (Entity ent : area.getEntitiesInArea()) {
                 if (!(ent instanceof Item)) continue;
 
                 Item itemEnt = (Item) ent;
@@ -123,7 +115,7 @@ public class Planter extends AbstractSelfTriggeredIC {
                     Block b = null;
                     if ((b = searchBlocks(stack)) != null) {
                         if (ItemUtil.takeFromItemEntity(itemEnt, 1)) {
-                            b.setTypeIdAndData(getBlockByItem(stack.getTypeId()), stack.getData().getData(), true);
+                            b.setTypeIdAndData(getBlockByItem(stack.getType()).getId(), stack.getData().getData(), true);
                             return true;
                         }
                     }
@@ -136,22 +128,13 @@ public class Planter extends AbstractSelfTriggeredIC {
 
     public Block searchBlocks(ItemStack stack) {
 
-        for (int x = -radius.getBlockX() + 1; x < radius.getBlockX(); x++) {
-            for (int y = -radius.getBlockY() + 1; y < radius.getBlockY(); y++) {
-                for (int z = -radius.getBlockZ() + 1; z < radius.getBlockZ(); z++) {
-                    int rx = target.getX() - x;
-                    int ry = target.getY() - y;
-                    int rz = target.getZ() - z;
-                    Block b = onBlock.getWorld().getBlockAt(rx, ry, rz);
+        Block b = area.getRandomBlockInArea();
 
-                    if (b.getType() != Material.AIR) continue;
+        if (b == null || b.getType() != Material.AIR) return null;
 
-                    if (itemPlantableOnBlock(stack.getType(), b.getRelative(0, -1, 0).getType())) {
+        if (itemPlantableOnBlock(stack.getType(), b.getRelative(0, -1, 0).getType())) {
 
-                        return b;
-                    }
-                }
-            }
+            return b;
         }
         return null;
     }
@@ -161,7 +144,7 @@ public class Planter extends AbstractSelfTriggeredIC {
         switch (itemId) {
             case SAPLING:
             case SEEDS:
-            case NETHER_WARTS:
+            case NETHER_STALK:
             case MELON_SEEDS:
             case PUMPKIN_SEEDS:
             case CACTUS:
@@ -191,7 +174,7 @@ public class Planter extends AbstractSelfTriggeredIC {
             case POTATO_ITEM:
             case CARROT_ITEM:
                 return blockId == Material.SOIL;
-            case NETHER_WARTS:
+            case NETHER_STALK:
                 return blockId == Material.SOUL_SAND;
             case CACTUS:
                 return blockId == Material.SAND;
@@ -206,35 +189,21 @@ public class Planter extends AbstractSelfTriggeredIC {
         return false;
     }
 
-    protected int getBlockByItem(int itemId) {
+    protected Material getBlockByItem(Material itemId) {
 
         switch (itemId) {
-            case ItemID.SEEDS:
-                return BlockID.CROPS;
-            case ItemID.MELON_SEEDS:
-                return BlockID.MELON_STEM;
-            case ItemID.PUMPKIN_SEEDS:
-                return BlockID.PUMPKIN_STEM;
-            case BlockID.SAPLING:
-                return BlockID.SAPLING;
-            case ItemID.NETHER_WART_SEED:
-                return BlockID.NETHER_WART;
-            case BlockID.CACTUS:
-                return BlockID.CACTUS;
-            case ItemID.POTATO:
-                return BlockID.POTATOES;
-            case ItemID.CARROT:
-                return BlockID.CARROTS;
-            case BlockID.RED_FLOWER:
-                return BlockID.RED_FLOWER;
-            case BlockID.YELLOW_FLOWER:
-                return BlockID.YELLOW_FLOWER;
-            case BlockID.RED_MUSHROOM:
-                return BlockID.RED_MUSHROOM;
-            case BlockID.BROWN_MUSHROOM:
-                return BlockID.BROWN_MUSHROOM;
-            case BlockID.LILY_PAD:
-                return BlockID.LILY_PAD;
+            case SEEDS:
+                return Material.CROPS;
+            case MELON_SEEDS:
+                return Material.MELON_STEM;
+            case PUMPKIN_SEEDS:
+                return Material.PUMPKIN_STEM;
+            case NETHER_STALK:
+                return Material.NETHER_WARTS;
+            case POTATO_ITEM:
+                return Material.POTATO;
+            case CARROT_ITEM:
+                return Material.CARROT;
             default:
                 return itemId;
         }
@@ -263,6 +232,12 @@ public class Planter extends AbstractSelfTriggeredIC {
         public String[] getLineHelp() {
 
             return new String[] {"+oItem to plant id{:data}", "+oradius=x:y:z offset"};
+        }
+
+        @Override
+        public void verify(ChangedSign sign) throws ICVerificationException {
+            if(!SearchArea.isValidArea(BukkitUtil.toSign(sign).getBlock(), sign.getLine(3)))
+                throw new ICVerificationException("Invalid SearchArea on 4th line!");
         }
     }
 }

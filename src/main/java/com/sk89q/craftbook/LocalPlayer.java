@@ -24,7 +24,6 @@ import com.sk89q.worldedit.Vector;
 /**
  * Holds an abstraction for players.
  *
- * @author sk89q
  */
 public interface LocalPlayer {
 
@@ -51,8 +50,6 @@ public interface LocalPlayer {
     public void setSneaking(boolean state);
 
     public boolean isInsideVehicle();
-
-    public Vehicle getVehicle();
 
     @Deprecated
     public int getHeldItemType();

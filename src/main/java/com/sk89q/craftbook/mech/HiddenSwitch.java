@@ -17,9 +17,11 @@ import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.ItemSyntax;
 import com.sk89q.craftbook.util.ItemUtil;
 import com.sk89q.craftbook.util.LocationUtil;
+import com.sk89q.craftbook.util.ProtectionUtil;
 import com.sk89q.craftbook.util.SignUtil;
 
 public class HiddenSwitch extends AbstractCraftBookMechanic {
@@ -33,8 +35,10 @@ public class HiddenSwitch extends AbstractCraftBookMechanic {
         return s.getLine(1).equalsIgnoreCase("[X]");
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onSignChange(SignChangeEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(!event.getLine(1).equalsIgnoreCase("[x]")) return;
         LocalPlayer lplayer = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
@@ -108,8 +112,11 @@ public class HiddenSwitch extends AbstractCraftBookMechanic {
         return false;
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onRightClick(PlayerInteractEvent event) {
+
+        if (!EventUtil.passesFilter(event))
+            return;
 
         if(event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
@@ -124,6 +131,9 @@ public class HiddenSwitch extends AbstractCraftBookMechanic {
             return;
 
         if (!isValidWallSign(event.getClickedBlock().getRelative(1, 0, 0)) && !isValidWallSign(event.getClickedBlock().getRelative(-1, 0, 0)) && !isValidWallSign(event.getClickedBlock().getRelative(0, 0, 1)) && !isValidWallSign(event.getClickedBlock().getRelative(0, 0, -1)))
+            return;
+
+        if(!ProtectionUtil.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace(), event.getAction()))
             return;
 
         if(testBlock(event.getClickedBlock(), event.getBlockFace(), event.getPlayer()))

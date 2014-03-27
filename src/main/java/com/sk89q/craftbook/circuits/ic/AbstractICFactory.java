@@ -66,15 +66,21 @@ public abstract class AbstractICFactory implements ICFactory {
     }
 
     @Override
-    public String getLongDescription() {
+    public String[] getLongDescription() {
 
-        return "Missing Description";
+        return new String[]{"Missing Description"};
     }
 
     @Override
     public String[] getLineHelp() {
 
         return new String[] {null, null};
+    }
+
+    @Override
+    public String[] getPinDescription(ChipState state) {
+
+        return new String[state.getInputCount() + state.getOutputCount()];
     }
 
     @Override

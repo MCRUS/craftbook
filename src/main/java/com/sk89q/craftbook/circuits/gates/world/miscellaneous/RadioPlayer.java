@@ -2,12 +2,13 @@ package com.sk89q.craftbook.circuits.gates.world.miscellaneous;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 
 import com.sk89q.craftbook.ChangedSign;
-import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
 import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
@@ -31,7 +32,10 @@ public class RadioPlayer extends AbstractSelfTriggeredIC {
     public void load() {
 
         band = getLine(2);
-        if (!getLine(3).isEmpty()) area = SearchArea.createArea(getBackBlock(), getLine(3));
+        if (!getLine(3).isEmpty())
+            area = SearchArea.createArea(getLocation().getBlock(), getLine(3));
+        else
+            area = SearchArea.createEmptyArea();
 
         listening = new HashMap<String, SearchArea>();
     }
@@ -47,6 +51,11 @@ public class RadioPlayer extends AbstractSelfTriggeredIC {
     }
 
     @Override
+    public boolean isAlwaysST() {
+        return true;
+    }
+
+    @Override
     public void trigger (ChipState chip) {
 
         Playlist playlist = RadioStation.getPlaylist(band);
@@ -55,18 +64,48 @@ public class RadioPlayer extends AbstractSelfTriggeredIC {
             return;
 
         if(chip.getInput(0)) {
-            for(Player player : BukkitUtil.toSign(getSign()).getWorld().getPlayers()) {
+            if(area.getPlayersInArea().size() != listening.size()) {
 
-                if(area != null && !area.isWithinArea(player.getLocation())) continue;
-                listening.put(player.getName(), area);
+                Map<String, SearchArea> removals = new HashMap<String, SearchArea>();
+
+                for(Entry<String, SearchArea> key : listening.entrySet()) {
+                    boolean found = false;
+                    for(Player p : area.getPlayersInArea()) {
+                        if(p.getName().equals(key.getKey())) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) removals.put(key.getKey(), key.getValue());
+                }
+
+                if(removals.size() > 0) {
+                    playlist.getPlaylistInterpreter().removePlayers(removals);
+                    for(String key : removals.keySet())
+                        listening.remove(key);
+                }
+
+                boolean changed = false;
+
+                for(Player player : area.getPlayersInArea())
+                    if(!listening.containsKey(player.getName())) {
+                        listening.put(player.getName(), area);
+                        changed = true;
+                    }
+
+                if(changed)
+                    playlist.getPlaylistInterpreter().addPlayers(listening);
+
+                CraftBookPlugin.logDebugMessage("Reset listener list! Size of: " + listening.size(), "ic-mc1277");
             }
-
-            playlist.addPlayers(listening);
-        } else {
-
-            playlist.removePlayers(listening);
+        } else if(listening.size() > 0) {
+            playlist.getPlaylistInterpreter().removePlayers(listening);
             listening.clear();
+
+            CraftBookPlugin.logDebugMessage("Cleared listener list!", "ic-mc1277");
         }
+
+        chip.setOutput(0, playlist.isPlaying() && !listening.isEmpty());
     }
 
     public static class Factory extends AbstractICFactory {

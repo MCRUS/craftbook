@@ -2,22 +2,20 @@ package com.sk89q.craftbook.circuits.ic;
 
 import java.util.Locale;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-import com.sk89q.craftbook.bukkit.CircuitCore;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 
 public class ICDocsParser {
 
-    private static CircuitCore core = CircuitCore.inst();
-
     public static void generateICDocs(Player player, String id) {
 
-        RegisteredICFactory ric = core.getIcManager().registered.get(id.toLowerCase(Locale.ENGLISH));
+        RegisteredICFactory ric = ICManager.inst().registered.get(id.toLowerCase(Locale.ENGLISH));
         if (ric == null) {
             try {
-                ric = core.getIcManager().registered.get(core.getSearchID(player, id));
+                ric = ICManager.inst().registered.get(ICManager.inst().getSearchID(player, id));
                 if (ric == null) {
                     player.sendMessage(ChatColor.RED + "Invalid IC!");
                     return;
@@ -45,7 +43,7 @@ public class ICDocsParser {
             } else {
                 player.sendMessage(ChatColor.DARK_GRAY + "Line 4: Blank.");
             }
-            player.sendMessage(ChatColor.AQUA + "Wiki: " + "http://wiki.sk89q.com/wiki/CraftBook/" + ric.getId().toUpperCase(Locale.ENGLISH));
+            player.sendMessage(ChatColor.AQUA + "Wiki: " + CraftBookPlugin.getWikiDomain() + "/" + ric.getId().toUpperCase(Locale.ENGLISH));
         } catch (Exception ignored) {
         }
     }
@@ -55,9 +53,9 @@ public class ICDocsParser {
         if(line.contains("+o"))
             line = ChatColor.GRAY + line + " (Optional)";
 
-        line = line.replace("{", ChatColor.GRAY + "");
-        line = line.replace("}", ChatColor.YELLOW + "");
+        line = StringUtils.replace(line, "{", ChatColor.GRAY + "");
+        line = StringUtils.replace(line, "}", ChatColor.YELLOW + "");
 
-        return line.replace("+o", "");
+        return StringUtils.replace(line, "+o", "");
     }
 }

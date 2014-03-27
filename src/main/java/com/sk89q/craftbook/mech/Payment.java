@@ -12,7 +12,9 @@ import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.ICUtil;
+import com.sk89q.craftbook.util.ProtectionUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.craftbook.util.events.SignClickEvent;
 
@@ -23,8 +25,10 @@ import com.sk89q.craftbook.util.events.SignClickEvent;
  */
 public class Payment extends AbstractCraftBookMechanic {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onRightClick(SignClickEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(event.getClickedBlock().getType() != Material.WALL_SIGN) return;
         if(event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
@@ -41,10 +45,16 @@ public class Payment extends AbstractCraftBookMechanic {
             return;
         }
 
+        if(!ProtectionUtil.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace(), event.getAction())) {
+            if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                player.printError("area.use-permissions");
+            return;
+        }
+
         double money = Double.parseDouble(sign.getLine(2));
         String reciever = sign.getLine(3);
 
-        if (CraftBookPlugin.plugins.getEconomy().withdrawPlayer(event.getPlayer().getName(), money).transactionSuccess())
+        if (CraftBookPlugin.plugins.getEconomy().withdrawPlayer(event.getPlayer().getName(), money).transactionSuccess()) {
             if (CraftBookPlugin.plugins.getEconomy().depositPlayer(reciever, money).transactionSuccess()) {
                 Block back = SignUtil.getBackBlock(event.getClickedBlock());
                 BlockFace bface = SignUtil.getBack(event.getClickedBlock());
@@ -52,14 +62,21 @@ public class Payment extends AbstractCraftBookMechanic {
                 player.print(player.translate("mech.pay.success") + money + " " + CraftBookPlugin.plugins.getEconomy().getName());
                 if (ICUtil.setState(redstoneItem, true, back))
                     CraftBookPlugin.inst().getServer().getScheduler().runTaskLater(CraftBookPlugin.inst(), new TurnOff(redstoneItem, back), 20L);
-            } else
+            } else {
                 CraftBookPlugin.plugins.getEconomy().depositPlayer(event.getPlayer().getName(), money);
+                player.printError("mech.pay.failed-to-pay");
+            }
+        } else {
+            player.printError(player.translate("mech.pay.not-enough-money"));
+        }
 
         event.setCancelled(true);
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onSignChange(SignChangeEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(!event.getLine(1).equalsIgnoreCase("[pay]")) return;
         LocalPlayer lplayer = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());

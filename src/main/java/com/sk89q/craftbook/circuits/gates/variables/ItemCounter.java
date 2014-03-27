@@ -1,5 +1,6 @@
 package com.sk89q.craftbook.circuits.gates.variables;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Server;
 import org.bukkit.block.BlockState;
 import org.bukkit.inventory.InventoryHolder;
@@ -15,7 +16,7 @@ import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.ic.ICVerificationException;
-import com.sk89q.craftbook.common.VariableManager;
+import com.sk89q.craftbook.common.variables.VariableManager;
 import com.sk89q.craftbook.util.ItemSyntax;
 import com.sk89q.craftbook.util.ItemUtil;
 import com.sk89q.craftbook.util.RegexUtil;
@@ -74,7 +75,7 @@ public class ItemCounter extends AbstractIC {
 
             String val = String.valueOf(existing + amount);
             if (val.endsWith(".0"))
-                val = val.replace(".0", "");
+                val = StringUtils.replace(val, ".0", "");
 
             VariableManager.instance.setVariable(var, key, val);
         }

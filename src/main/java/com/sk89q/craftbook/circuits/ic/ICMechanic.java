@@ -19,6 +19,7 @@ package com.sk89q.craftbook.circuits.ic;
 import java.util.Locale;
 import java.util.regex.Matcher;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -35,6 +36,7 @@ import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.circuits.pipe.PipePutEvent;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.ICUtil;
 import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.craftbook.util.SignUtil;
@@ -68,7 +70,7 @@ public class ICMechanic extends AbstractCraftBookMechanic {
         this.manager = manager;
     }
 
-    public Object[] setupIC(Block block) {
+    public Object[] setupIC(Block block, boolean create) {
 
         // if we're not looking at a wall sign, it can't be an IC.
         if (block.getType() != Material.WALL_SIGN) return null;
@@ -82,10 +84,10 @@ public class ICMechanic extends AbstractCraftBookMechanic {
         // TODO: remove after some time to stop converting existing MCA ICs
         // convert existing MCA ICs to the new [MCXXXX]A syntax
         if (prefix.equalsIgnoreCase("MCA")) {
-            sign.setLine(1, (sign.getLine(1).toLowerCase(Locale.ENGLISH).replace("mca", "mc") + "a").toUpperCase(Locale.ENGLISH));
+            sign.setLine(1, (StringUtils.replace(sign.getLine(1).toLowerCase(Locale.ENGLISH), "mca", "mc") + "a").toUpperCase(Locale.ENGLISH));
             sign.update(false);
 
-            return setupIC(block);
+            return setupIC(block, create);
         }
         if (sign.getLine(1).toLowerCase(Locale.ENGLISH).startsWith("[mc0")) {
             if(sign.getLine(1).equalsIgnoreCase("[mc0420]"))
@@ -93,29 +95,31 @@ public class ICMechanic extends AbstractCraftBookMechanic {
             else if(sign.getLine(1).equalsIgnoreCase("[mc0421]"))
                 sign.setLine(1, "[MC1422]S");
             else
-                sign.setLine(1, (sign.getLine(1).toLowerCase(Locale.ENGLISH).replace("mc0", "mc1") + "s").toUpperCase(Locale.ENGLISH));
+                sign.setLine(1, (StringUtils.replace(sign.getLine(1).toLowerCase(Locale.ENGLISH), "mc0", "mc1") + "s").toUpperCase(Locale.ENGLISH));
             sign.update(false);
 
-            return setupIC(block);
+            return setupIC(block, create);
         }
 
         if (sign.getLine(1).toLowerCase(Locale.ENGLISH).startsWith("[mcz")) {
-            sign.setLine(1, (sign.getLine(1).toLowerCase(Locale.ENGLISH).replace("mcz", "mcx") + "s").toUpperCase(Locale.ENGLISH));
+            sign.setLine(1, (StringUtils.replace(sign.getLine(1).toLowerCase(Locale.ENGLISH), "mcz", "mcx") + "s").toUpperCase(Locale.ENGLISH));
             sign.update(false);
 
-            return setupIC(block);
+            return setupIC(block, create);
         }
 
         if (!manager.hasCustomPrefix(prefix)) return null;
 
         String id = matcher.group(1);
+
+        if(CraftBookPlugin.inst().getConfiguration().ICsDisabled.contains(id.toLowerCase()) || CraftBookPlugin.inst().getConfiguration().ICsDisabled.contains(id)) return null; //This IC is disabled.
         // after this point, we don't return null if we can't make an IC: we throw shit,
         // because it SHOULD be an IC and can't possibly be any other kind of mechanic.
 
         // now actually try to pull up an IC of that id number.
         RegisteredICFactory registration = manager.get(id);
         if (registration == null) {
-            //throw new InvalidMechanismException("\"" + sign.getLine(1) + "\" should be an IC ID, but no IC registered under that ID could be found.");
+            CraftBookPlugin.logger().warning("\"" + sign.getLine(1) + "\" should be an IC ID, but no IC registered under that ID could be found.");
             return null;
         }
 
@@ -135,7 +139,7 @@ public class ICMechanic extends AbstractCraftBookMechanic {
                 // add the created ic to the cache
                 ICManager.addCachedIC(block.getLocation(), ic);
             }
-        } else {
+        } else if (create) {
             ic = registration.getFactory().create(sign);
             if(!sign.getLine(0).equals(ic.getSignTitle()) && !sign.getLine(0).startsWith("=")) {
                 sign.setLine(0, ic.getSignTitle());
@@ -144,7 +148,8 @@ public class ICMechanic extends AbstractCraftBookMechanic {
             ic.load();
             // add the created ic to the cache
             ICManager.addCachedIC(block.getLocation(), ic);
-        }
+        } else
+            return null;
         // extract the suffix
         String suffix = "";
         String[] str = RegexUtil.RIGHT_BRACKET_PATTERN.split(sign.getLine(1));
@@ -174,10 +179,12 @@ public class ICMechanic extends AbstractCraftBookMechanic {
         return rets;
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockRedstoneChange(final SourcedBlockRedstoneEvent event) {
 
-        final Object[] icData = setupIC(event.getBlock());
+        if(!EventUtil.passesFilter(event)) return;
+
+        final Object[] icData = setupIC(event.getBlock(), true);
 
         if(icData == null) return;
 
@@ -220,8 +227,10 @@ public class ICMechanic extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onRightClick(SignClickEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
@@ -230,23 +239,27 @@ public class ICMechanic extends AbstractCraftBookMechanic {
             ICManager.removeCachedIC(event.getClickedBlock().getLocation());
         }
 
-        final Object[] icData = setupIC(event.getClickedBlock());
+        final Object[] icData = setupIC(event.getClickedBlock(), true);
 
         if(icData == null) return;
 
         ((IC) icData[2]).onRightClick(event.getPlayer());
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onThinkPing(SelfTriggerPingEvent event) {
 
-        setupIC(event.getBlock());
+        if(!EventUtil.passesFilter(event)) return;
+
+        setupIC(event.getBlock(), true);
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onThinkUnregister(SelfTriggerUnregisterEvent event) {
 
-        final Object[] icData = setupIC(event.getBlock());
+        if(!EventUtil.passesFilter(event)) return;
+
+        final Object[] icData = setupIC(event.getBlock(), false);
 
         if(icData != null) {
             if(event.getReason() == UnregisterReason.ERROR) {
@@ -264,14 +277,14 @@ public class ICMechanic extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onThink(SelfTriggerThinkEvent event) {
 
-        final Object[] icData = setupIC(event.getBlock());
+        if(!EventUtil.passesFilter(event)) return;
 
-        if(icData == null) return;
+        final Object[] icData = setupIC(event.getBlock(), true);
 
-        if((IC) icData[2] instanceof SelfTriggeredIC) {
+        if(icData != null && (IC) icData[2] instanceof SelfTriggeredIC) {
             event.setHandled(true);
             ChipState chipState = ((ICFamily) icData[1]).detectSelfTriggered(BukkitUtil.toWorldVector(event.getBlock()), ((IC) icData[2]).getSign());
             ((SelfTriggeredIC) icData[2]).think(chipState);
@@ -279,10 +292,12 @@ public class ICMechanic extends AbstractCraftBookMechanic {
             CraftBookPlugin.inst().getSelfTriggerManager().unregisterSelfTrigger(event.getBlock().getLocation(), UnregisterReason.UNKNOWN);
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockBreak(BlockBreakEvent event) {
 
-        final Object[] icData = setupIC(event.getBlock());
+        if(!EventUtil.passesFilter(event)) return;
+
+        final Object[] icData = setupIC(event.getBlock(), false);
 
         if(icData == null) return;
 
@@ -294,10 +309,12 @@ public class ICMechanic extends AbstractCraftBookMechanic {
             ((IC) icData[2]).unload();
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onPipePut(PipePutEvent event) {
 
-        final Object[] icData = setupIC(event.getPuttingBlock());
+        if(!EventUtil.passesFilter(event)) return;
+
+        final Object[] icData = setupIC(event.getPuttingBlock(), true);
 
         if(icData == null) return;
 
@@ -305,8 +322,10 @@ public class ICMechanic extends AbstractCraftBookMechanic {
             ((PipeInputIC) icData[2]).onPipeTransfer(event);
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onSignChange(SignChangeEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         initializeIC(event.getBlock(), CraftBookPlugin.inst().wrapPlayer(event.getPlayer()), event, false);
     }
@@ -385,7 +404,6 @@ public class ICMechanic extends AbstractCraftBookMechanic {
 
             final RegisteredICFactory registration = manager.get(id);
             if (registration == null) {
-                //throw new InvalidMechanismException("Unknown IC detected: " + id);
                 player.printError("Unknown IC detected: " + id);
                 SignUtil.cancelSign(event);
                 return;
@@ -441,7 +459,7 @@ public class ICMechanic extends AbstractCraftBookMechanic {
             String id = event.getLine(0).substring(1);
 
             boolean st = id.toLowerCase(Locale.ENGLISH).endsWith(" st");
-            id = id.toLowerCase(Locale.ENGLISH).replace(" st", "");
+            id = StringUtils.replace(id.toLowerCase(Locale.ENGLISH), " st", "");
 
             String shortId = manager.longRegistered.get(id.toLowerCase(Locale.ENGLISH));
             if (shortId == null) {

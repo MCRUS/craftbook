@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.commands.VariableCommands;
-import com.sk89q.craftbook.common.VariableManager;
+import com.sk89q.craftbook.common.variables.VariableManager;
 
 public class ParsingUtil {
 
@@ -33,8 +34,14 @@ public class ParsingUtil {
 
     public static String parsePlayerTags(String line, Player player) {
 
-        line = line.replace("@p", player.getName());
-        line = line.replace("@p.l", player.getLocation().getX() + ":" + player.getLocation().getY() + ":" + player.getLocation().getZ());
+        line = StringUtils.replace(line, "@p.l", player.getLocation().getX() + ":" + player.getLocation().getY() + ":" + player.getLocation().getZ());
+        line = StringUtils.replace(line, "@p.x", String.valueOf(player.getLocation().getX()));
+        line = StringUtils.replace(line, "@p.y", String.valueOf(player.getLocation().getY()));
+        line = StringUtils.replace(line, "@p.z", String.valueOf(player.getLocation().getZ()));
+        line = StringUtils.replace(line, "@p.bx", String.valueOf(player.getLocation().getBlockX()));
+        line = StringUtils.replace(line, "@p.by", String.valueOf(player.getLocation().getBlockY()));
+        line = StringUtils.replace(line, "@p.bz", String.valueOf(player.getLocation().getBlockZ()));
+        line = StringUtils.replace(line, "@p", player.getName());
 
         return line;
     }
@@ -43,16 +50,18 @@ public class ParsingUtil {
 
         List<String> variables = new ArrayList<String>();
 
-        for(String bit : RegexUtil.PERCENT_PATTERN.split(line))
+        for(String bit : RegexUtil.PERCENT_PATTERN.split(line)) {
+            if(line.indexOf(bit) > 0 && line.charAt(line.indexOf(bit)-1) == '\\') continue;
             if(!bit.trim().isEmpty() && !bit.trim().equals("|"))
                 variables.add(bit.trim());
+        }
 
         return variables;
     }
 
     public static String parseVariables(String line, CommandSender player) {
 
-        if(CraftBookPlugin.inst() == null || VariableManager.instance == null)
+        if(CraftBookPlugin.inst() == null || VariableManager.instance == null || VariableManager.instance.getVariableStore().isEmpty())
             return line;
 
         CraftBookPlugin.logDebugMessage("Attempting to parse variables. Input line: " + line, "variables.line-parsing");
@@ -81,10 +90,10 @@ public class ParsingUtil {
 
             for(Entry<Tuple2<String, String>, String> bit : VariableManager.instance.getVariableStore().entrySet()) {
                 if(bit.getKey().b.equalsIgnoreCase(key) && bit.getKey().a.equalsIgnoreCase(value))
-                    line = line.replace("%" + var + "%", bit.getValue());
+                    line = StringUtils.replace(line, "%" + var + "%", bit.getValue());
             }
         }
 
-        return line;
+        return StringUtils.replace(line, "\\%", "%");
     }
 }

@@ -11,26 +11,27 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerMoveEvent;
 
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.ItemInfo;
 
 public class Footprints extends AbstractCraftBookMechanic {
 
-    private static boolean disabled = false;
+    public Set<String> footsteps;
 
-    public Set<String> footsteps = new HashSet<String>();
-
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerMove(final PlayerMoveEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(event.getFrom().getX() == event.getTo().getX() && event.getFrom().getZ() == event.getTo().getZ())
             return;
 
-        if (disabled) return;
         Block below = event.getPlayer().getLocation().subtract(0, 1, 0).getBlock(); //Gets the block they're standing on
         double yOffset = 0.07D;
 
@@ -53,7 +54,7 @@ public class Footprints extends AbstractCraftBookMechanic {
                 return;
 
             try {
-                PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(63);
+                PacketContainer packet = ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.WORLD_PARTICLES);
                 packet.getStrings().write(0, "footstep");
                 packet.getFloat().write(0, (float) event.getPlayer().getLocation().getX())
                 .write(1, (float) (event.getPlayer().getLocation().getY() + yOffset))
@@ -87,7 +88,6 @@ public class Footprints extends AbstractCraftBookMechanic {
                 }, event.getPlayer().isSprinting() ? 7 : 10);
             } catch (Throwable e) {
                 CraftBookPlugin.logger().warning("Footprints do not work without ProtocolLib!");
-                disabled = true;
                 return;
             }
         }
@@ -96,13 +96,15 @@ public class Footprints extends AbstractCraftBookMechanic {
     @Override
     public boolean enable () {
 
-        if (CraftBookPlugin.plugins.hasProtocolLib()) return true;
-        else CraftBookPlugin.inst().getLogger().warning("Footprints require ProtocolLib! They will not function without it!");
+        if (CraftBookPlugin.plugins.hasProtocolLib()) {
+            footsteps = new HashSet<String>();
+            return true;
+        } else CraftBookPlugin.inst().getLogger().warning("Footprints require ProtocolLib! They will not function without it!");
         return false;
     }
 
     @Override
     public void disable () {
-        footsteps.clear();
+        footsteps = null;
     }
 }

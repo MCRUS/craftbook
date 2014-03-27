@@ -1,5 +1,6 @@
 package com.sk89q.craftbook.mech;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -13,15 +14,19 @@ import com.sk89q.craftbook.bukkit.BukkitPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.util.BlockUtil;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.ParsingUtil;
+import com.sk89q.craftbook.util.ProtectionUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.craftbook.util.events.SignClickEvent;
 import com.sk89q.craftbook.util.events.SourcedBlockRedstoneEvent;
 
 public class CommandSigns extends AbstractCraftBookMechanic {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onSignChange(SignChangeEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(!event.getLine(1).equalsIgnoreCase("[command]")) return;
         LocalPlayer lplayer = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
@@ -35,8 +40,10 @@ public class CommandSigns extends AbstractCraftBookMechanic {
         event.setLine(1, "[Command]");
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onRightClick(SignClickEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         ChangedSign s = event.getSign();
@@ -53,13 +60,21 @@ public class CommandSigns extends AbstractCraftBookMechanic {
             return;
         }
 
+        if(!ProtectionUtil.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace(), event.getAction())) {
+            if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                localPlayer.printError("area.use-permissions");
+            return;
+        }
+
         runCommandSign(s, localPlayer);
 
         event.setCancelled(true);
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockRedstoneChange(SourcedBlockRedstoneEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if (!event.isOn() || event.isMinor() || !CraftBookPlugin.inst().getConfiguration().commandSignAllowRedstone || !SignUtil.isSign(event.getBlock()))
             return;
@@ -75,7 +90,7 @@ public class CommandSigns extends AbstractCraftBookMechanic {
 
     public void runCommandSign(ChangedSign sign, LocalPlayer player) {
 
-        String command = sign.getLine(2).replace("/", "") + sign.getLine(3);
+        String command = StringUtils.replace(sign.getLine(2), "/", "") + sign.getLine(3);
 
         while(BlockUtil.areBlocksIdentical(BukkitUtil.toBlock(sign), BukkitUtil.toBlock(sign).getRelative(0, -1, 0))) {
 

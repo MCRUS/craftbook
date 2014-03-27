@@ -41,12 +41,20 @@
             <id>md_5-rep</id>
             <url>http://repo.md-5.net/content/repositories/releases</url>
         </repository>
+        <repository>
+            <id>vault repo</id>
+            <url>http://nexus.theyeticave.net/content/repositories/pub_releases</url>
+        </repository>
+        <repository>
+            <id>gravity-repo</id>
+            <url>http://repo.gravitydevelopment.net/</url>
+        </repository>
     </repositories>
     <dependencies>
         <dependency>
             <groupId>com.sk89q</groupId>
             <artifactId>worldedit</artifactId>
-            <version>5.5.8-SNAPSHOT</version>
+            <version>5.5.9-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.sk89q</groupId>
@@ -61,41 +69,47 @@
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
-            <version>1.7.2-R0.3-SNAPSHOT</version>
+            <version>1.7.2-R0.4-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>craftbukkit</artifactId>
-            <version>1.7.2-R0.3-SNAPSHOT</version>
+            <version>1.7.2-R0.4-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>net.milkbowl.vault</groupId>
             <artifactId>Vault</artifactId>
-            <version>1.2.16</version>
+            <version>1.2.31</version>
         </dependency>
         <dependency>
             <groupId>com.comphenix.protocol</groupId>
             <artifactId>ProtocolLib</artifactId>
-            <version>2.7.0</version>
+            <version>3.2.0</version>
         </dependency>
         <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-            <version>1.4.9</version>
-            <type>jar</type>
-            <scope>test</scope>
-        </dependency>
+	        <groupId>org.powermock</groupId>
+	        <artifactId>powermock-module-junit4</artifactId>
+	        <version>1.4.9</version>
+	        <type>jar</type>
+	        <scope>test</scope>
+	    </dependency>
+	    <dependency>
+	        <groupId>org.powermock</groupId>
+	        <artifactId>powermock-api-mockito</artifactId>
+	        <version>1.4.9</version>
+	        <type>jar</type>
+	        <scope>test</scope>
+	    </dependency>
+	    <dependency>
+	       <groupId>fr.neatmonster</groupId>
+	       <artifactId>ncpcore</artifactId>
+	       <version>static</version>
+	    </dependency>
         <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito</artifactId>
-            <version>1.4.9</version>
-            <type>jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>fr.neatmonster</groupId>
-            <artifactId>ncpcore</artifactId>
-            <version>static</version>
+            <groupId>net.gravitydevelopment.anticheat</groupId>
+            <artifactId>AntiCheat</artifactId>
+            <version>2.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
     <distributionManagement>
@@ -103,6 +117,14 @@
             <id>sk89q-docs-upload</id>
             <url>ftp://sk89q-maven-deploy/craftbook/</url>
         </site>
+        <repository>
+            <id>maven.sk89q.com</id>
+            <url>http://maven.sk89q.com/artifactory/libs-release-local</url>
+        </repository>
+        <snapshotRepository>
+            <id>maven.sk89q.com-snapshot</id>
+            <url>http://maven.sk89q.com/artifactory/libs-snapshot-local</url>
+        </snapshotRepository>
     </distributionManagement>
     <build>
         <defaultGoal>install</defaultGoal>
@@ -137,6 +159,7 @@
                     <include>cauldron-recipes.yml</include>
                     <include>command-items.yml</include>
                     <include>crafting-recipes.yml</include>
+                    <include>custom-drops.yml</include>
                     <include>custom-block-drops.txt</include>
                     <include>custom-ics.txt</include>
                     <include>custom-mob-drops.txt</include>
@@ -251,13 +274,100 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-eclipse-plugin</artifactId>
-                <configuration>
-                    <downloadSources>true</downloadSources>
-                    <downloadJavadocs>true</downloadJavadocs>
-                </configuration>
-            </plugin>
+			    <groupId>org.apache.maven.plugins</groupId>
+			    <artifactId>maven-eclipse-plugin</artifactId>
+			    <configuration>
+				    <downloadSources>true</downloadSources>
+				    <downloadJavadocs>true</downloadJavadocs>
+			    </configuration>
+		    </plugin>
+		    
+		    <!-- Leave this alone! Compile-time checks so that your extension works. -->
+			<!--<plugin>
+			    <groupId>org.bsc.maven</groupId>
+			    <artifactId>maven-processor-plugin</artifactId>
+			    <version>2.2.4</version>
+			 
+			    <executions>
+			        <execution>
+			            <id>process</id>
+			            <phase>process-classes</phase>
+			 
+			            <goals>
+			                <goal>process</goal>
+			            </goals>
+			        </execution>
+			    </executions>
+			 
+			    <configuration>
+			        <outputDirectory>src/main/generated</outputDirectory>
+			 
+			        <processors>
+			            <processor>com.laytonsmith.core.extensions.ExtensionAnnotationProcessor</processor>
+			        </processors>
+			    </configuration>
+			</plugin> -->
+			 
+			<!-- Leave this alone! Run-time extension loading speedup. -->
+			<!--<plugin>
+			    <groupId>org.codehaus.mojo</groupId>
+			    <artifactId>exec-maven-plugin</artifactId>
+			    <version>1.2.1</version>
+			 
+			    <executions>
+			        <execution>
+			            <id>cache-annotations</id>
+			            <phase>process-classes</phase>
+			            <goals>
+			                <goal>java</goal>
+			            </goals>
+			        </execution>
+			    </executions>
+			 
+			    <configuration>
+			        <mainClass>com.laytonsmith.PureUtilities.ClassLoading.Annotations.CacheAnnotations</mainClass>
+			 
+			        <arguments>
+			            <argument>${basedir}/target/classes</argument>
+			            <argument>${basedir}/target/classes</argument>
+			        </arguments>
+			    </configuration>
+			</plugin>-->
         </plugins>
+        <pluginManagement>
+        	<plugins>
+        		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+        		<plugin>
+        			<groupId>org.eclipse.m2e</groupId>
+        			<artifactId>lifecycle-mapping</artifactId>
+        			<version>1.0.0</version>
+        			<configuration>
+        				<lifecycleMappingMetadata>
+        					<pluginExecutions>
+        						<pluginExecution>
+        							<pluginExecutionFilter>
+        								<groupId>
+        									org.codehaus.mojo
+        								</groupId>
+        								<artifactId>
+        									exec-maven-plugin
+        								</artifactId>
+        								<versionRange>
+        									[1.2.1,)
+        								</versionRange>
+        								<goals>
+        									<goal>java</goal>
+        								</goals>
+        							</pluginExecutionFilter>
+        							<action>
+        								<ignore></ignore>
+        							</action>
+        						</pluginExecution>
+        					</pluginExecutions>
+        				</lifecycleMappingMetadata>
+        			</configuration>
+        		</plugin>
+        	</plugins>
+        </pluginManagement>
     </build>
 </project>

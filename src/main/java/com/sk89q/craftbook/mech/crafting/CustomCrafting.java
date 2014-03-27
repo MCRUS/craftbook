@@ -34,6 +34,7 @@ import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.mech.crafting.RecipeManager.RecipeType;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.ItemUtil;
 import com.sk89q.craftbook.util.ParsingUtil;
 import com.sk89q.util.yaml.YAMLFormat;
@@ -46,21 +47,22 @@ import com.sk89q.util.yaml.YAMLProcessor;
  */
 public class CustomCrafting extends AbstractCraftBookMechanic {
 
-    protected final CraftBookPlugin plugin = CraftBookPlugin.inst();
+    public static CustomCrafting INSTANCE;
 
     public static final Map<Recipe, RecipeManager.Recipe> advancedRecipes = new HashMap<Recipe, RecipeManager.Recipe>();
 
     @Override
     public boolean enable() {
 
-        plugin.createDefaultConfiguration(new File(plugin.getDataFolder(), "crafting-recipes.yml"), "crafting-recipes.yml");
-        new RecipeManager(new YAMLProcessor(new File(plugin.getDataFolder(), "crafting-recipes.yml"), true, YAMLFormat.EXTENDED));
+        INSTANCE = this;
+        CraftBookPlugin.inst().createDefaultConfiguration(new File(CraftBookPlugin.inst().getDataFolder(), "crafting-recipes.yml"), "crafting-recipes.yml");
+        new RecipeManager(new YAMLProcessor(new File(CraftBookPlugin.inst().getDataFolder(), "crafting-recipes.yml"), true, YAMLFormat.EXTENDED));
         Collection<RecipeManager.Recipe> recipeCollection = RecipeManager.INSTANCE.getRecipes();
         int recipes = 0;
         for (RecipeManager.Recipe r : recipeCollection)
             if(addRecipe(r))
                 recipes++;
-        plugin.getLogger().info("Registered " + recipes + " custom recipes!");
+        CraftBookPlugin.inst().getLogger().info("Registered " + recipes + " custom recipes!");
 
         return true;
     }
@@ -70,6 +72,7 @@ public class CustomCrafting extends AbstractCraftBookMechanic {
 
         advancedRecipes.clear();
         RecipeManager.INSTANCE = null;
+        INSTANCE = null;
     }
 
     /**
@@ -95,7 +98,7 @@ public class CustomCrafting extends AbstractCraftBookMechanic {
             } else
                 return false;
 
-            plugin.getServer().addRecipe(sh);
+            CraftBookPlugin.inst().getServer().addRecipe(sh);
             if(r.hasAdvancedData()) {
                 advancedRecipes.put(sh, r);
                 CraftBookPlugin.logDebugMessage("Adding a new recipe with advanced data!", "advanced-data.init");
@@ -103,19 +106,21 @@ public class CustomCrafting extends AbstractCraftBookMechanic {
 
             return true;
         } catch (IllegalArgumentException e) {
-            plugin.getLogger().severe("Corrupt or invalid recipe!");
-            plugin.getLogger().severe("Please either delete custom-crafting.yml, or fix the issues with your recipes file!");
+            CraftBookPlugin.inst().getLogger().severe("Corrupt or invalid recipe!");
+            CraftBookPlugin.inst().getLogger().severe("Please either delete custom-crafting.yml, or fix the issues with your recipes file!");
             BukkitUtil.printStacktrace(e);
         } catch (Exception e) {
-            plugin.getLogger().severe("Failed to load recipe! Is it incorrectly written?");
+            CraftBookPlugin.inst().getLogger().severe("Failed to load recipe! Is it incorrectly written?");
             BukkitUtil.printStacktrace(e);
         }
 
         return false;
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOW)
     public void prepareCraft(PrepareItemCraftEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         ItemStack bits = null;
         Player p = null;
@@ -212,8 +217,10 @@ public class CustomCrafting extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOW)
     public void prepareFurnace(InventoryClickEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(!(event.getInventory() instanceof FurnaceInventory)) return;
         if(event.getAction() != InventoryAction.PLACE_ALL && event.getAction() != InventoryAction.PLACE_ONE && event.getAction() != InventoryAction.PLACE_SOME) return;
@@ -241,8 +248,10 @@ public class CustomCrafting extends AbstractCraftBookMechanic {
             event.setCancelled(true);
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOW)
     public void onFurnaceCook(FurnaceSmeltEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         ItemStack bits = null;
         CraftBookPlugin.logDebugMessage("Smelting has been initiated!", "advanced-data");
@@ -294,8 +303,10 @@ public class CustomCrafting extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onCraft(CraftItemEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         CraftBookPlugin.logDebugMessage("Crafting has been initiated!", "advanced-data");
         Player p = (Player) event.getWhoClicked();

@@ -6,10 +6,10 @@ import java.util.List;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.ItemStack;
 
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
-import com.sk89q.worldedit.blocks.BlockID;
 
 public class BlockUtil {
 
@@ -20,8 +20,7 @@ public class BlockUtil {
 
     public static boolean areBlocksIdentical(Block block, Block block2) {
 
-        if (block.getType() == block2.getType()) if (block.getData() == block2.getData()) return true;
-        return false;
+        return block.getType() == block2.getType() && block.getData() == block2.getData();
     }
 
     public static boolean isBlockSimilarTo(Block block, Material type) {
@@ -31,27 +30,26 @@ public class BlockUtil {
 
     public static boolean isBlockIdenticalTo(Block block, Material type, byte data) {
 
-        if (block.getType() == type) if (block.getData() == data) return true;
-        return false;
+        return block.getType() == type && block.getData() == data;
     }
 
-    public static boolean isBlockReplacable(int id) {
+    public static boolean isBlockReplacable(Material id) {
 
         switch (id) {
 
-            case BlockID.AIR:
-            case BlockID.CROPS:
-            case BlockID.DEAD_BUSH:
-            case BlockID.END_PORTAL:
-            case BlockID.FIRE:
-            case BlockID.LONG_GRASS:
-            case BlockID.LAVA:
-            case BlockID.STATIONARY_LAVA:
-            case BlockID.WATER:
-            case BlockID.STATIONARY_WATER:
-            case BlockID.VINE:
-            case BlockID.SNOW:
-            case BlockID.PISTON_MOVING_PIECE:
+            case AIR:
+            case CROPS:
+            case DEAD_BUSH:
+            case ENDER_PORTAL:
+            case FIRE:
+            case LONG_GRASS:
+            case LAVA:
+            case STATIONARY_LAVA:
+            case WATER:
+            case STATIONARY_WATER:
+            case VINE:
+            case SNOW:
+            case PISTON_MOVING_PIECE:
                 return true;
             default:
                 return false;
@@ -95,8 +93,9 @@ public class BlockUtil {
 
         switch(block.getType()) {
             case SNOW:
-                if(tool == null || tool.getType() == Material.WOOD_SPADE || tool.getType() == Material.STONE_SPADE || tool.getType() == Material.IRON_SPADE || tool.getType() == Material.GOLD_SPADE || tool.getType() == Material.DIAMOND_SPADE)
-                    drops.add(new ItemStack(Material.SNOW_BALL));
+                if(tool == null) break;
+                if(tool.getType() == Material.WOOD_SPADE || tool.getType() == Material.STONE_SPADE || tool.getType() == Material.IRON_SPADE || tool.getType() == Material.GOLD_SPADE || tool.getType() == Material.DIAMOND_SPADE)
+                    drops.add(new ItemStack(Material.SNOW_BALL, block.getData() + 1));
                 break;
             case CROPS:
                 drops.add(new ItemStack(Material.WHEAT, 1));
@@ -112,8 +111,8 @@ public class BlockUtil {
                 if(CraftBookPlugin.inst().getRandom().nextInt(50) == 0)
                     drops.add(new ItemStack(Material.POISONOUS_POTATO, 1));
                 break;
-            case NETHER_STALK:
-                drops.add(new ItemStack(Material.NETHER_WARTS, 2 + CraftBookPlugin.inst().getRandom().nextInt(3)));
+            case NETHER_WARTS:
+                drops.add(new ItemStack(Material.NETHER_STALK, 2 + CraftBookPlugin.inst().getRandom().nextInt(3)));
                 break;
             case SUGAR_CANE_BLOCK:
                 drops.add(new ItemStack(Material.SUGAR_CANE, 1));
@@ -133,5 +132,26 @@ public class BlockUtil {
         }
 
         return drops.toArray(new ItemStack[drops.size()]);
+    }
+
+    public static Block[] getTouchingBlocks(Block block) {
+
+        List<Block> blocks = new ArrayList<Block>();
+        for(BlockFace face : LocationUtil.getDirectFaces())
+            blocks.add(block.getRelative(face));
+
+        return blocks.toArray(new Block[blocks.size()]);
+    }
+
+    public static Block[] getIndirectlyTouchingBlocks(Block block) {
+
+        List<Block> blocks = new ArrayList<Block>();
+        for(int x = -1; x < 2; x++)
+            for(int y = -1; y < 2; y++)
+                for(int z = -1; z < 2; z++)
+                    if(!(x == 0 && y == 0 & z == 0))
+                        blocks.add(block.getRelative(x,y,z));
+
+        return blocks.toArray(new Block[blocks.size()]);
     }
 }

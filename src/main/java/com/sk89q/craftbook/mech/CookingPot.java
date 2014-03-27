@@ -11,7 +11,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.SignChangeEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 import com.sk89q.craftbook.AbstractCraftBookMechanic;
@@ -19,17 +18,22 @@ import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.ItemUtil;
+import com.sk89q.craftbook.util.ProtectionUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.craftbook.util.events.SelfTriggerPingEvent;
 import com.sk89q.craftbook.util.events.SelfTriggerThinkEvent;
 import com.sk89q.craftbook.util.events.SelfTriggerUnregisterEvent.UnregisterReason;
+import com.sk89q.craftbook.util.events.SignClickEvent;
 import com.sk89q.craftbook.util.events.SourcedBlockRedstoneEvent;
 
 public class CookingPot extends AbstractCraftBookMechanic {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onSignChange(SignChangeEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if (!event.getLine(1).equalsIgnoreCase("[Cook]")) return;
 
@@ -50,8 +54,10 @@ public class CookingPot extends AbstractCraftBookMechanic {
         CraftBookPlugin.inst().getSelfTriggerManager().registerSelfTrigger(event.getBlock().getLocation());
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onPing(SelfTriggerPingEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(!SignUtil.isSign(event.getBlock())) return;
 
@@ -62,8 +68,10 @@ public class CookingPot extends AbstractCraftBookMechanic {
         CraftBookPlugin.inst().getSelfTriggerManager().registerSelfTrigger(event.getBlock().getLocation());
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onThink(SelfTriggerThinkEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(!SignUtil.isSign(event.getBlock())) return;
 
@@ -131,13 +139,14 @@ public class CookingPot extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
-    public void onRightClick(PlayerInteractEvent event) {
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onRightClick(SignClickEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(event.getAction() != Action.RIGHT_CLICK_BLOCK && event.getAction() != Action.LEFT_CLICK_BLOCK) return;
-        if(!SignUtil.isSign(event.getClickedBlock())) return;
 
-        ChangedSign sign = BukkitUtil.toChangedSign(event.getClickedBlock());
+        ChangedSign sign = event.getSign();
 
         if(!sign.getLine(1).equals("[Cook]")) return;
 
@@ -154,6 +163,11 @@ public class CookingPot extends AbstractCraftBookMechanic {
                     if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
                         p.printError("mech.restock-permission");
                     event.setCancelled(true);
+                    return;
+                }
+                if(!ProtectionUtil.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace(), event.getAction())) {
+                    if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                        p.printError("area.use-permissions");
                     return;
                 }
                 if (ItemUtil.isStackValid(player.getItemInHand()) && Ingredients.isIngredient(player.getItemInHand().getType())) {
@@ -183,8 +197,10 @@ public class CookingPot extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockDestroy(BlockBreakEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(!SignUtil.isSign(event.getBlock())) return;
 
@@ -195,8 +211,10 @@ public class CookingPot extends AbstractCraftBookMechanic {
         CraftBookPlugin.inst().getSelfTriggerManager().unregisterSelfTrigger(event.getBlock().getLocation(), UnregisterReason.BREAK);
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockRedstoneChange(SourcedBlockRedstoneEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(!SignUtil.isSign(event.getBlock())) return;
 

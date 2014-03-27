@@ -5,6 +5,7 @@
 
 package com.sk89q.craftbook.circuits.jinglenote;
 
+import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.circuits.jinglenote.JingleSequencer.Note;
 import com.sk89q.craftbook.util.SearchArea;
@@ -36,18 +37,27 @@ public abstract class JingleNotePlayer implements Runnable {
             return;
         try {
             try {
-                sequencer.run(this);
+                sequencer.play(this);
             } catch (Throwable t) {
                 BukkitUtil.printStacktrace(t);
             }
 
-            Thread.sleep(500);
+            while(isPlaying()){
+                Thread.sleep(10L);
+            }
+
+            Thread.sleep(500L);
         } catch (InterruptedException e) {
             BukkitUtil.printStacktrace(e);
         } finally {
-            sequencer.stop();
-            sequencer = null;
+            CraftBookPlugin.logDebugMessage("Finished playing for: " + player, "midi.stop");
+            stop();
         }
+    }
+
+    public boolean isPlaying() {
+
+        return sequencer != null && (sequencer.isPlaying() || !sequencer.hasPlayedBefore()) && !sequencer.getPlayers().isEmpty() ;
     }
 
     public String getPlayer() {
@@ -58,7 +68,8 @@ public abstract class JingleNotePlayer implements Runnable {
     public void stop() {
 
         if (sequencer != null) {
-            sequencer.stop();
+            sequencer.stop(this);
+            sequencer = null;
         }
     }
 

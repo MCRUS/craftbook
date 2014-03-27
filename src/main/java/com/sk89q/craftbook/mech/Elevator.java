@@ -32,6 +32,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.material.Button;
@@ -42,9 +44,10 @@ import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.BukkitPlayer;
-import com.sk89q.craftbook.bukkit.BukkitVehicle;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.util.EventUtil;
+import com.sk89q.craftbook.util.ProtectionUtil;
 import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.worldedit.blocks.BlockType;
@@ -59,31 +62,46 @@ public class Elevator extends AbstractCraftBookMechanic {
 
     @Override
     public boolean enable() {
-        flyingPlayers = new HashSet<String>();
+        if(CraftBookPlugin.inst().getConfiguration().elevatorSlowMove)
+            flyingPlayers = new HashSet<String>();
         return true;
     }
 
     @Override
     public void disable() {
 
-        Iterator<String> it = flyingPlayers.iterator();
-        while(it.hasNext()) {
-            OfflinePlayer op = Bukkit.getOfflinePlayer(it.next());
-            if(!op.isOnline()) {
+        if(flyingPlayers != null) {
+            Iterator<String> it = flyingPlayers.iterator();
+            while(it.hasNext()) {
+                OfflinePlayer op = Bukkit.getOfflinePlayer(it.next());
+                if(!op.isOnline()) {
+                    it.remove();
+                    continue;
+                }
+                op.getPlayer().setFlying(false);
+                op.getPlayer().setAllowFlight(op.getPlayer().getGameMode() == GameMode.CREATIVE);
                 it.remove();
-                continue;
             }
-            op.getPlayer().setFlying(false);
-            op.getPlayer().setAllowFlight(op.getPlayer().getGameMode() == GameMode.CREATIVE);
-            it.remove();
-        }
 
-        flyingPlayers = null;
+            flyingPlayers = null;
+        }
+    }
+
+    @EventHandler
+    public void onPlayerDamage(EntityDamageEvent event) {
+
+        if(!CraftBookPlugin.inst().getConfiguration().elevatorSlowMove) return;
+        if(!(event.getEntity() instanceof Player)) return;
+        if(!flyingPlayers.contains(((Player) event.getEntity()).getName())) return;
+        if(event instanceof EntityDamageByEntityEvent) return;
+
+        event.setCancelled(true);
     }
 
     @EventHandler
     public void onPlayerLeave(PlayerQuitEvent event) {
 
+        if(!CraftBookPlugin.inst().getConfiguration().elevatorSlowMove) return;
         //Clean up mechanics that store players that we don't want anymore.
         Iterator<String> it = flyingPlayers.iterator();
         while(it.hasNext()) {
@@ -97,8 +115,10 @@ public class Elevator extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onSignChange(SignChangeEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         Direction dir = Direction.NONE;
         if(event.getLine(1).equalsIgnoreCase("[lift down]")) dir = Direction.DOWN;
@@ -138,8 +158,11 @@ public class Elevator extends AbstractCraftBookMechanic {
         NONE, UP, DOWN, RECV
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onRightClick(PlayerInteractEvent event) {
+
+        if (!EventUtil.passesFilter(event))
+            return;
 
         if(event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
@@ -211,6 +234,12 @@ public class Elevator extends AbstractCraftBookMechanic {
             event.setCancelled(true);
             if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
                 localPlayer.printError("mech.use-permission");
+            return;
+        }
+
+        if(!ProtectionUtil.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace(), event.getAction())) {
+            if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                localPlayer.printError("area.use-permissions");
             return;
         }
 
@@ -334,12 +363,13 @@ public class Elevator extends AbstractCraftBookMechanic {
         } else {
             // Teleport!
             if (player.isInsideVehicle()) {
-                newLocation.setX(((BukkitVehicle)player.getVehicle()).getVehicle().getLocation().getX());
+
+                newLocation.setX(((BukkitPlayer)player).getPlayer().getVehicle().getLocation().getX());
                 newLocation.setY(floor.getY() + 2);
-                newLocation.setZ(((BukkitVehicle)player.getVehicle()).getVehicle().getLocation().getZ());
-                newLocation.setYaw(((BukkitVehicle)player.getVehicle()).getVehicle().getLocation().getYaw());
-                newLocation.setPitch(((BukkitVehicle)player.getVehicle()).getVehicle().getLocation().getPitch());
-                ((BukkitVehicle)player.getVehicle()).getVehicle().teleport(newLocation);
+                newLocation.setZ(((BukkitPlayer)player).getPlayer().getVehicle().getLocation().getZ());
+                newLocation.setYaw(((BukkitPlayer)player).getPlayer().getVehicle().getLocation().getYaw());
+                newLocation.setPitch(((BukkitPlayer)player).getPlayer().getVehicle().getLocation().getPitch());
+                ((BukkitPlayer)player).getPlayer().getVehicle().teleport(newLocation);
             }
             player.setPosition(BukkitUtil.toLocation(newLocation).getPosition(), newLocation.getPitch(), newLocation.getYaw());
 

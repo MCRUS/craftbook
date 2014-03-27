@@ -13,13 +13,14 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.material.Directional;
 import org.bukkit.util.Vector;
 
-import com.comphenix.protocol.Packets;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.ListenerOptions;
 import com.comphenix.protocol.events.ListenerPriority;
@@ -29,8 +30,10 @@ import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.util.BlockUtil;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.ItemInfo;
 import com.sk89q.craftbook.util.LocationUtil;
+import com.sk89q.craftbook.util.ProtectionUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.craftbook.util.Tuple2;
 import com.sk89q.worldedit.blocks.BlockType;
@@ -41,7 +44,7 @@ import com.sk89q.worldedit.blocks.BlockType;
  */
 public class Chair extends AbstractCraftBookMechanic {
 
-    public Map<String, Tuple2<Entity, Block>> chairs = new ConcurrentHashMap<String, Tuple2<Entity, Block>>();
+    public Map<String, Tuple2<Entity, Block>> chairs;
 
     public void addChair(final Player player, Block block) {
 
@@ -142,20 +145,23 @@ public class Chair extends AbstractCraftBookMechanic {
         return false;
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockBreak(BlockBreakEvent event) {
 
-        if (!CraftBookPlugin.inst().getConfiguration().chairEnabled) return;
+        if(!EventUtil.passesFilter(event)) return;
+
         if (hasChair(event.getBlock())) {
             event.setCancelled(true);
             CraftBookPlugin.inst().wrapPlayer(event.getPlayer()).printError("mech.chairs.in-use");
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onRightClick(PlayerInteractEvent event) {
 
-        if (!CraftBookPlugin.inst().getConfiguration().chairEnabled) return;
+        if (!EventUtil.passesFilter(event))
+            return;
+
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (event.getClickedBlock() == null || !CraftBookPlugin.inst().getConfiguration().chairBlocks.contains(new ItemInfo(event.getClickedBlock())))
             return;
@@ -165,7 +171,7 @@ public class Chair extends AbstractCraftBookMechanic {
         Player player = event.getPlayer();
 
         // Now everything looks good, continue;
-        if (CraftBookPlugin.inst().getConfiguration().chairAllowHeldBlock || !lplayer.isHoldingBlock() || lplayer.getHeldItemInfo().getType() == Material.AIR) {
+        if (CraftBookPlugin.inst().getConfiguration().chairAllowHeldBlock || !lplayer.isHoldingBlock() && lplayer.getHeldItemInfo().getType() != Material.SIGN || lplayer.getHeldItemInfo().getType() == Material.AIR) {
             if (CraftBookPlugin.inst().getConfiguration().chairRequireSign && !hasSign(event.getClickedBlock(), new ArrayList<Location>(), event.getClickedBlock()))
                 return;
             if (!lplayer.hasPermission("craftbook.mech.chair.use")) {
@@ -173,6 +179,17 @@ public class Chair extends AbstractCraftBookMechanic {
                     lplayer.printError("mech.use-permission");
                 return;
             }
+            if(!ProtectionUtil.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace(), event.getAction())) {
+                if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                    lplayer.printError("area.use-permissions");
+                return;
+            }
+
+            if(event.getPlayer().getLocation().distanceSquared(event.getClickedBlock().getLocation().add(0.5, 0.5, 0.5)) > Math.pow(CraftBookPlugin.inst().getConfiguration().chairMaxClickRadius, 2)) {
+                lplayer.printError("mech.chairs.too-far");
+                return;
+            }
+
             if (hasChair(player.getPlayer())) { // Stand
                 removeChair(player.getPlayer());
             } else { // Sit
@@ -250,11 +267,13 @@ public class Chair extends AbstractCraftBookMechanic {
     @Override
     public boolean enable () {
 
+        chairs = new ConcurrentHashMap<String, Tuple2<Entity, Block>>();
+
         Bukkit.getScheduler().runTaskTimer(CraftBookPlugin.inst(), new ChairChecker(), 20L, 20L);
 
         try {
             Class.forName("com.comphenix.protocol.events.PacketListener");
-            ProtocolLibrary.getProtocolManager().getAsynchronousManager().registerAsyncHandler(new PacketAdapter(PacketAdapter.params(CraftBookPlugin.inst(), Packets.Client.PLAYER_INPUT).clientSide().listenerPriority(ListenerPriority.HIGHEST).options(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
+            ProtocolLibrary.getProtocolManager().getAsynchronousManager().registerAsyncHandler(new PacketAdapter(PacketAdapter.params(CraftBookPlugin.inst(), PacketType.Play.Client.STEER_VEHICLE).clientSide().listenerPriority(ListenerPriority.HIGHEST).options(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
                 @Override
                 public void onPacketReceiving(PacketEvent e) {
                     if (!e.isCancelled()) {
@@ -266,13 +285,26 @@ public class Chair extends AbstractCraftBookMechanic {
                 }
             }).syncStart();
 
-            ProtocolLibrary.getProtocolManager().getAsynchronousManager().registerAsyncHandler(new PacketAdapter(PacketAdapter.params(CraftBookPlugin.inst(), Packets.Client.ENTITY_ACTION).clientSide().listenerPriority(ListenerPriority.HIGHEST).options(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
+            ProtocolLibrary.getProtocolManager().getAsynchronousManager().registerAsyncHandler(new PacketAdapter(PacketAdapter.params(CraftBookPlugin.inst(), PacketType.Play.Client.ENTITY_ACTION).clientSide().listenerPriority(ListenerPriority.HIGHEST).options(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
                 @Override
                 public void onPacketReceiving(PacketEvent e) {
                     if (!e.isCancelled()) {
                         Player player = e.getPlayer();
                         if(hasChair(player))
                             removeChair(player);
+                    }
+                }
+            }).syncStart();
+
+            ProtocolLibrary.getProtocolManager().getAsynchronousManager().registerAsyncHandler(new PacketAdapter(PacketAdapter.params(CraftBookPlugin.inst(), PacketType.Play.Client.POSITION, PacketType.Play.Client.POSITION_LOOK).clientSide().listenerPriority(ListenerPriority.HIGHEST).options(ListenerOptions.INTERCEPT_INPUT_BUFFER)) {
+                @Override
+                public void onPacketReceiving(PacketEvent e) {
+                    if (!e.isCancelled()) {
+                        for(double d : e.getPacket().getDoubles().getValues())
+                            if(Double.isNaN(d)) {
+                                e.setCancelled(true);
+                                return;
+                            }
                     }
                 }
             }).syncStart();
@@ -286,7 +318,10 @@ public class Chair extends AbstractCraftBookMechanic {
 
     @Override
     public void disable () {
-        chairs.clear();
-        ProtocolLibrary.getProtocolManager().getAsynchronousManager().unregisterAsyncHandlers(CraftBookPlugin.inst());
+        chairs = null;
+        try {
+            ProtocolLibrary.getProtocolManager().getAsynchronousManager().unregisterAsyncHandlers(CraftBookPlugin.inst());
+        } catch(Throwable e) {
+        }
     }
 }

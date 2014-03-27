@@ -14,11 +14,9 @@ import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Painting;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Vehicle;
 
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.LocalPlayer;
-import com.sk89q.craftbook.bukkit.BukkitVehicle;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.worldedit.BlockWorldVector;
@@ -90,14 +88,14 @@ public class BukkitUtil {
         }
     }
 
-    private static final Map<World, LocalWorld> wlw = new HashMap<World, LocalWorld>();
+    private static final Map<String, LocalWorld> wlw = new HashMap<String, LocalWorld>();
 
     public static LocalWorld getLocalWorld(World w) {
 
-        LocalWorld lw = wlw.get(w);
+        LocalWorld lw = wlw.get(w.getName());
         if (lw == null) {
             lw = new BukkitWorld(w);
-            wlw.put(w, lw);
+            wlw.put(w.getName(), lw);
         }
         return lw;
     }
@@ -115,6 +113,11 @@ public class BukkitUtil {
     public static BlockWorldVector toWorldVector(Block block) {
 
         return new BlockWorldVector(getLocalWorld(block.getWorld()), block.getX(), block.getY(), block.getZ());
+    }
+
+    public static BlockWorldVector toWorldVector(org.bukkit.Location location) {
+
+        return new BlockWorldVector(getLocalWorld(location.getWorld()), location.getX(), location.getY(), location.getZ());
     }
 
     public static Vector toVector(org.bukkit.Location loc) {
@@ -206,10 +209,5 @@ public class BukkitUtil {
             default:
                 return new BukkitEntity(toLocation(e.getLocation()), e.getType(), e.getUniqueId());
         }
-    }
-
-    public static BukkitVehicle toVehicle(Vehicle vehicle) {
-
-        return new BukkitVehicle(vehicle);
     }
 }

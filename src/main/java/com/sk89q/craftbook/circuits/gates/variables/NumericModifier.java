@@ -1,5 +1,7 @@
 package com.sk89q.craftbook.circuits.gates.variables;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.Validate;
 import org.bukkit.Server;
 
 import com.sk89q.craftbook.ChangedSign;
@@ -12,8 +14,7 @@ import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.ic.ICVerificationException;
-import com.sk89q.craftbook.common.VariableManager;
-import com.sk89q.craftbook.util.ParsingUtil;
+import com.sk89q.craftbook.common.variables.VariableManager;
 import com.sk89q.craftbook.util.RegexUtil;
 
 public class NumericModifier extends AbstractIC {
@@ -32,7 +33,7 @@ public class NumericModifier extends AbstractIC {
         return "VAR MODIFIER";
     }
 
-    Function function;
+    MathFunction function;
     String variable;
     double amount;
 
@@ -41,7 +42,7 @@ public class NumericModifier extends AbstractIC {
 
         try {
             variable = getLine(2);
-            function = Function.valueOf(getLine(3).split(":")[0]);
+            function = MathFunction.parseFunction(getLine(3).split(":")[0]);
             amount = Double.parseDouble(getLine(3).split(":")[1]);
         } catch(Exception ignored) {}
     }
@@ -49,53 +50,83 @@ public class NumericModifier extends AbstractIC {
     @Override
     public void trigger (ChipState chip) {
 
-        if(function == null) {
-            chip.setOutput(0, false);
-            return;
+        if(chip.getInput(0)) {
+            if(function == null) {
+                chip.setOutput(0, false);
+                return;
+            }
+
+            try {
+                String var,key;
+                var = VariableManager.instance.getVariableName(variable);
+                key = VariableManager.instance.getNamespace(variable);
+
+                double currentValue = Double.parseDouble(VariableManager.instance.getVariable(var,key));
+
+                currentValue = function.parseNumber(currentValue, amount);
+
+                String val = String.valueOf(currentValue);
+                if (val.endsWith(".0"))
+                    val = StringUtils.replace(val, ".0", "");
+
+                VariableManager.instance.setVariable(var, key, val);
+                chip.setOutput(0, true);
+                return;
+            } catch(NumberFormatException ignored){}
         }
 
-        try {
-            double currentValue = Double.parseDouble(ParsingUtil.parseVariables(variable, null));
+        chip.setOutput(0, false);
+    }
 
-            switch(function) {
+    public enum MathFunction {
+
+        ADD("+"),SUBTRACT("-"),MULTIPLY("*","x"),DIVIDE("/"),MOD("%");
+
+        String[] mini;
+
+        MathFunction(String ... mini) {
+            this.mini = mini;
+        }
+
+        public static MathFunction parseFunction(String text) {
+
+            for(MathFunction func : values()) {
+                if(func.name().equalsIgnoreCase(text))
+                    return func;
+                for(String min : func.mini)
+                    if(min.equalsIgnoreCase(text))
+                        return func;
+            }
+
+            return null;
+        }
+
+        public double parseNumber(double initial, double amount) {
+            switch(this) {
                 case ADD:
-                    currentValue += amount;
+                    initial += amount;
                     break;
                 case DIVIDE:
                     if(amount == 0) {
-                        chip.setOutput(0, false);
-                        return;
+                        return initial;
                     }
-                    currentValue /= amount;
+                    initial /= amount;
                     break;
                 case MULTIPLY:
-                    currentValue *= amount;
+                    initial *= amount;
                     break;
                 case SUBTRACT:
-                    currentValue -= amount;
+                    initial -= amount;
+                    break;
+                case MOD:
+                    initial %= amount;
                     break;
                 default:
                     break;
             }
 
-            String val = String.valueOf(currentValue);
-            if (val.endsWith(".0"))
-                val = val.replace(".0", "");
-
-            String var,key;
-            var = VariableManager.instance.getVariableName(variable);
-            key = VariableManager.instance.getNamespace(variable);
-
-            VariableManager.instance.setVariable(var, key, val);
-            chip.setOutput(0, true);
-            return;
-        } catch(Exception ignored){}
-        chip.setOutput(0, false);
-    }
-
-    private enum Function {
-
-        ADD,SUBTRACT,MULTIPLY,DIVIDE;
+            return initial;
+        }
     }
 
     public static class Factory extends AbstractICFactory {
@@ -115,6 +146,40 @@ public class NumericModifier extends AbstractIC {
         public String getShortDescription() {
 
             return "Modifies a variable using the specified function.";
+        }
+
+        @Override
+        public String[] getLongDescription() {
+
+            return new String[]{
+                    "The '''VAR100''' IC allows for the modification of numerical variables using common binary operations (Known an Functions).",
+                    "",
+                    "== Functions ==" ,
+                    "{| class=\"wiki-table sortable\"",
+                    "! Name",
+                    "! Symbol",
+                    "! Function",
+                    "|-",
+                    "| Add || + || Adds the inputted value to the variable.",
+                    "|-",
+                    "| Subtract || - || Subtracts the inputted value from the variable.",
+                    "|-",
+                    "| Multiply || * OR x || Multiplies the inputted value by the variable.",
+                    "|-",
+                    "| Divide || / || Divides the inputted value by the variable.",
+                    "|-",
+                    "| Mod || % || Performs modulo by the inputted value on the variable.",
+                    "|}"
+            };
+        }
+
+        @Override
+        public String[] getPinDescription(ChipState state) {
+
+            return new String[] {
+                    "Trigger IC",//Inputs
+                    "High on success"//Outputs
+            };
         }
 
         @Override
@@ -145,7 +210,7 @@ public class NumericModifier extends AbstractIC {
                 } else
                     if(!VariableManager.instance.hasVariable(parts[1], parts[0]))
                         throw new ICVerificationException("Unknown Variable!");
-                Function.valueOf(sign.getLine(3).split(":")[0]);
+                Validate.notNull(MathFunction.parseFunction(sign.getLine(3).split(":")[0]));
                 Double.parseDouble(sign.getLine(3).split(":")[1]);
             } catch(NumberFormatException e) {
                 throw new ICVerificationException("Amount must be a number!");

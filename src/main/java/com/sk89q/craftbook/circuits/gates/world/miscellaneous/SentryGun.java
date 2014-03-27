@@ -3,7 +3,6 @@ package com.sk89q.craftbook.circuits.gates.world.miscellaneous;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.sk89q.util.yaml.YAMLProcessor;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.block.Block;
@@ -20,14 +19,13 @@ import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.ConfigurableIC;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
-import com.sk89q.craftbook.circuits.ic.ICVerificationException;
 import com.sk89q.craftbook.circuits.ic.RestrictedIC;
 import com.sk89q.craftbook.util.BlockUtil;
 import com.sk89q.craftbook.util.EntityType;
 import com.sk89q.craftbook.util.EntityUtil;
-import com.sk89q.craftbook.util.ICUtil;
 import com.sk89q.craftbook.util.LocationUtil;
 import com.sk89q.craftbook.util.SearchArea;
+import com.sk89q.util.yaml.YAMLProcessor;
 import com.sk89q.worldedit.Vector;
 
 public class SentryGun extends AbstractSelfTriggeredIC {
@@ -53,7 +51,7 @@ public class SentryGun extends AbstractSelfTriggeredIC {
         }
         if(getSign().getLine(2).split(":").length > 1)
             speed = Float.parseFloat(getSign().getLine(2).split(":")[1]);
-        area = SearchArea.createArea(getBackBlock(), getLine(3));
+        area = SearchArea.createArea(getLocation().getBlock(), getLine(3));
         manned = getSign().getLine(2).split(":").length > 2 && getSign().getLine(2).split(":")[2].equalsIgnoreCase("MAN");
     }
 
@@ -87,7 +85,7 @@ public class SentryGun extends AbstractSelfTriggeredIC {
 
         Player shooter = manned ? getShootingPlayer() : null;
         if(shooter != null) {
-            Arrow ar = area.getWorld().spawnArrow(BlockUtil.getBlockCentre(area.getCenter() == null ? area.getCenter().getBlock() : getBackBlock()), shooter.getLocation().getDirection().normalize(), speed, 0);
+            Arrow ar = area.getWorld().spawnArrow(BlockUtil.getBlockCentre(area.getCenter() == null ? area.getCenter().getBlock() : getBackBlock()).add(0, 1, 0), shooter.getLocation().getDirection().normalize(), speed, 0);
             ar.setShooter(shooter);
             ar.setTicksLived(2500);
         } else {
@@ -139,12 +137,6 @@ public class SentryGun extends AbstractSelfTriggeredIC {
         public IC create(ChangedSign sign) {
 
             return new SentryGun(getServer(), sign, this);
-        }
-
-        @Override
-        public void verify(ChangedSign sign) throws ICVerificationException {
-
-            ICUtil.verifySignLocationSyntax(sign, 3);
         }
 
         @Override

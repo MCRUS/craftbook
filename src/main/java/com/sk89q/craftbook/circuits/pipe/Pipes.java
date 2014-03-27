@@ -32,10 +32,12 @@ import com.sk89q.craftbook.bukkit.BukkitConfiguration;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
 import com.sk89q.craftbook.util.BlockUtil;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.InventoryUtil;
 import com.sk89q.craftbook.util.ItemSyntax;
 import com.sk89q.craftbook.util.ItemUtil;
 import com.sk89q.craftbook.util.LocationUtil;
+import com.sk89q.craftbook.util.ProtectionUtil;
 import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.craftbook.util.VerifyUtil;
@@ -43,8 +45,10 @@ import com.sk89q.craftbook.util.events.SourcedBlockRedstoneEvent;
 
 public class Pipes extends AbstractCraftBookMechanic {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onSignChange(SignChangeEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(!event.getLine(1).equalsIgnoreCase("[pipe]")) return;
 
@@ -55,6 +59,20 @@ public class Pipes extends AbstractCraftBookMechanic {
                 player.printError("mech.create-permission");
             SignUtil.cancelSign(event);
             return;
+        }
+
+        if(ProtectionUtil.shouldUseProtection() && SignUtil.getBackBlock(event.getBlock()).getType() == Material.PISTON_STICKY_BASE) {
+
+            PistonBaseMaterial pis = (PistonBaseMaterial) SignUtil.getBackBlock(event.getBlock()).getState().getData();
+            Block off = SignUtil.getBackBlock(event.getBlock()).getRelative(pis.getFacing());
+            if(off.getState() instanceof InventoryHolder) {
+                if(!ProtectionUtil.canAccessInventory(event.getPlayer(), off)) {
+                    if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                        player.printError("area.use-permission");
+                    SignUtil.cancelSign(event);
+                    return;
+                }
+            }
         }
 
         event.setLine(1, "[Pipe]");
@@ -312,9 +330,10 @@ public class Pipes extends AbstractCraftBookMechanic {
                         break;
                 }
 
-                PipeSuckEvent event = new PipeSuckEvent(block, items, fac);
+                PipeSuckEvent event = new PipeSuckEvent(block, new ArrayList<ItemStack>(items), fac);
                 Bukkit.getPluginManager().callEvent(event);
-                items = event.getItems();
+                items.clear();
+                items.addAll(event.getItems());
                 if(!event.isCancelled()) {
                     visitedPipes.add(fac.getLocation());
                     searchNearbyPipes(block, visitedPipes, items, filters, exceptions);
@@ -334,9 +353,10 @@ public class Pipes extends AbstractCraftBookMechanic {
                 items.add(f.getInventory().getResult());
                 if (f.getInventory().getResult() != null) f.getInventory().setResult(null);
 
-                PipeSuckEvent event = new PipeSuckEvent(block, items, fac);
+                PipeSuckEvent event = new PipeSuckEvent(block, new ArrayList<ItemStack>(items), fac);
                 Bukkit.getPluginManager().callEvent(event);
-                items = event.getItems();
+                items.clear();
+                items.addAll(event.getItems());
                 if(!event.isCancelled()) {
                     visitedPipes.add(fac.getLocation());
                     searchNearbyPipes(block, visitedPipes, items, filters, exceptions);
@@ -357,9 +377,10 @@ public class Pipes extends AbstractCraftBookMechanic {
 
                 items.add(new ItemStack(juke.getPlaying()));
 
-                PipeSuckEvent event = new PipeSuckEvent(block, items, fac);
+                PipeSuckEvent event = new PipeSuckEvent(block, new ArrayList<ItemStack>(items), fac);
                 Bukkit.getPluginManager().callEvent(event);
-                items = event.getItems();
+                items.clear();
+                items.addAll(event.getItems());
 
                 if(!event.isCancelled()) {
                     visitedPipes.add(fac.getLocation());
@@ -373,9 +394,10 @@ public class Pipes extends AbstractCraftBookMechanic {
                     }
                 } else juke.setPlaying(null);
             } else {
-                PipeSuckEvent event = new PipeSuckEvent(block, items, fac);
+                PipeSuckEvent event = new PipeSuckEvent(block, new ArrayList<ItemStack>(items), fac);
                 Bukkit.getPluginManager().callEvent(event);
-                items = event.getItems();
+                items.clear();
+                items.addAll(event.getItems());
                 if(!event.isCancelled() && !items.isEmpty()) {
                     visitedPipes.add(fac.getLocation());
                     searchNearbyPipes(block, visitedPipes, items, filters, exceptions);
@@ -387,6 +409,7 @@ public class Pipes extends AbstractCraftBookMechanic {
             Bukkit.getPluginManager().callEvent(fEvent);
 
             leftovers = fEvent.getItems();
+            items.clear();
 
             if (!leftovers.isEmpty()) {
                 for (ItemStack item : leftovers) {
@@ -397,8 +420,10 @@ public class Pipes extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockRedstoneChange(SourcedBlockRedstoneEvent event){
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if (event.getBlock().getType() == Material.PISTON_STICKY_BASE) {
 
@@ -411,8 +436,10 @@ public class Pipes extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onPipeRequest(PipeRequestEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if (event.getBlock().getType() == Material.PISTON_STICKY_BASE) {
 

@@ -4,12 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import net.minecraft.server.v1_7_R1.EntityPlayer;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.craftbukkit.v1_7_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
@@ -22,7 +23,7 @@ import com.sk89q.util.yaml.YAMLProcessor;
  */
 public class LanguageManager {
 
-    HashMap<String, YAMLProcessor> languageMap = new HashMap<String, YAMLProcessor>();
+    Map<String, YAMLProcessor> languageMap = new HashMap<String, YAMLProcessor>();
 
     public void init() {
         checkForLanguages();
@@ -30,15 +31,11 @@ public class LanguageManager {
 
     public void close() {
 
-        for(YAMLProcessor proc : languageMap.values()) {
-            proc.save();
-        }
     }
 
     public void checkForLanguages() {
 
-        List<String> languages = CraftBookPlugin.inst().getConfiguration().languages;
-        for (String language : languages) {
+        for (String language : CraftBookPlugin.inst().getConfiguration().languages) {
             language = language.trim();
             File f = new File(CraftBookPlugin.inst().getDataFolder(), language + ".yml");
             if(!f.exists())
@@ -52,7 +49,7 @@ public class LanguageManager {
             try {
                 lang.load();
             } catch (Throwable e) {
-                CraftBookPlugin.inst().getLogger().severe("An error occured loading the languages file for: " + language + "! This language MAY NOT WORK UNTIL FIXED!");
+                CraftBookPlugin.inst().getLogger().severe("An error occured loading the languages file for: " + language + "! This language WILL NOT WORK UNTIL FIXED!");
                 e.printStackTrace();
                 continue;
             }
@@ -61,6 +58,8 @@ public class LanguageManager {
 
             for(Entry<String, String> s : defaultMessages.entrySet())
                 lang.getString(s.getKey(), s.getValue());
+
+            lang.save();
 
             languageMap.put(language, lang);
         }
@@ -79,7 +78,7 @@ public class LanguageManager {
             } else {
                 String trans = message;
                 for(Entry<String, String> tran : defaultMessages.entrySet()) {
-                    trans = trans.replace(tran.getKey(), tran.getValue());
+                    trans = StringUtils.replace(trans, tran.getKey(), tran.getValue());
                 }
                 return trans;
             }
@@ -89,7 +88,6 @@ public class LanguageManager {
                 translated = languageData.getString(message);
             else {
                 translated = languageData.getString(message, def);
-                languageMap.put(language, languageData);
             }
 
             if(!CraftBookPlugin.inst().getConfiguration().languageScanText || translated != null) {
@@ -102,8 +100,7 @@ public class LanguageManager {
                 for(String tran : languageData.getMap().keySet()) {
                     String trand = defaultMessages.get(tran) != null ? languageData.getString(tran, defaultMessages.get(tran)) : languageData.getString(tran);
                     if(tran == null || trand == null) continue;
-                    trans = trans.replace(tran, trand);
-                    languageMap.put(language, languageData);
+                    trans = StringUtils.replace(trans, tran, trand);
                 }
                 return trans;
             }
@@ -177,6 +174,7 @@ public class LanguageManager {
         put("mech.chairs.stand", "You are no longer sitting!");
         put("mech.chairs.in-use", "This chair is in use!");
         put("mech.chairs.floating", "This chair has nothing below it!");
+        put("mech.chairs.too-far", "This chair is too far away!");
 
         put("mech.command.create","Command Sign Created!");
 
@@ -237,6 +235,8 @@ public class LanguageManager {
 
         put("mech.pay.create","Pay Created!");
         put("mech.pay.success","Payment Successful! You paid: ");
+        put("mech.pay.not-enough-money", "Payment Failed! You don't have enough money.");
+        put("mech.pay.failed-to-pay", "Payment Failed! The money failed to be exchanged.");
 
         put("mech.pistons.crush.created","Piston Crush Mechanic Created!");
         put("mech.pistons.supersticky.created","Piston Super-Sticky Mechanic Created!");

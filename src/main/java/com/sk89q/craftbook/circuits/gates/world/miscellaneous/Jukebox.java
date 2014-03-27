@@ -4,23 +4,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.BlockBreakEvent;
 
 import com.sk89q.craftbook.ChangedSign;
-import com.sk89q.craftbook.circuits.ic.AbstractIC;
 import com.sk89q.craftbook.circuits.ic.AbstractICFactory;
+import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
 import com.sk89q.craftbook.circuits.jinglenote.Playlist;
 import com.sk89q.craftbook.util.SearchArea;
-import com.sk89q.worldedit.BlockWorldVector;
 
-public class Jukebox extends AbstractIC {
+public class Jukebox extends AbstractSelfTriggeredIC {
 
-    public static Map<BlockWorldVector, Playlist> playlists = new HashMap<BlockWorldVector, Playlist>();
+    public static Map<Location, Playlist> playlists;
+
+    Map<String, SearchArea> players;
 
     SearchArea area;
 
@@ -29,21 +30,27 @@ public class Jukebox extends AbstractIC {
     }
 
     @Override
-    public void onICBreak(BlockBreakEvent event) {
-        super.onICBreak(event);
-        if(playlists.containsKey(getSign().getBlockVector())) {
-            playlists.remove(getSign().getBlockVector()).stopPlaylist();
+    public void unload() {
+        if(playlists.containsKey(getBackBlock().getLocation())) {
+            playlists.remove(getBackBlock().getLocation()).stopPlaylist();
         }
+    }
+
+    @Override
+    public boolean isAlwaysST() {
+        return true;
     }
 
     @Override
     public void load() {
 
         String plist = getLine(2);
-        if (!getLine(3).isEmpty()) area = SearchArea.createArea(getBackBlock(), getLine(3));
+        if (!getLine(3).isEmpty()) area = SearchArea.createArea(getLocation().getBlock(), getLine(3));
 
-        if(!playlists.containsKey(getSign().getBlockVector()))
-            playlists.put(getSign().getBlockVector(), new Playlist(plist));
+        if(!playlists.containsKey(getBackBlock().getLocation()))
+            playlists.put(getBackBlock().getLocation(), new Playlist(plist));
+
+        players = new HashMap<String, SearchArea>();
     }
 
     @Override
@@ -59,21 +66,37 @@ public class Jukebox extends AbstractIC {
     @Override
     public void trigger (ChipState chip) {
 
-        Playlist playlist = playlists.get(getSign().getBlockVector());
+        Playlist playlist = playlists.get(getBackBlock().getLocation());
 
         if(playlist == null) return; //Heh?
 
-        Map<String, SearchArea> players = new HashMap<String, SearchArea>();
-        for(Player p : Bukkit.getServer().getOnlinePlayers()) {
-            if(area != null && !area.isWithinArea(p.getLocation())) continue;
-            players.put(p.getName(), area);
+        if (chip.getInput(0) && !playlist.isPlaying())
+            playlist.startPlaylist();
+        else if(!chip.getInput(0) && playlist.isPlaying())
+            playlist.stopPlaylist();
+
+        if(chip.getInput(0)) {
+
+            boolean hasChanged = false;
+
+            for(Player p : Bukkit.getServer().getOnlinePlayers()) {
+                if(area != null && !area.isWithinArea(p.getLocation())) {
+                    if(players.containsKey(p.getName())) {
+                        players.remove(p.getName());
+                        hasChanged = true;
+                    }
+                    continue;
+                } else if (!players.containsKey(p.getName())) {
+                    players.put(p.getName(), area);
+                    hasChanged = true;
+                }
+            }
+
+            if(hasChanged)
+                playlist.getPlaylistInterpreter().setPlayers(players);
         }
 
-        playlist.setPlayers(players);
-        if(chip.getInput(0))
-            playlist.startPlaylist();
-        else
-            playlist.stopPlaylist();
+        chip.setOutput(0, playlist.isPlaying());
     }
 
     public static class Factory extends AbstractICFactory {
@@ -81,6 +104,7 @@ public class Jukebox extends AbstractIC {
         public Factory(Server server) {
 
             super(server);
+            playlists = new HashMap<Location, Playlist>();
         }
 
         @Override

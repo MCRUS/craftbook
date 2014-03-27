@@ -5,19 +5,32 @@ import java.io.IOException;
 import java.util.Map.Entry;
 
 import com.sk89q.craftbook.common.LanguageManager;
+import com.sk89q.craftbook.util.developer.ExternalUtilityBase;
 import com.sk89q.util.yaml.YAMLFormat;
 import com.sk89q.util.yaml.YAMLProcessor;
 
-public class GenerateDefaultLanguage {
+public class GenerateDefaultLanguage extends ExternalUtilityBase {
 
-    public static void main(String[] args) {
+    @Override
+    public void generate () {
 
-        if(!new File("en_US.yml").exists()) try {
-            new File("en_US.yml").createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
+        File language = new File(getGenerationFolder(), "en_US.yml");
+
+        if(!language.exists()) {
+            try {
+                language.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            language.delete();
+            try {
+                language.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        YAMLProcessor proc = new YAMLProcessor(new File("en_US.yml"), true, YAMLFormat.EXTENDED);
+        YAMLProcessor proc = new YAMLProcessor(language, true, YAMLFormat.EXTENDED);
         try {
             proc.load();
         } catch (IOException e) {

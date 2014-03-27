@@ -23,17 +23,21 @@ import org.bukkit.inventory.ItemStack;
 import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.LocalPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.util.EventUtil;
 import com.sk89q.craftbook.util.ItemUtil;
 
 public class BetterLeads extends AbstractCraftBookMechanic {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerClick(PlayerInteractEntityEvent event) {
 
         if(!ItemUtil.isStackValid(event.getPlayer().getItemInHand())) return;
         if(!(event.getRightClicked() instanceof LivingEntity)) return;
         LocalPlayer player = CraftBookPlugin.inst().wrapPlayer(event.getPlayer());
         if(player.getHeldItemInfo().getType() != Material.LEASH) return;
+
+        if (!EventUtil.passesFilter(event)) return;
+
         CraftBookPlugin.logDebugMessage("A player has right clicked an entity with a lead!", "betterleads.allowed-mobs");
 
         String typeName = event.getRightClicked().getType().getName();
@@ -82,13 +86,15 @@ public class BetterLeads extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onEntityTarget(EntityTargetEvent event) {
 
+        if(!CraftBookPlugin.inst().getConfiguration().leadsStopTarget) return;
         if(!(event.getEntity() instanceof Monster)) return;
         if(!((LivingEntity) event.getEntity()).isLeashed()) return;
         if(!(event.getTarget() instanceof Player)) return;
-        if(!CraftBookPlugin.inst().getConfiguration().leadsStopTarget) return;
+
+        if (!EventUtil.passesFilter(event)) return;
 
         LocalPlayer player = CraftBookPlugin.inst().wrapPlayer((Player) event.getTarget());
 
@@ -112,11 +118,13 @@ public class BetterLeads extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onHitchBreakRandomly(final HangingBreakEvent event) {
 
         if(!CraftBookPlugin.inst().getConfiguration().leadsHitchPersists) return;
         if(!(event.getEntity() instanceof LeashHitch)) return;
+
+        if (!EventUtil.passesFilter(event)) return;
 
         int amountConnected = 0;
 
@@ -136,12 +144,14 @@ public class BetterLeads extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onHitchBreak(final HangingBreakByEntityEvent event) {
 
         if(!CraftBookPlugin.inst().getConfiguration().leadsHitchPersists && !CraftBookPlugin.inst().getConfiguration().leadsOwnerBreakOnly) return;
         if(!(event.getEntity() instanceof LeashHitch)) return;
         if(!(event.getRemover() instanceof Player)) return;
+
+        if (!EventUtil.passesFilter(event)) return;
 
         event.setCancelled(true);
 
@@ -151,9 +161,10 @@ public class BetterLeads extends AbstractCraftBookMechanic {
             if(!(ent instanceof LivingEntity)) continue;
             if(!((LivingEntity) ent).isLeashed() || !((LivingEntity) ent).getLeashHolder().equals(event.getEntity())) continue;
             boolean isOwner = false;
-            if(ent instanceof Tameable && (!((Tameable) event.getEntity()).isTamed() || ((Tameable) ent).getOwner().equals(event.getRemover())))
-                isOwner = true;
-            if(!(ent instanceof Tameable) || isOwner || !CraftBookPlugin.inst().getConfiguration().leadsOwnerBreakOnly || ((Player) event.getRemover()).hasPermission("craftbook.mech.leads.owner-break-only.bypass")) {
+            if(ent instanceof Tameable)
+                if(!((Tameable) event.getEntity()).isTamed() || ((Tameable) ent).getOwner().equals(event.getRemover()))
+                    isOwner = true;
+            if(isOwner || !(ent instanceof Tameable) || !CraftBookPlugin.inst().getConfiguration().leadsOwnerBreakOnly || ((Player) event.getRemover()).hasPermission("craftbook.mech.leads.owner-break-only.bypass")) {
                 ((LivingEntity) ent).setLeashHolder(null);
                 event.getEntity().getWorld().dropItemNaturally(event.getEntity().getLocation(), new ItemStack(Material.LEASH, 1));
                 continue;
@@ -171,13 +182,17 @@ public class BetterLeads extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onUnleash(PlayerUnleashEntityEvent event) {
 
         if(!CraftBookPlugin.inst().getConfiguration().leadsOwnerBreakOnly) return;
         if(!(event.getEntity() instanceof LivingEntity)) return;
         if(!((LivingEntity) event.getEntity()).isLeashed() || !(((LivingEntity) event.getEntity()).getLeashHolder() instanceof LeashHitch)) return;
-        if(!(event.getEntity() instanceof Tameable) || !((Tameable) event.getEntity()).isTamed()) return;
+        if(!(event.getEntity() instanceof Tameable)) return;
+        if(!!((Tameable) event.getEntity()).isTamed()) return;
+
+        if (!EventUtil.passesFilter(event)) return;
+
         if(!((Tameable) event.getEntity()).getOwner().equals(event.getPlayer()))
             event.setCancelled(true);
     }

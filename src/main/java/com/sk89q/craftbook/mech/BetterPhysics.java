@@ -11,27 +11,36 @@ import org.bukkit.event.block.BlockPlaceEvent;
 
 import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
+import com.sk89q.craftbook.util.EventUtil;
 
 public class BetterPhysics extends AbstractCraftBookMechanic {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onBlockBreak(BlockBreakEvent event) {
 
-        if(event.getBlock().getType() == Material.LADDER && CraftBookPlugin.inst().getConfiguration().physicsLadders)
+        if (!EventUtil.passesFilter(event))
+            return;
+
+        if(FallingLadders.isValid(event.getBlock()))
             Bukkit.getScheduler().runTask(CraftBookPlugin.inst(), new FallingLadders(event.getBlock()));
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onBlockPlace(BlockPlaceEvent event) {
 
-        if(event.getBlock().getType() == Material.LADDER && CraftBookPlugin.inst().getConfiguration().physicsLadders)
+        if (!EventUtil.passesFilter(event)) return;
+
+        if(FallingLadders.isValid(event.getBlock()))
             Bukkit.getScheduler().runTask(CraftBookPlugin.inst(), new FallingLadders(event.getBlock()));
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onBlockUpdate(BlockPhysicsEvent event) {
 
-        if(event.getBlock().getType() == Material.LADDER && CraftBookPlugin.inst().getConfiguration().physicsLadders)
+        if (!EventUtil.passesFilter(event))
+            return;
+
+        if(FallingLadders.isValid(event.getBlock()))
             Bukkit.getScheduler().runTask(CraftBookPlugin.inst(), new FallingLadders(event.getBlock()));
     }
 
@@ -44,10 +53,15 @@ public class BetterPhysics extends AbstractCraftBookMechanic {
             this.ladder = ladder;
         }
 
+        public static boolean isValid(Block block) {
+
+            return block.getType() == Material.LADDER && CraftBookPlugin.inst().getConfiguration().physicsLadders && block.getRelative(0, -1, 0).getType() == Material.AIR;
+        }
+
         @Override
         public void run () {
-            if(ladder.getRelative(0, -1, 0).getType() != Material.AIR)
-                return;
+
+            if(!isValid(ladder)) return;
             ladder.getWorld().spawnFallingBlock(ladder.getLocation(), ladder.getType(), ladder.getData());
             ladder.setTypeId(Material.AIR.getId(), false);
         }

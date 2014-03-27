@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
@@ -33,8 +34,10 @@ import com.sk89q.craftbook.util.ProtectionUtil;
 
 public class HeadDrops extends AbstractCraftBookMechanic {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDeath(EntityDeathEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(!CraftBookPlugin.inst().getConfiguration().headDropsEnabled) return;
         if(!(event.getEntity() instanceof LivingEntity)) return;
@@ -121,8 +124,10 @@ public class HeadDrops extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerInteract(PlayerInteractEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if(event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
@@ -143,12 +148,12 @@ public class HeadDrops extends AbstractCraftBookMechanic {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockBreak(BlockBreakEvent event) {
 
         if(!CraftBookPlugin.inst().getConfiguration().headDropsEnabled) return;
         if(!CraftBookPlugin.inst().getConfiguration().headDropsMiningDrops) return;
-        if(EventUtil.shouldIgnoreEvent(event))
+        if(!EventUtil.passesFilter(event))
             return;
         if(event.getPlayer().getGameMode() == GameMode.CREATIVE) return;
 
@@ -177,7 +182,7 @@ public class HeadDrops extends AbstractCraftBookMechanic {
             }
 
             if(type != null)
-                meta.setDisplayName(ChatColor.RESET + type.getName().replace("_", " ") + " Head");
+                meta.setDisplayName(ChatColor.RESET + StringUtils.replace(type.getName(), "_", " ") + " Head");
             else
                 meta.setDisplayName(ChatColor.RESET + playerName + "'s Head");
 
@@ -216,7 +221,7 @@ public class HeadDrops extends AbstractCraftBookMechanic {
         //Unofficial/Community
         BAT("coolwhip101", "bozzobrain"),
         ENDER_DRAGON("KingEndermen", "KingEnderman"),
-        SILVERFISH("AlexVMiner"),
+        SILVERFISH("Xzomag", "AlexVMiner"),
         SNOWMAN("scraftbrothers2", "Koebasti"),
         HORSE("gavertoso"),
         WOLF("Budwolf"),

@@ -19,11 +19,11 @@ import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
+import com.sk89q.craftbook.circuits.ic.ICVerificationException;
 import com.sk89q.craftbook.circuits.pipe.PipeRequestEvent;
 import com.sk89q.craftbook.util.BlockUtil;
-import com.sk89q.craftbook.util.ICUtil;
+import com.sk89q.craftbook.util.SearchArea;
 import com.sk89q.craftbook.util.SignUtil;
-import com.sk89q.worldedit.Vector;
 
 public class CombineHarvester extends AbstractSelfTriggeredIC {
 
@@ -32,20 +32,12 @@ public class CombineHarvester extends AbstractSelfTriggeredIC {
         super(server, sign, factory);
     }
 
-    Vector radius;
-    Block target;
-    Block onBlock;
+    SearchArea area;
 
     @Override
     public void load() {
 
-        onBlock = getBackBlock();
-        radius = ICUtil.parseRadius(getSign());
-        if (getLine(2).contains("=")) {
-            target = ICUtil.parseBlockLocation(getSign());
-        } else {
-            target = getBackBlock();
-        }
+        area = SearchArea.createArea(getLocation().getBlock(), getLine(2));
     }
 
     @Override
@@ -69,27 +61,22 @@ public class CombineHarvester extends AbstractSelfTriggeredIC {
     @Override
     public void think(ChipState chip) {
 
-        chip.setOutput(0, harvest());
+        if(chip.getInput(0)) return;
+
+        for(int i = 0; i < 10; i++)
+            chip.setOutput(0, harvest());
     }
 
     public boolean harvest() {
 
-        for (int x = -radius.getBlockX() + 1; x < radius.getBlockX(); x++) {
-            for (int y = -radius.getBlockY() + 1; y < radius.getBlockY(); y++) {
-                for (int z = -radius.getBlockZ() + 1; z < radius.getBlockZ(); z++) {
-                    int rx = target.getX() - x;
-                    int ry = target.getY() - y;
-                    int rz = target.getZ() - z;
-                    Block b = BukkitUtil.toSign(getSign()).getWorld().getBlockAt(rx, ry, rz);
+        Block b = area.getRandomBlockInArea();
 
-                    if (harvestable(b)) {
+        if(b == null) return false;
 
-                        collectDrops(BlockUtil.getBlockDrops(b, null));
-                        b.setType(Material.AIR);
-                        return true;
-                    }
-                }
-            }
+        if (harvestable(b)) {
+            collectDrops(BlockUtil.getBlockDrops(b, null));
+            b.setType(Material.AIR);
+            return true;
         }
         return false;
     }
@@ -104,16 +91,16 @@ public class CombineHarvester extends AbstractSelfTriggeredIC {
 
         if(!event.isValid()) return;
 
-        if (onBlock.getRelative(0, 1, 0).getType() == Material.CHEST) {
+        if (getBackBlock().getRelative(0, 1, 0).getType() == Material.CHEST) {
 
-            Chest c = (Chest) onBlock.getRelative(0, 1, 0).getState();
+            Chest c = (Chest) getBackBlock().getRelative(0, 1, 0).getState();
             HashMap<Integer, ItemStack> leftovers = c.getInventory().addItem(event.getItems().toArray(new ItemStack[event.getItems().size()]));
             for (ItemStack item : leftovers.values()) {
-                onBlock.getWorld().dropItemNaturally(BukkitUtil.toSign(getSign()).getLocation().add(0.5, 0, 0.5), item);
+                getBackBlock().getWorld().dropItemNaturally(BukkitUtil.toSign(getSign()).getLocation().add(0.5, 0, 0.5), item);
             }
         } else {
             for (ItemStack item : event.getItems()) {
-                onBlock.getWorld().dropItemNaturally(BukkitUtil.toSign(getSign()).getLocation().add(0.5, 0, 0.5), item);
+                getBackBlock().getWorld().dropItemNaturally(BukkitUtil.toSign(getSign()).getLocation().add(0.5, 0, 0.5), item);
             }
         }
     }
@@ -135,10 +122,13 @@ public class CombineHarvester extends AbstractSelfTriggeredIC {
         if(block.getType() == Material.COCOA && ((block.getData() & 0x8) == 0x8 || (block.getData() & 0xC) == 0xC))
             return true;
 
-        if(block.getType() == Material.NETHER_STALK && block.getData() >= 0x3)
+        if(block.getType() == Material.NETHER_WARTS && block.getData() >= 0x3)
             return true;
 
         if(block.getType() == Material.MELON_BLOCK || block.getType() == Material.PUMPKIN)
+            return true;
+
+        if(block.getType() == Material.LOG || block.getType() == Material.LOG_2)
             return true;
 
         return false;
@@ -167,6 +157,12 @@ public class CombineHarvester extends AbstractSelfTriggeredIC {
         public String[] getLineHelp() {
 
             return new String[] {"+oradius=x:y:z offset", null};
+        }
+
+        @Override
+        public void verify(ChangedSign sign) throws ICVerificationException {
+            if(!SearchArea.isValidArea(BukkitUtil.toSign(sign).getBlock(), sign.getLine(2)))
+                throw new ICVerificationException("Invalid SearchArea on 3rd line!");
         }
     }
 }

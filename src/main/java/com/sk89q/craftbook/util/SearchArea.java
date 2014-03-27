@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -54,6 +55,11 @@ public class SearchArea {
         this.world = world;
     }
 
+    public static SearchArea createEmptyArea() {
+
+        return new SearchArea();
+    }
+
     /**
      * Parses a line and creates the appropriate system of parsing for this Area.
      * 
@@ -67,7 +73,7 @@ public class SearchArea {
             if(CraftBookPlugin.plugins.getWorldGuard() == null)
                 return new SearchArea();
 
-            ProtectedRegion reg = CraftBookPlugin.plugins.getWorldGuard().getRegionManager(block.getWorld()).getRegion(line.replace("r:", ""));
+            ProtectedRegion reg = CraftBookPlugin.plugins.getWorldGuard().getRegionManager(block.getWorld()).getRegion(StringUtils.replace(line, "r:", ""));
             if(reg == null)
                 return new SearchArea();
 
@@ -91,7 +97,7 @@ public class SearchArea {
             if(CraftBookPlugin.plugins.getWorldGuard() == null)
                 return false;
 
-            ProtectedRegion reg = CraftBookPlugin.plugins.getWorldGuard().getRegionManager(block.getWorld()).getRegion(line.replace("r:", ""));
+            ProtectedRegion reg = CraftBookPlugin.plugins.getWorldGuard().getRegionManager(block.getWorld()).getRegion(StringUtils.replace(line, "r:", ""));
             if(reg == null)
                 return false;
 
@@ -160,7 +166,7 @@ public class SearchArea {
     @SuppressWarnings("serial")
     public List<Entity> getEntitiesInArea() {
 
-        return getEntitiesInArea(new ArrayList<EntityType>(){{add(EntityType.ANY);}});
+        return getEntitiesInArea(new ArrayList<EntityType>(1){{add(EntityType.ANY);}});
     }
 
     /**
@@ -177,7 +183,8 @@ public class SearchArea {
         } else if(hasRadiusAndCenter()) {
             if(LocationUtil.isWithinRadius(location, getCenter(), getRadius()))
                 return true;
-        }
+        } else
+            return true;
 
         return false;
     }
@@ -215,6 +222,42 @@ public class SearchArea {
         }
 
         return chunks;
+    }
+
+    /**
+     * Get a random block from within the area.
+     * 
+     * @return the block.
+     */
+    public Block getRandomBlockInArea() {
+
+        int xMin=0,xMax=0,yMin=0,yMax=0,zMin=0,zMax=0;
+
+        if(hasRegion()) {
+            xMin = getRegion().getMinimumPoint().getBlockX();
+            xMax = getRegion().getMaximumPoint().getBlockX();
+            yMin = getRegion().getMinimumPoint().getBlockY();
+            yMax = getRegion().getMaximumPoint().getBlockY();
+            zMin = getRegion().getMinimumPoint().getBlockZ();
+            zMax = getRegion().getMaximumPoint().getBlockZ();
+        } else if(hasRadiusAndCenter()) {
+
+            xMin = Math.min(getCenter().getBlockX() - getRadius().getBlockX(), getCenter().getBlockX() + getRadius().getBlockX());
+            xMax = Math.max(getCenter().getBlockX() - getRadius().getBlockX(), getCenter().getBlockX() + getRadius().getBlockX());
+            yMin = Math.min(getCenter().getBlockY() - getRadius().getBlockY(), getCenter().getBlockY() + getRadius().getBlockY());
+            yMax = Math.max(getCenter().getBlockY() - getRadius().getBlockY(), getCenter().getBlockY() + getRadius().getBlockY());
+            zMin = Math.min(getCenter().getBlockZ() - getRadius().getBlockZ(), getCenter().getBlockZ() + getRadius().getBlockZ());
+            zMax = Math.max(getCenter().getBlockZ() - getRadius().getBlockZ(), getCenter().getBlockZ() + getRadius().getBlockZ());
+        } else
+            return null;
+
+        int x = xMin + (int)(CraftBookPlugin.inst().getRandom().nextDouble() * (xMax - xMin + 1));
+        int y = yMin + (int)(CraftBookPlugin.inst().getRandom().nextDouble() * (yMax - yMin + 1));
+        int z = zMin + (int)(CraftBookPlugin.inst().getRandom().nextDouble() * (zMax - zMin + 1));
+        Location loc = new Location(getWorld(), x, y, z);
+        if(!isWithinArea(loc))
+            return null;
+        return loc.getBlock();
     }
 
     /**

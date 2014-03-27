@@ -5,19 +5,31 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import com.sk89q.craftbook.bukkit.BukkitConfiguration;
+import com.sk89q.craftbook.util.developer.ExternalUtilityBase;
 import com.sk89q.util.yaml.YAMLFormat;
 import com.sk89q.util.yaml.YAMLProcessor;
 
-public class GenerateConfiguration {
+public class GenerateConfiguration extends ExternalUtilityBase {
 
-    public static void main(String[] args) {
+    @Override
+    public void generate () {
 
-        if(!new File("config.yml").exists()) try {
-            new File("config.yml").createNewFile();
-        } catch (IOException e) {
-            e.printStackTrace();
+        File file = new File(getGenerationFolder(), "config.yml");
+        if(!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            file.delete();
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        BukkitConfiguration config = new BukkitConfiguration(new YAMLProcessor(new File("config.yml"), true, YAMLFormat.EXTENDED), Logger.getGlobal());
+        BukkitConfiguration config = new BukkitConfiguration(new YAMLProcessor(file, true, YAMLFormat.EXTENDED), Logger.getLogger(Logger.GLOBAL_LOGGER_NAME));
         config.load();
     }
 }

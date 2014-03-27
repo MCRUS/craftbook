@@ -14,9 +14,9 @@ import com.sk89q.craftbook.circuits.ic.AbstractSelfTriggeredIC;
 import com.sk89q.craftbook.circuits.ic.ChipState;
 import com.sk89q.craftbook.circuits.ic.IC;
 import com.sk89q.craftbook.circuits.ic.ICFactory;
-import com.sk89q.craftbook.util.ICUtil;
+import com.sk89q.craftbook.circuits.ic.ICVerificationException;
 import com.sk89q.craftbook.util.ItemUtil;
-import com.sk89q.worldedit.Vector;
+import com.sk89q.craftbook.util.SearchArea;
 
 public class Cultivator extends AbstractSelfTriggeredIC {
 
@@ -37,19 +37,12 @@ public class Cultivator extends AbstractSelfTriggeredIC {
         return "CULTIVATOR";
     }
 
-    Vector radius;
-    Block target, onBlock;
+    SearchArea area;
 
     @Override
     public void load() {
 
-        onBlock = getBackBlock();
-        radius = ICUtil.parseRadius(getSign(), 2);
-        if (getLine(2).contains("=")) {
-            target = ICUtil.parseBlockLocation(getSign(), 2);
-        } else {
-            target = getBackBlock();
-        }
+        area = SearchArea.createArea(getLocation().getBlock(), getLine(2));
     }
 
     @Override
@@ -61,27 +54,23 @@ public class Cultivator extends AbstractSelfTriggeredIC {
     @Override
     public void think(ChipState state) {
 
-        state.setOutput(0, cultivate());
+        if(state.getInput(0)) return;
+
+        for(int i = 0; i < 10; i++)
+            state.setOutput(0, cultivate());
     }
 
     public boolean cultivate() {
 
-        for (int x = -radius.getBlockX() + 1; x < radius.getBlockX(); x++) {
-            for (int y = -radius.getBlockY() + 1; y < radius.getBlockY(); y++) {
-                for (int z = -radius.getBlockZ() + 1; z < radius.getBlockZ(); z++) {
-                    int rx = target.getX() - x;
-                    int ry = target.getY() - y;
-                    int rz = target.getZ() - z;
-                    Block b = BukkitUtil.toSign(getSign()).getWorld().getBlockAt(rx, ry, rz);
+        Block b = area.getRandomBlockInArea();
 
-                    if (b.getType() == Material.DIRT || b.getType() == Material.GRASS) {
+        if(b == null) return false;
 
-                        if (b.getRelative(BlockFace.UP).getType() == Material.AIR && damageHoe()) {
-                            b.setType(Material.SOIL);
-                            return true;
-                        }
-                    }
-                }
+        if (b.getType() == Material.DIRT || b.getType() == Material.GRASS) {
+
+            if (b.getRelative(BlockFace.UP).getType() == Material.AIR && damageHoe()) {
+                b.setType(Material.SOIL);
+                return true;
             }
         }
 
@@ -90,8 +79,8 @@ public class Cultivator extends AbstractSelfTriggeredIC {
 
     public boolean damageHoe() {
 
-        if (onBlock.getRelative(0, 1, 0).getType() == Material.CHEST) {
-            Chest c = (Chest) onBlock.getRelative(0, 1, 0).getState();
+        if (getBackBlock().getRelative(0, 1, 0).getType() == Material.CHEST) {
+            Chest c = (Chest) getBackBlock().getRelative(0, 1, 0).getState();
             for (int i = 290; i <= 294; i++) {
                 for (int slot = 0; slot < c.getInventory().getSize(); slot++) {
                     if (c.getInventory().getItem(slot) == null || c.getInventory().getItem(slot).getTypeId() != i)
@@ -131,15 +120,22 @@ public class Cultivator extends AbstractSelfTriggeredIC {
         }
 
         @Override
-        public String getLongDescription() {
+        public String[] getLongDescription() {
 
-            return "The Cultivator IC tills dirt and grass around the IC within the area designated on line 3, using the hoes in the above chest.";
+            //TODO
+            return new String[]{"The Cultivator IC tills dirt and grass around the IC within the area designated on line 3, using the hoes in the above chest."};
         }
 
         @Override
         public String[] getLineHelp() {
 
             return new String[] {"+oradius=x:y:z offset", null};
+        }
+
+        @Override
+        public void verify(ChangedSign sign) throws ICVerificationException {
+            if(!SearchArea.isValidArea(BukkitUtil.toSign(sign).getBlock(), sign.getLine(2)))
+                throw new ICVerificationException("Invalid SearchArea on 3rd line!");
         }
     }
 }

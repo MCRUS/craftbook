@@ -16,15 +16,21 @@
 
 package com.sk89q.craftbook.bukkit;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Minecart;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.vehicle.VehicleEnterEvent;
@@ -42,8 +48,8 @@ import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.craftbook.util.events.SignClickEvent;
 import com.sk89q.craftbook.util.events.SourcedBlockRedstoneEvent;
 import com.sk89q.craftbook.util.exceptions.InvalidMechanismException;
-import com.sk89q.craftbook.vehicles.cart.CartBlockMechanism;
-import com.sk89q.craftbook.vehicles.cart.CartMechanismBlocks;
+import com.sk89q.craftbook.vehicles.cart.blocks.CartBlockMechanism;
+import com.sk89q.craftbook.vehicles.cart.blocks.CartMechanismBlocks;
 import com.sk89q.craftbook.vehicles.cart.events.CartBlockEnterEvent;
 import com.sk89q.craftbook.vehicles.cart.events.CartBlockImpactEvent;
 import com.sk89q.craftbook.vehicles.cart.events.CartBlockRedstoneEvent;
@@ -61,13 +67,28 @@ import com.sk89q.worldedit.bukkit.BukkitUtil;
  */
 public class MechanicListenerAdapter implements Listener {
 
-    @EventHandler(priority = EventPriority.HIGHEST)
-    public void onPlayerInteract(PlayerInteractEvent event) {
+    Set<String> signClickTimer = new HashSet<String>();
 
-        if (EventUtil.shouldIgnoreEvent(event))
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerInteract(final PlayerInteractEvent event) {
+
+        if (!EventUtil.passesFilter(event))
             return;
 
         if(event.getClickedBlock() != null && SignUtil.isSign(event.getClickedBlock())) {
+            if(CraftBookPlugin.inst().getConfiguration().signClickTimeout > 0) {
+                if(signClickTimer.contains(event.getPlayer().getName())) {
+                    return;
+                } else {
+                    signClickTimer.add(event.getPlayer().getName());
+                    Bukkit.getScheduler().runTaskLater(CraftBookPlugin.inst(), new Runnable() {
+                        @Override
+                        public void run () {
+                            signClickTimer.remove(event.getPlayer().getName());
+                        }
+                    }, CraftBookPlugin.inst().getConfiguration().signClickTimeout);
+                }
+            }
             SignClickEvent ev = new SignClickEvent(event.getPlayer(), event.getAction(), event.getItem(), event.getClickedBlock(), event.getBlockFace());
             CraftBookPlugin.inst().getServer().getPluginManager().callEvent(ev);
             if(ev.isCancelled())
@@ -75,62 +96,77 @@ public class MechanicListenerAdapter implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockBreak(BlockBreakEvent event) {
 
-        if (EventUtil.shouldIgnoreEvent(event))
+        if (!EventUtil.passesFilter(event))
             return;
 
         if(!(CraftBookPlugin.inst().getConfiguration().advancedBlockChecks && event.isCancelled())) {
-            switch(event.getBlock().getType()) {
-
-                case REDSTONE_TORCH_ON:
-                case DIODE_BLOCK_ON:
-                case REDSTONE_BLOCK:
-                case REDSTONE_COMPARATOR_ON:
-                    if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !ProtectionUtil.canBuild(event.getPlayer(), event.getBlock().getLocation(), false))
-                        break;
-                    handleRedstoneForBlock(event.getBlock(), 15, 0);
-                    break;
-                case REDSTONE_WIRE:
-                    if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !ProtectionUtil.canBuild(event.getPlayer(), event.getBlock().getLocation(), false))
-                        break;
-                    if(event.getBlock().getData() > 0)
-                        handleRedstoneForBlock(event.getBlock(), event.getBlock().getData(), 0);
-                    break;
-                case LEVER:
-                    if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !ProtectionUtil.canBuild(event.getPlayer(), event.getBlock().getLocation(), false))
-                        break;
-                    if(((org.bukkit.material.Lever) event.getBlock().getState().getData()).isPowered())
-                        handleRedstoneForBlock(event.getBlock(), 15, 0);
-                    break;
-                case WOOD_BUTTON:
-                case STONE_BUTTON:
-                    if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !ProtectionUtil.canBuild(event.getPlayer(), event.getBlock().getLocation(), false))
-                        break;
-                    if(((org.bukkit.material.Button) event.getBlock().getState().getData()).isPowered())
-                        handleRedstoneForBlock(event.getBlock(), 15, 0);
-                    break;
-                case STONE_PLATE:
-                case WOOD_PLATE:
-                case GOLD_PLATE:
-                case IRON_PLATE:
-                case DETECTOR_RAIL:
-                    if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !ProtectionUtil.canBuild(event.getPlayer(), event.getBlock().getLocation(), false))
-                        break;
-                    if(event.getBlock().getState().getData() instanceof PressureSensor && ((PressureSensor) event.getBlock().getState().getData()).isPressed())
-                        handleRedstoneForBlock(event.getBlock(), 15, 0);
-                    break;
-                default:
-                    break;
-            }
+            checkBlockChange(event.getPlayer(), event.getBlock(), false);
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onBlockPlace(BlockPlaceEvent event) {
+
+        if (!EventUtil.passesFilter(event))
+            return;
+
+        if(!(CraftBookPlugin.inst().getConfiguration().advancedBlockChecks && event.isCancelled())) {
+            checkBlockChange(event.getPlayer(), event.getBlock(), true);
+        }
+    }
+
+    public void checkBlockChange(Player player, Block block, boolean build) {
+        switch(block.getType()) {
+
+            case REDSTONE_TORCH_ON:
+            case DIODE_BLOCK_ON:
+            case REDSTONE_BLOCK:
+            case REDSTONE_COMPARATOR_ON:
+                if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !ProtectionUtil.canBuild(player, block.getLocation(), build))
+                    break;
+                handleRedstoneForBlock(block, build ? 0 : 15, build ? 15 : 0);
+                break;
+            case REDSTONE_WIRE:
+                if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !ProtectionUtil.canBuild(player, block.getLocation(), build))
+                    break;
+                if(block.getData() > 0)
+                    handleRedstoneForBlock(block, block.getData(), 0);
+                break;
+            case LEVER:
+                if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !ProtectionUtil.canBuild(player, block.getLocation(), build))
+                    break;
+                if(((org.bukkit.material.Lever) block.getState().getData()).isPowered())
+                    handleRedstoneForBlock(block, build ? 0 : 15, build ? 15 : 0);
+                break;
+            case WOOD_BUTTON:
+            case STONE_BUTTON:
+                if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !ProtectionUtil.canBuild(player, block.getLocation(), build))
+                    break;
+                if(((org.bukkit.material.Button) block.getState().getData()).isPowered())
+                    handleRedstoneForBlock(block, build ? 0 : 15, build ? 15 : 0);
+                break;
+            case STONE_PLATE:
+            case WOOD_PLATE:
+            case GOLD_PLATE:
+            case IRON_PLATE:
+            case DETECTOR_RAIL:
+                if(CraftBookPlugin.inst().getConfiguration().pedanticBlockChecks && !ProtectionUtil.canBuild(player, block.getLocation(), build))
+                    break;
+                if(block.getState().getData() instanceof PressureSensor && ((PressureSensor) block.getState().getData()).isPressed())
+                    handleRedstoneForBlock(block, build ? 0 : 15, build ? 15 : 0);
+                break;
+            default:
+                break;
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
     public void onBlockRedstoneChange(BlockRedstoneEvent event) {
 
-        if (EventUtil.shouldIgnoreEvent(event))
+        if (!EventUtil.passesFilter(event))
             return;
 
         handleRedstoneForBlock(event.getBlock(), event.getOldCurrent(), event.getNewCurrent());
@@ -303,8 +339,12 @@ public class MechanicListenerAdapter implements Listener {
         });
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onVehicleMove(VehicleMoveEvent event) {
+
+        if(!CraftBookPlugin.inst().getConfiguration().enableVehicles) return;
+        if (!EventUtil.passesFilter(event))
+            return;
 
         if(event.getVehicle() instanceof Minecart) {
             try {
@@ -324,8 +364,12 @@ public class MechanicListenerAdapter implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onVehicleEnter(VehicleEnterEvent event) {
+
+        if(!CraftBookPlugin.inst().getConfiguration().enableVehicles) return;
+        if (!EventUtil.passesFilter(event))
+            return;
 
         if(!event.getVehicle().getWorld().isChunkLoaded(event.getVehicle().getLocation().getBlockX() >> 4, event.getVehicle().getLocation().getBlockZ() >> 4))
             return;
@@ -348,11 +392,12 @@ public class MechanicListenerAdapter implements Listener {
     /**
      * Called when a chunk is loaded.
      */
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onChunkLoad(final ChunkLoadEvent event) {
 
-        if (EventUtil.shouldIgnoreEvent(event))
+        if (!EventUtil.passesFilter(event))
             return;
+
         CraftBookPlugin.server().getScheduler().runTaskLater(CraftBookPlugin.inst(), new Runnable() {
 
             @Override
@@ -366,10 +411,10 @@ public class MechanicListenerAdapter implements Listener {
     /**
      * Called when a chunk is unloaded.
      */
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onChunkUnload(ChunkUnloadEvent event) {
 
-        if (EventUtil.shouldIgnoreEvent(event))
+        if (!EventUtil.passesFilter(event))
             return;
 
         CraftBookPlugin.inst().getSelfTriggerManager().unregisterSelfTrigger(event.getChunk());

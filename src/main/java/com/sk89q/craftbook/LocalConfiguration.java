@@ -32,11 +32,6 @@ public abstract class LocalConfiguration {
     public boolean ICSavePersistentData;
     public boolean ICMidiUsePercussion;
     public boolean ICBreakOnError;
-    // Circuits - Wiring
-    public boolean netherrackEnabled;
-    public boolean pumpkinsEnabled;
-    public boolean glowstoneEnabled;
-    public ItemInfo glowstoneOffBlock;
     // Circuits - Pipes
     public boolean pipesEnabled;
     public boolean pipesDiagonal;
@@ -45,6 +40,11 @@ public abstract class LocalConfiguration {
     public boolean pipeRequireSign;
     // Circuits - Redstone Jukebox
     public boolean jukeboxEnabled;
+    // Circuits - Wiring
+    public boolean netherrackEnabled;
+    public boolean pumpkinsEnabled;
+    public boolean glowstoneEnabled;
+    public ItemInfo glowstoneOffBlock;
 
     // Mechanics
     // Mechanics - AI
@@ -96,6 +96,8 @@ public abstract class LocalConfiguration {
     // Mechanics - Cauldron
     public boolean cauldronEnabled;
     public boolean cauldronUseSpoons;
+    public boolean cauldronAllowRedstone;
+    public boolean cauldronItemTracking;
     // Mechanics - Chair
     public boolean chairEnabled;
     public boolean chairAllowHeldBlock;
@@ -104,6 +106,7 @@ public abstract class LocalConfiguration {
     public boolean chairFacing;
     public boolean chairRequireSign;
     public int chairMaxDistance;
+    public int chairMaxClickRadius;
     // Mechanics - Chunk Anchor
     public boolean chunkAnchorEnabled;
     public boolean chunkAnchorRedstone;
@@ -201,9 +204,18 @@ public abstract class LocalConfiguration {
     public boolean snowSlowdown;
     public boolean snowRealistic;
     public boolean snowHighPiles;
+    public int snowMaxPileHeight;
     public boolean snowJumpTrample;
     public List<ItemInfo> snowRealisticReplacables;
     public int snowFallAnimationSpeed;
+    public boolean snowFreezeWater;
+    public boolean snowMeltSunlight;
+    public boolean snowMeltPartial;
+    // Mechanics - Sponges
+    public boolean spongeEnabled;
+    public int spongeRadius;
+    public boolean spongeCircleRadius;
+    public boolean spongeRedstone;
     // Mechanics - Teleporter
     public boolean teleporterEnabled;
     public boolean teleporterRequireSign;
@@ -277,6 +289,7 @@ public abstract class LocalConfiguration {
     // Vehicles - Minecart Remove Entities Options
     public boolean minecartRemoveEntitiesEnabled;
     public boolean minecartRemoveEntitiesOtherCarts;
+    public boolean minecartRemoveEntitiesEmpty;
     // Vehicles - Minecart Vision Steering Options
     public boolean minecartVisionSteeringEnabled;
     public int minecartVisionSteeringMinimumSensitivity;

@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Locale;
 
 import org.apache.commons.lang.Validate;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Material;
 import org.bukkit.block.Sign;
 
@@ -22,10 +23,7 @@ public class ChangedSign {
 
     public ChangedSign(Sign sign, String[] lines, LocalPlayer player) {
 
-        Validate.notNull(sign);
-
-        this.sign = sign;
-        this.lines = lines;
+        this(sign, lines);
 
         if(lines != null) {
             for(int i = 0; i < 4; i++) {
@@ -42,7 +40,7 @@ public class ChangedSign {
                         key = "global";
 
                     if(player != null && !VariableCommands.hasVariablePermission(((BukkitPlayer) player).getPlayer(), key, var, "use"))
-                        setLine(i,line.replace("%" + key + "|" + var + "%", ""));
+                        setLine(i, StringUtils.replace(line, "%" + key + "|" + var + "%", ""));
                 }
             }
         }
@@ -96,12 +94,6 @@ public class ChangedSign {
         return sign.getZ();
     }
 
-    /*
-     * @Override public Chunk getChunk() {
-     * 
-     * return BukkitUtil.sign.getChunk(); }
-     */
-
     public String[] getLines() {
 
         return lines;
@@ -110,6 +102,11 @@ public class ChangedSign {
     public String getLine(int index) throws IndexOutOfBoundsException {
 
         return ParsingUtil.parseLine(lines[index], null);
+    }
+
+    public String getRawLine(int index) throws IndexOutOfBoundsException {
+
+        return lines[index];
     }
 
     public void setLine(int index, String line) throws IndexOutOfBoundsException {
@@ -185,7 +182,7 @@ public class ChangedSign {
             if(((ChangedSign) o).getRawData() != getRawData())
                 return false;
             for(int i = 0; i < 4; i++)
-                if(!((ChangedSign) o).getLine(i).equals(getLine(i)))
+                if(!((ChangedSign) o).getRawLine(i).equals(getRawLine(i)))
                     return false;
             if(((ChangedSign) o).getX() != getX())
                 return false;

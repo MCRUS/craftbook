@@ -13,8 +13,12 @@ import org.bukkit.material.Button;
 import com.sk89q.craftbook.AbstractCraftBookMechanic;
 import com.sk89q.craftbook.ChangedSign;
 import com.sk89q.craftbook.LocalPlayer;
+import com.sk89q.craftbook.bukkit.BukkitPlayer;
 import com.sk89q.craftbook.bukkit.CraftBookPlugin;
 import com.sk89q.craftbook.bukkit.util.BukkitUtil;
+import com.sk89q.craftbook.util.EventUtil;
+import com.sk89q.craftbook.util.ParsingUtil;
+import com.sk89q.craftbook.util.ProtectionUtil;
 import com.sk89q.craftbook.util.RegexUtil;
 import com.sk89q.craftbook.util.SignUtil;
 import com.sk89q.worldedit.Location;
@@ -30,8 +34,10 @@ import com.sk89q.worldedit.blocks.BlockType;
  */
 public class Teleporter extends AbstractCraftBookMechanic {
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onSignChange(SignChangeEvent event) {
+
+        if(!EventUtil.passesFilter(event)) return;
 
         if (!event.getLine(1).equalsIgnoreCase("[Teleporter]")) return;
 
@@ -44,7 +50,7 @@ public class Teleporter extends AbstractCraftBookMechanic {
             return;
         }
 
-        String[] pos = RegexUtil.COLON_PATTERN.split(event.getLine(2));
+        String[] pos = RegexUtil.COLON_PATTERN.split(ParsingUtil.parseLine(event.getLine(2), event.getPlayer()));
         if (pos.length <= 2) {
             localPlayer.printError("mech.teleport.invalidcoords");
             SignUtil.cancelSign(event);
@@ -55,8 +61,11 @@ public class Teleporter extends AbstractCraftBookMechanic {
         event.setLine(1, "[Teleporter]");
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH)
     public void onRightClick(PlayerInteractEvent event) {
+
+        if (!EventUtil.passesFilter(event))
+            return;
 
         if(event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 
@@ -95,6 +104,12 @@ public class Teleporter extends AbstractCraftBookMechanic {
         if (!localPlayer.hasPermission("craftbook.mech.teleporter.use")) {
             if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
                 localPlayer.printError("mech.use-permission");
+            return;
+        }
+
+        if(!ProtectionUtil.canUse(event.getPlayer(), event.getClickedBlock().getLocation(), event.getBlockFace(), event.getAction())) {
+            if(CraftBookPlugin.inst().getConfiguration().showPermissionMessages)
+                localPlayer.printError("area.use-permissions");
             return;
         }
 
@@ -174,9 +189,9 @@ public class Teleporter extends AbstractCraftBookMechanic {
         Location subspaceRift = player.getPosition();
         subspaceRift = subspaceRift.setPosition(new Vector(floor.getX() + 0.5, floor.getY() + 1, floor.getZ() + 0.5));
         if (player.isInsideVehicle()) {
-            subspaceRift = player.getVehicle().getLocation();
+            subspaceRift = BukkitUtil.toLocation(((BukkitPlayer)player).getPlayer().getVehicle().getLocation());
             subspaceRift = subspaceRift.setPosition(new Vector(floor.getX() + 0.5, floor.getY() + 2, floor.getZ() + 0.5));
-            player.getVehicle().teleport(subspaceRift);
+            ((BukkitPlayer)player).getPlayer().getVehicle().teleport(BukkitUtil.toLocation(subspaceRift));
         }
         if (CraftBookPlugin.inst().getConfiguration().teleporterMaxRange > 0)
             if (subspaceRift.getPosition().distanceSq(player.getPosition().getPosition()) > CraftBookPlugin.inst().getConfiguration().teleporterMaxRange * CraftBookPlugin.inst().getConfiguration().teleporterMaxRange) {
