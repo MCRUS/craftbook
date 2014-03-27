@@ -83,10 +83,13 @@ public abstract class LocalConfiguration {
     public List<ItemInfo> pistonsMovementBlacklist;
     public boolean pistonsBounce;
     public List<ItemInfo> pistonsBounceBlacklist;
+    // Mechanics - BetterPlants
+    public boolean betterPlantsEnabled;
+    public boolean betterPlantsFernFarming;
     // Mechanics - Bookcase
     public boolean bookcaseEnabled;
     public boolean bookcaseReadHoldingBlock;
-    public boolean bookcaseReadWhenSneaking;
+    public TernaryState bookcaseReadWhenSneaking;
     // Mechanics - Bridge
     public boolean bridgeEnabled;
     public boolean bridgeAllowRedstone;
@@ -118,6 +121,7 @@ public abstract class LocalConfiguration {
     public boolean commandSignAllowRedstone;
     // Mechanics - Cooking Pot
     public boolean cookingPotEnabled;
+    public boolean cookingPotAllowRedstone;
     public boolean cookingPotFuel;
     public boolean cookingPotOres;
     public boolean cookingPotSignOpen;

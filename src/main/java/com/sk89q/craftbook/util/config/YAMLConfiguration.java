@@ -219,12 +219,20 @@ public class YAMLConfiguration extends LocalConfiguration {
         pistonMaxDistance = config.getInt("mechanics.better-pistons.max-distance", 12);
 
 
+        // Better Plants Configuration Listener
+        config.setComment("mechanics.better-plants.enable", "Enables BetterPlants Mechanics. (This must be enabled for any sub-mechanic to work)");
+        betterPlantsEnabled = config.getBoolean("mechanics.better-plants.enable", false);
+
+        config.setComment("mechanics.better-plants.fern-farming", "Allows ferns to be farmed by breaking top half of a large fern. (And small ferns to grow)");
+        betterPlantsFernFarming = config.getBoolean("mechanics.better-plants.fern-farming", true);
+
+
         // Bookcase Configuration Listener
         config.setComment("mechanics.bookcase.enable", "Enable readable bookshelves.");
         bookcaseEnabled = config.getBoolean("mechanics.bookcase.enable", false);
 
         config.setComment("mechanics.bookcase.read-when-sneaking", "Enable reading while sneaking.");
-        bookcaseReadWhenSneaking = config.getBoolean("mechanics.bookcase.read-when-sneaking", false);
+        bookcaseReadWhenSneaking = TernaryState.getFromString(config.getString("mechanics.bookcase.read-when-sneaking", "no"));
 
         config.setComment("mechanics.bookcase.read-when-holding-block", "Allow bookshelves to work when the player is holding a block.");
         bookcaseReadHoldingBlock = config.getBoolean("mechanics.bookcase.read-when-holding-block", false);
@@ -314,6 +322,9 @@ public class YAMLConfiguration extends LocalConfiguration {
         // Cooking Pot Configuration Listener
         config.setComment("mechanics.cooking-pot.enable", "Enable cooking pots.");
         cookingPotEnabled = config.getBoolean("mechanics.cooking-pot.enable", false);
+
+        config.setComment("mechanics.cooking-pot.allow-redstone", "Allows for redstone to be used as a fuel source.");
+        cookingPotAllowRedstone = config.getBoolean("mechanics.cooking-pot.allow-redstone", true);
 
         config.setComment("mechanics.cooking-pot.require-fuel", "Require fuel to cook.");
         cookingPotFuel = config.getBoolean("mechanics.cooking-pot.require-fuel", true);

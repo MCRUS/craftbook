@@ -26,6 +26,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
@@ -115,7 +116,7 @@ public class CommandItems extends AbstractCraftBookMechanic {
 
         CraftBookPlugin.logger().info("Successfully added " + amount + " CommandItems!");
 
-        if(definitions.size() > 0)
+        if(definitions.size() > 0) {
             Bukkit.getScheduler().runTaskTimer(CraftBookPlugin.inst(), new Runnable() {
 
                 @Override
@@ -133,6 +134,21 @@ public class CommandItems extends AbstractCraftBookMechanic {
                     }
                 }
             }, 1, 20);
+            Bukkit.getScheduler().runTaskTimer(CraftBookPlugin.inst(), new Runnable() {
+
+                @Override
+                public void run () {
+
+                    for(Player player : Bukkit.getOnlinePlayers()) {
+                        if(player.getItemInHand() != null)
+                            performCommandItems(player.getItemInHand(), player, null);
+                        for(ItemStack stack : player.getInventory().getArmorContents())
+                            if(stack != null)
+                                performCommandItems(stack, player, null);
+                    }
+                }
+            }, 10, 10);
+        }
 
         if(CraftBookPlugin.inst().getPersistentStorage().get("command-items.death-items") == null)
             CraftBookPlugin.inst().getPersistentStorage().set("command-items.death-items", new HashMap<String, List<String>>());
@@ -208,6 +224,18 @@ public class CommandItems extends AbstractCraftBookMechanic {
             return;
 
         performCommandItems(event.getPlayer().getItemInHand(), event.getPlayer(), event);
+    }
+
+    @EventHandler(priority=EventPriority.HIGH)
+    public void onProjectileHit(final ProjectileHitEvent event) {
+
+        if(!(event.getEntity().getShooter() instanceof Player))
+            return;
+
+        if(((Player) event.getEntity().getShooter()).getItemInHand() == null)
+            return;
+
+        performCommandItems(((Player) event.getEntity().getShooter()).getItemInHand(), (Player) event.getEntity().getShooter(), event);
     }
 
     @EventHandler(priority=EventPriority.HIGH)
@@ -314,7 +342,7 @@ public class CommandItems extends AbstractCraftBookMechanic {
     @SuppressWarnings("deprecation")
     public void performCommandItems(ItemStack item, final Player player, final Event event) {
 
-        if (!EventUtil.passesFilter(event))
+        if (event != null && !EventUtil.passesFilter(event))
             return;
 
         LocalPlayer lplayer = CraftBookPlugin.inst().wrapPlayer(player);
@@ -335,30 +363,56 @@ public class CommandItems extends AbstractCraftBookMechanic {
                 }
 
                 if(cooldownPeriods.containsKey(new Tuple2<String, String>(lplayer.getName(), comdef.name))) {
-                    lplayer.printError(lplayer.translate("mech.command-items.wait") + " " + cooldownPeriods.get(new Tuple2<String, String>(lplayer.getName(), comdef.name)) + " " + lplayer.translate("mech.command-items.wait-seconds"));
+                    if(def.clickType != ClickType.PASSIVE)
+                        lplayer.printError(lplayer.translate("mech.command-items.wait") + " " + cooldownPeriods.get(new Tuple2<String, String>(lplayer.getName(), comdef.name)) + " " + lplayer.translate("mech.command-items.wait-seconds"));
                     break current;
                 }
 
                 for(ItemStack stack : def.consumables) {
-                    if(!player.getInventory().containsAtLeast(stack, stack.getAmount())) {
+
+                    boolean found = false;
+
+                    for(ItemStack tStack : player.getInventory().getContents()) {
+                        if(ItemUtil.areItemsIdentical(stack, tStack)) {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if(!found) {
                         lplayer.printError(lplayer.translate("mech.command-items.need") + " " + stack.getAmount() + " " + stack.getType().name() + " " + lplayer.translate("mech.command-items.need-use"));
                         break current;
                     }
                 }
-                if(def.consumables.length > 0) {
-                    if(!player.getInventory().removeItem(def.consumables).isEmpty()) {
+
+                for(ItemStack stack : def.consumables) {
+
+                    boolean found = false;
+
+                    for(ItemStack tStack : player.getInventory().getContents()) {
+                        if(ItemUtil.areItemsIdentical(stack, tStack)) {
+                            found = true;
+                            ItemStack toRemove = tStack.clone();
+                            toRemove.setAmount(stack.getAmount());
+                            player.getInventory().removeItem(toRemove);
+                            break;
+                        }
+                    }
+
+                    if(!found) {
                         lplayer.printError("mech.command-items.out-of-sync");
                         break current;
-                    } else
-                        player.updateInventory();
+                    }
                 }
+
                 if(def.consumeSelf) {
                     if(player.getItemInHand().getAmount() > 1)
                         player.getItemInHand().setAmount(player.getItemInHand().getAmount() - 1);
                     else
                         player.setItemInHand(null);
-                    player.updateInventory();
                 }
+
+                player.updateInventory();
 
                 for(CommandItemAction action : comdef.actions)
                     if(action.stage == ActionRunStage.BEFORE)
@@ -418,6 +472,8 @@ public class CommandItems extends AbstractCraftBookMechanic {
 
     public String parseLine(String command, Event event, Player player) {
 
+        if(command == null) return null;
+
         if(event instanceof EntityDamageByEntityEvent) {
             command = StringUtils.replace(command, "@d.x", String.valueOf(((EntityDamageByEntityEvent) event).getEntity().getLocation().getX()));
             command = StringUtils.replace(command, "@d.y", String.valueOf(((EntityDamageByEntityEvent) event).getEntity().getLocation().getY()));
@@ -425,6 +481,7 @@ public class CommandItems extends AbstractCraftBookMechanic {
             command = StringUtils.replace(command, "@d.bx", String.valueOf(((EntityDamageByEntityEvent) event).getEntity().getLocation().getBlockX()));
             command = StringUtils.replace(command, "@d.by", String.valueOf(((EntityDamageByEntityEvent) event).getEntity().getLocation().getBlockY()));
             command = StringUtils.replace(command, "@d.bz", String.valueOf(((EntityDamageByEntityEvent) event).getEntity().getLocation().getBlockZ()));
+            command = StringUtils.replace(command, "@d.w", String.valueOf(((EntityDamageByEntityEvent) event).getEntity().getLocation().getWorld().getName()));
             command = StringUtils.replace(command, "@d.l", ((EntityDamageByEntityEvent) event).getEntity().getLocation().toString());
             if(((EntityDamageByEntityEvent) event).getEntity() instanceof Player)
                 command = StringUtils.replace(command, "@d", ((Player) ((EntityDamageByEntityEvent) event).getEntity()).getName());
@@ -438,6 +495,7 @@ public class CommandItems extends AbstractCraftBookMechanic {
             command = StringUtils.replace(command, "@d.bx", String.valueOf(((PlayerInteractEntityEvent) event).getRightClicked().getLocation().getBlockX()));
             command = StringUtils.replace(command, "@d.by", String.valueOf(((PlayerInteractEntityEvent) event).getRightClicked().getLocation().getBlockY()));
             command = StringUtils.replace(command, "@d.bz", String.valueOf(((PlayerInteractEntityEvent) event).getRightClicked().getLocation().getBlockZ()));
+            command = StringUtils.replace(command, "@d.w", String.valueOf(((PlayerInteractEntityEvent) event).getRightClicked().getLocation().getWorld().getName()));
             command = StringUtils.replace(command, "@d.l", ((PlayerInteractEntityEvent) event).getRightClicked().getLocation().toString());
             if(((PlayerInteractEntityEvent) event).getRightClicked() instanceof Player)
                 command = StringUtils.replace(command, "@d", ((Player) ((PlayerInteractEntityEvent) event).getRightClicked()).getName());
@@ -448,6 +506,7 @@ public class CommandItems extends AbstractCraftBookMechanic {
             command = StringUtils.replace(command, "@b.x", String.valueOf(((BlockEvent) event).getBlock().getX()));
             command = StringUtils.replace(command, "@b.y", String.valueOf(((BlockEvent) event).getBlock().getY()));
             command = StringUtils.replace(command, "@b.z", String.valueOf(((BlockEvent) event).getBlock().getZ()));
+            command = StringUtils.replace(command, "@b.w", ((BlockEvent) event).getBlock().getLocation().getWorld().getName());
             command = StringUtils.replace(command, "@b.l", ((BlockEvent) event).getBlock().getLocation().toString());
             command = StringUtils.replace(command, "@b", ((BlockEvent) event).getBlock().getType().name() + (((BlockEvent) event).getBlock().getData() == 0 ? "" : ":") + ((BlockEvent) event).getBlock().getData());
         }
@@ -455,6 +514,7 @@ public class CommandItems extends AbstractCraftBookMechanic {
             command = StringUtils.replace(command, "@b.x", String.valueOf(((PlayerInteractEvent) event).getClickedBlock().getX()));
             command = StringUtils.replace(command, "@b.y", String.valueOf(((PlayerInteractEvent) event).getClickedBlock().getY()));
             command = StringUtils.replace(command, "@b.z", String.valueOf(((PlayerInteractEvent) event).getClickedBlock().getZ()));
+            command = StringUtils.replace(command, "@b.w", String.valueOf(((PlayerInteractEvent) event).getClickedBlock().getWorld().getName()));
             command = StringUtils.replace(command, "@b.l", ((PlayerInteractEvent) event).getClickedBlock().getLocation().toString());
             command = StringUtils.replace(command, "@b", ((PlayerInteractEvent) event).getClickedBlock().getType().name() + (((PlayerInteractEvent) event).getClickedBlock().getData() == 0 ? "" : ":") + ((PlayerInteractEvent) event).getClickedBlock().getData());
         }
@@ -465,13 +525,15 @@ public class CommandItems extends AbstractCraftBookMechanic {
             command = StringUtils.replace(command, "@e.bx", String.valueOf(((EntityEvent) event).getEntity().getLocation().getBlockX()));
             command = StringUtils.replace(command, "@e.by", String.valueOf(((EntityEvent) event).getEntity().getLocation().getBlockY()));
             command = StringUtils.replace(command, "@e.bz", String.valueOf(((EntityEvent) event).getEntity().getLocation().getBlockZ()));
+            command = StringUtils.replace(command, "@e.w", String.valueOf(((EntityEvent) event).getEntity().getLocation().getWorld().getName()));
             command = StringUtils.replace(command, "@e.l", ((EntityEvent) event).getEntity().getLocation().toString());
             command = StringUtils.replace(command, "@e", ((EntityEvent) event).getEntityType().getName());
         }
         if(event instanceof AsyncPlayerChatEvent && command.contains("@m"))
             command = StringUtils.replace(command, "@m", ((AsyncPlayerChatEvent) event).getMessage());
 
-        command = ParsingUtil.parseLine(command, player);
+        command = ParsingUtil.parsePlayerTags(command, player);
+        command = ParsingUtil.parseVariables(command, null);
 
         return command;
     }
